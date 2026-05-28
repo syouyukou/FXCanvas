@@ -49,7 +49,7 @@
 	<header class="header">
 		<div class="logo">
 			<span class="logo-icon">◈</span>
-			<span class="logo-text">effect<span class="logo-dot">.</span>clone</span>
+			<span class="logo-text">FX<span class="logo-dot">Canvas</span></span>
 		</div>
 
 		<div class="header-center"></div>
