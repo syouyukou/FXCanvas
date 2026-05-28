@@ -537,6 +537,98 @@ void main() {
 }`
 	},
 
+	// ─── STAR GLOW ──────────────────────────────────────────
+	{
+		id: 'star_glow',
+		name: 'Star Glow',
+		category: 'Effects',
+		enabled: true,
+		params: [
+			{ name: 'threshold',   label: 'Threshold',       type: 'float', min: 0,   max: 1,   step: 0.01, default: 0.5,  value: 0.5  },
+			{ name: 'knee',        label: 'Knee',            type: 'float', min: 0,   max: 0.5, step: 0.01, default: 0.05, value: 0.05 },
+			{ name: 'intensity',   label: 'Intensity',       type: 'float', min: 0,   max: 2,   step: 0.01, default: 0.5,  value: 0.5  },
+			{ name: 'streaks',     label: 'Streaks',         type: 'float', min: 2,   max: 8,   step: 1,    default: 4,    value: 4    },
+			{ name: 'samples',     label: 'Sample Count',    type: 'float', min: 8,   max: 60,  step: 1,    default: 30,   value: 30   },
+			{ name: 'length',      label: 'Length',          type: 'float', min: 10,  max: 200, step: 1,    default: 80,   value: 80   },
+			{ name: 'falloff',     label: 'Falloff',         type: 'float', min: 0.1, max: 1,   step: 0.01, default: 0.45, value: 0.45 },
+			{ name: 'angle',       label: 'Angle Deg',       type: 'float', min: 0,   max: 180, step: 1,    default: 0,    value: 0    },
+			{ name: 'colorize',    label: 'Colorize',        type: 'float', min: 0,   max: 1,   step: 0.01, default: 0.8,  value: 0.8  },
+			{ name: 'grad_shift',  label: 'Gradient Shift',  type: 'float', min: 0,   max: 1,   step: 0.01, default: 0.3,  value: 0.3  }
+		],
+		fragmentShader:
+			HEADER +
+			`
+uniform float u_threshold;
+uniform float u_knee;
+uniform float u_intensity;
+uniform float u_streaks;
+uniform float u_samples;
+uniform float u_length;
+uniform float u_falloff;
+uniform float u_angle;
+uniform float u_colorize;
+uniform float u_grad_shift;
+
+// Soft-knee highlight extraction
+float extractHighlight(float lum) {
+  float lo = u_threshold - u_knee;
+  float hi = u_threshold + u_knee;
+  if (lum < lo) return 0.0;
+  if (lum > hi) return lum - u_threshold;
+  float t = (lum - lo) / (2.0 * u_knee);
+  return t * t * u_knee;
+}
+
+// Blue-white gradient (matches reference)
+vec3 glowColor(float t, float shift) {
+  float s = fract(t + shift);
+  // warm core → cool tips
+  vec3 warm = vec3(1.0, 0.95, 0.8);
+  vec3 cool = vec3(0.5, 0.7, 1.0);
+  return mix(warm, cool, s);
+}
+
+void main() {
+  vec4 base = texture(u_texture, v_texCoord);
+  vec2 texel = 1.0 / u_resolution;
+
+  vec3 glowAcc = vec3(0.0);
+  float totalWeight = 0.0;
+
+  float numStreaks = u_streaks;
+  float baseAngle = u_angle * 3.14159 / 180.0;
+
+  for (float s = 0.0; s < 8.0; s++) {
+    if (s >= numStreaks) break;
+    float ang = baseAngle + s * 3.14159 / numStreaks;
+    vec2 dir = vec2(cos(ang), sin(ang));
+
+    // sample in both directions along this axis
+    for (float sign = -1.0; sign <= 1.0; sign += 2.0) {
+      vec3 streakColor = vec3(0.0);
+      float weight = 1.0;
+      for (float j = 1.0; j <= 60.0; j++) {
+        if (j > u_samples) break;
+        vec2 offset = dir * sign * j * u_length / u_samples * texel;
+        vec2 uv = v_texCoord + offset;
+        if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) break;
+        vec4 s2 = texture(u_texture, uv);
+        float lum = dot(s2.rgb, vec3(0.299, 0.587, 0.114));
+        float h = extractHighlight(lum);
+        float t = j / u_samples;
+        vec3 gc = mix(vec3(1.0), glowColor(t, u_grad_shift), u_colorize);
+        streakColor += s2.rgb * h * weight * gc;
+        weight *= (1.0 - u_falloff * 0.05);
+      }
+      glowAcc += streakColor;
+    }
+  }
+
+  vec3 glow = glowAcc * u_intensity * 0.1;
+  outColor = vec4(clamp(base.rgb + glow, 0.0, 1.0), base.a);
+}`
+	},
+
 	// ─── DITHER ─────────────────────────────────────────────
 	{
 		id: 'dither',
