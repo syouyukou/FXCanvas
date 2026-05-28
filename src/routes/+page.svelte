@@ -2,10 +2,12 @@
 	import EffectPanel from '$lib/components/EffectPanel.svelte';
 	import Canvas from '$lib/components/Canvas.svelte';
 	import LayerPanel from '$lib/components/LayerPanel.svelte';
-	import { sourceImage, imageSize, appliedEffects } from '$lib/stores/editor';
+	import ExportMenu from '$lib/components/ExportMenu.svelte';
+	import { sourceImage, imageSize } from '$lib/stores/editor';
 	import type { Renderer } from '$lib/engine/renderer';
 
 	let renderer: Renderer | null = $state(null);
+	let viewZoom = $state(100);
 	let fileInput = $state<HTMLInputElement | null>(null);
 
 	function loadFile(file: File) {
@@ -33,24 +35,6 @@
 				node.removeEventListener('change', onFileChange);
 			}
 		};
-	}
-
-	function exportPNG() {
-		if (!renderer?.hasImage()) return;
-		const url = renderer.exportCanvas($appliedEffects);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = 'effect-export.png';
-		a.click();
-	}
-
-	function exportJPEG() {
-		if (!renderer?.hasImage()) return;
-		const url = renderer.exportJPEG($appliedEffects);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = 'effect-export.jpg';
-		a.click();
 	}
 </script>
 
@@ -81,28 +65,14 @@
 				class="hidden-input"
 			/>
 
-			<div class="export-group">
-				<button class="btn-primary" onclick={exportPNG} disabled={!$sourceImage}>
-					Export PNG
-				</button>
-				<button
-					class="btn-export-more"
-					onclick={exportJPEG}
-					disabled={!$sourceImage}
-					title="Export JPEG"
-				>
-					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-						<polyline points="6 9 12 15 18 9"/>
-					</svg>
-				</button>
-			</div>
+			<ExportMenu {renderer} />
 		</div>
 	</header>
 
 	<!-- Main -->
 	<main class="main">
 		<EffectPanel />
-		<Canvas bind:renderer />
+		<Canvas bind:renderer bind:viewZoom />
 		<LayerPanel />
 	</main>
 
@@ -111,6 +81,7 @@
 		<span class="footer-info">
 			{#if $sourceImage}
 				{$imageSize.width} × {$imageSize.height} px
+				<span class="zoom-badge">{viewZoom}%</span>
 				{#if Math.max($imageSize.width, $imageSize.height) > 1280}
 					<span class="preview-badge">PREVIEW</span>
 				{/if}
@@ -118,7 +89,7 @@
 				No media loaded
 			{/if}
 		</span>
-		<span class="footer-tip">Drag image · Click effect (random) · Shift+click (defaults)</span>
+		<span class="footer-tip">Scroll to zoom · Double-click reset · Drag image · Click effect (random) · Shift+click (defaults)</span>
 	</footer>
 </div>
 
@@ -214,50 +185,6 @@
 		display: none;
 	}
 
-	.export-group {
-		display: flex;
-		align-items: stretch;
-	}
-
-	.btn-primary {
-		background: #fff;
-		color: #000;
-		border: none;
-		border-radius: 6px 0 0 6px;
-		padding: 6px 14px;
-		font-size: 13px;
-		font-weight: 600;
-		cursor: pointer;
-		transition: opacity 0.15s;
-	}
-
-	.btn-primary:disabled {
-		opacity: 0.35;
-		cursor: default;
-	}
-
-	.btn-primary:not(:disabled):hover {
-		opacity: 0.9;
-	}
-
-	.btn-export-more {
-		background: #ddd;
-		color: #000;
-		border: none;
-		border-left: 1px solid #bbb;
-		border-radius: 0 6px 6px 0;
-		padding: 6px 8px;
-		cursor: pointer;
-		display: flex;
-		align-items: center;
-		transition: opacity 0.15s;
-	}
-
-	.btn-export-more:disabled {
-		opacity: 0.35;
-		cursor: default;
-	}
-
 	/* ── Main ───────────────────────────── */
 	.main {
 		flex: 1;
@@ -294,6 +221,13 @@
 		border: 1px solid #333;
 		border-radius: 3px;
 		padding: 1px 5px;
+	}
+
+	.zoom-badge {
+		font-size: 10px;
+		color: #666;
+		font-variant-numeric: tabular-nums;
+		min-width: 3ch;
 	}
 
 	.footer-tip {

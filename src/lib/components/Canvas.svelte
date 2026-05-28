@@ -4,28 +4,81 @@
 	import { appliedEffects, sourceImage, imageSize } from '../stores/editor';
 	import { refreshThumbnailsForImage } from '../engine/effectThumbnails';
 
+	const MIN_ZOOM = 0.25;
+	const MAX_ZOOM = 8;
+
 	let resizeObserver: ResizeObserver | null = null;
 	let lastImage = $state<HTMLImageElement | ImageBitmap | null>(null);
+	let fitScale = $state(1);
+	let userZoom = $state(1);
+	let panX = $state(0);
+	let panY = $state(0);
 
-	let { renderer = $bindable<Renderer | null>(null) } = $props();
+	let { renderer = $bindable<Renderer | null>(null), viewZoom = $bindable(100) } = $props();
 
 	let canvas: HTMLCanvasElement;
 	let container: HTMLDivElement;
 
-	function fitCanvas(img: { width: number; height: number }) {
-		if (!container || !canvas) return;
-		const cw = container.clientWidth;
-		const ch = container.clientHeight;
-		const scale = Math.min(cw / img.width, ch / img.height, 1);
+	function clampZoom(z: number) {
+		return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z));
+	}
+
+	function computeFitScale(img: { width: number; height: number }) {
+		if (!container) return 1;
+		return Math.min(
+			container.clientWidth / img.width,
+			container.clientHeight / img.height,
+			1
+		);
+	}
+
+	function applyLayout(img: { width: number; height: number }) {
+		if (!canvas) return;
+		fitScale = computeFitScale(img);
+		const scale = fitScale * userZoom;
 		canvas.style.width = img.width * scale + 'px';
 		canvas.style.height = img.height * scale + 'px';
+		viewZoom = Math.round(userZoom * 100);
+	}
+
+	function resetView() {
+		userZoom = 1;
+		panX = 0;
+		panY = 0;
+	}
+
+	function onWheel(e: WheelEvent) {
+		if (!renderer || !$sourceImage) return;
+		e.preventDefault();
+
+		const rect = container.getBoundingClientRect();
+		const mx = e.clientX - rect.left - rect.width / 2;
+		const my = e.clientY - rect.top - rect.height / 2;
+		const img = renderer.imageSize;
+		const oldScale = fitScale * userZoom;
+		const factor = Math.exp(-e.deltaY * 0.001);
+		const nextZoom = clampZoom(userZoom * factor);
+		const newScale = fitScale * nextZoom;
+
+		const imgX = (mx - panX) / oldScale;
+		const imgY = (my - panY) / oldScale;
+		panX = mx - imgX * newScale;
+		panY = my - imgY * newScale;
+		userZoom = nextZoom;
+		applyLayout(img);
+	}
+
+	function onDoubleClick() {
+		if (!renderer || !$sourceImage) return;
+		resetView();
+		applyLayout(renderer.imageSize);
 	}
 
 	onMount(() => {
 		renderer = new Renderer(canvas);
 
 		resizeObserver = new ResizeObserver(() => {
-			if ($sourceImage && renderer) fitCanvas(renderer.imageSize);
+			if ($sourceImage && renderer) applyLayout(renderer.imageSize);
 		});
 		resizeObserver.observe(container);
 	});
@@ -38,6 +91,7 @@
 	$effect(() => {
 		if (!renderer || !$sourceImage) {
 			lastImage = null;
+			viewZoom = 100;
 			return;
 		}
 
@@ -47,7 +101,8 @@
 			renderer.loadImage($sourceImage);
 			lastImage = $sourceImage;
 			imageSize.set(renderer.imageSize);
-			fitCanvas(renderer.imageSize);
+			resetView();
+			applyLayout(renderer.imageSize);
 			setTimeout(() => refreshThumbnailsForImage($sourceImage!), 0);
 		}
 
@@ -80,6 +135,7 @@
 	bind:this={container}
 	ondrop={onDrop}
 	ondragover={onDragOver}
+	onwheel={onWheel}
 	role="region"
 	aria-label="Canvas"
 >
@@ -94,7 +150,16 @@
 			<span>or click Load Media</span>
 		</div>
 	{/if}
-	<canvas bind:this={canvas} class:hidden={!$sourceImage}></canvas>
+	<div
+		class="canvas-stage"
+		class:hidden={!$sourceImage}
+		style="transform: translate({panX}px, {panY}px)"
+		ondblclick={onDoubleClick}
+		role="img"
+		aria-label="Preview canvas"
+	>
+		<canvas bind:this={canvas}></canvas>
+	</div>
 </div>
 
 <style>
@@ -106,16 +171,21 @@
 		background: #111;
 		overflow: hidden;
 		position: relative;
+		cursor: default;
+	}
+
+	.canvas-stage {
+		flex-shrink: 0;
+	}
+
+	.canvas-stage.hidden {
+		display: none;
 	}
 
 	canvas {
 		display: block;
 		image-rendering: pixelated;
 		box-shadow: 0 4px 32px rgba(0, 0, 0, 0.6);
-	}
-
-	canvas.hidden {
-		display: none;
 	}
 
 	.empty-state {

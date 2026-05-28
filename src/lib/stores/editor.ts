@@ -1,16 +1,22 @@
-import { writable, derived, get } from 'svelte/store';
+import { writable, derived } from 'svelte/store';
 import { EFFECTS } from '../effects/index';
 import type { Effect, AppliedEffect, EffectParam } from '../engine/renderer';
+import { cloneGradient, type GradientStop } from '../engine/gradient';
 
 function cloneEffect(effect: Effect): Effect {
 	return {
 		...effect,
-		params: effect.params.map((p) => ({ ...p })),
+		params: effect.params.map((p) => ({
+			...p,
+			...(p.type === 'gradient'
+				? { default: cloneGradient(p.default as GradientStop[]) }
+				: {})
+		})),
 		enabled: true
 	};
 }
 
-function randomParamValue(param: EffectParam): number | boolean | string {
+function randomParamValue(param: EffectParam): number | boolean | string | GradientStop[] {
 	switch (param.type) {
 		case 'bool':
 			return Math.random() > 0.5;
@@ -18,7 +24,7 @@ function randomParamValue(param: EffectParam): number | boolean | string {
 			if (param.options?.length) {
 				return param.options[Math.floor(Math.random() * param.options.length)].value;
 			}
-			return param.default;
+			return param.default as number;
 		case 'color':
 			return (
 				'#' +
@@ -26,6 +32,15 @@ function randomParamValue(param: EffectParam): number | boolean | string {
 					.toString(16)
 					.padStart(6, '0')
 			);
+		case 'gradient':
+			return cloneGradient(param.default as GradientStop[]).map((s) => ({
+				pos: Math.max(0, Math.min(1, s.pos + (Math.random() - 0.5) * 0.2)),
+				color:
+					'#' +
+					Math.floor(Math.random() * 0xffffff)
+						.toString(16)
+						.padStart(6, '0')
+			}));
 		case 'int':
 			return Math.round(param.min! + Math.random() * (param.max! - param.min!));
 		default:
@@ -38,6 +53,8 @@ export const activeLayerIndex = writable<number>(-1);
 export const sourceImage = writable<HTMLImageElement | ImageBitmap | null>(null);
 export const imageSize = writable<{ width: number; height: number }>({ width: 0, height: 0 });
 export const thumbnails = writable<Map<string, string>>(new Map());
+/** Square crop of the current preview source (shown on effect thumb hover). */
+export const sourceThumbnail = writable<string | null>(null);
 export const searchQuery = writable('');
 export const leftTab = writable<'explore' | 'favorites'>('explore');
 export const favorites = writable<Set<string>>(new Set());
@@ -51,12 +68,15 @@ export const filteredEffects = derived([searchQuery], ([$search]) => {
 });
 
 export function addEffect(effectTemplate: Effect, options?: { randomize?: boolean }) {
-	if (!get(sourceImage)) return;
-
 	const cloned = cloneEffect(effectTemplate);
-	const params: Record<string, number | boolean | string> = {};
+	const params: Record<string, number | boolean | string | GradientStop[]> = {};
 	for (const p of cloned.params) {
-		params[p.name] = options?.randomize ? randomParamValue(p) : p.default;
+		params[p.name] =
+			options?.randomize
+				? randomParamValue(p)
+				: p.type === 'gradient'
+					? cloneGradient(p.default as GradientStop[])
+					: (p.default as number | boolean | string);
 	}
 	appliedEffects.update((list) => {
 		const newList = [...list, { effect: cloned, params }];
@@ -81,7 +101,11 @@ export function toggleEffect(index: number) {
 	);
 }
 
-export function updateParam(index: number, paramName: string, value: number | boolean | string) {
+export function updateParam(
+	index: number,
+	paramName: string,
+	value: number | boolean | string | GradientStop[]
+) {
 	appliedEffects.update((list) =>
 		list.map((item, i) =>
 			i === index ? { ...item, params: { ...item.params, [paramName]: value } } : item
@@ -107,7 +131,7 @@ export function randomizeParams(index: number) {
 	appliedEffects.update((list) =>
 		list.map((item, i) => {
 			if (i !== index) return item;
-			const newParams: Record<string, number | boolean | string> = {};
+			const newParams: Record<string, number | boolean | string | GradientStop[]> = {};
 			for (const p of item.effect.params) {
 				newParams[p.name] = randomParamValue(p);
 			}
@@ -120,9 +144,12 @@ export function resetParams(index: number) {
 	appliedEffects.update((list) =>
 		list.map((item, i) => {
 			if (i !== index) return item;
-			const newParams: Record<string, number | boolean | string> = {};
+			const newParams: Record<string, number | boolean | string | GradientStop[]> = {};
 			for (const p of item.effect.params) {
-				newParams[p.name] = p.default;
+				newParams[p.name] =
+					p.type === 'gradient'
+						? cloneGradient(p.default as GradientStop[])
+						: (p.default as number | boolean | string);
 			}
 			return { ...item, params: newParams };
 		})

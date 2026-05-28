@@ -285,6 +285,23 @@
 - Distort：Glitch
 - Effects：CRT、Vignette、Pixelate、Star Glow、Dither
 
+### Star Glow（effect.app 對照）
+
+| 參數 | 說明 | 預設 |
+|------|------|------|
+| highlight boost | 亮部門檻／抽取強度（愈高愈只留高光） | 0.93 |
+| streaks | 星芒射線數（2–8） | 3 |
+| sample count | 每條射線取樣步數 | 30 |
+| length | 射線長度（像素尺度） | 80 |
+| alternate | 奇偶射線長度交替 | 1.00 |
+| falloff | 沿射線衰減 | 0.45 |
+| angle deg | 整體旋轉（度） | 0 |
+| Colorize | 漸層著色混合量 | 1.00 |
+| Gradient map | 三階色標（沿射線 t 取樣） | 白→淺藍→深藍 |
+| Gradient shift | 漸層相位偏移 | 0.29 |
+
+**技術**：WebGL2 fragment shader；自亮部沿多方向做 line gathering；與 Bloom（柔光暈）不同，屬星芒／十字濾鏡類效果。詳見 [effect.app/effects/star-glow](https://effect.app/effects/star-glow)。
+
 ---
 
 ## 相關連結

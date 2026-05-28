@@ -6,54 +6,44 @@ export function createDefaultPreviewImage(): Promise<HTMLImageElement> {
 	canvas.height = S;
 	const ctx = canvas.getContext('2d')!;
 
-	// Dark ambient background
-	const bg = ctx.createLinearGradient(0, 0, S, S);
-	bg.addColorStop(0, '#0c0e18');
-	bg.addColorStop(0.55, '#151322');
-	bg.addColorStop(1, '#1a1424');
+	// Deep ambient background (Effect.app-style)
+	const bg = ctx.createRadialGradient(S * 0.5, S * 0.55, S * 0.1, S * 0.5, S * 0.5, S * 0.75);
+	bg.addColorStop(0, '#1a2240');
+	bg.addColorStop(0.55, '#0d1224');
+	bg.addColorStop(1, '#060810');
 	ctx.fillStyle = bg;
 	ctx.fillRect(0, 0, S, S);
 
-	// Neon accent (top-right) — good for Levels / Bloom previews
-	const neon = ctx.createRadialGradient(S * 0.82, S * 0.18, 0, S * 0.82, S * 0.18, S * 0.42);
-	neon.addColorStop(0, '#ff5c8a');
-	neon.addColorStop(0.35, '#a855f7');
-	neon.addColorStop(1, 'transparent');
-	ctx.fillStyle = neon;
+	// Large warm orb (left)
+	const warm = ctx.createRadialGradient(S * 0.34, S * 0.52, 0, S * 0.34, S * 0.52, S * 0.34);
+	warm.addColorStop(0, '#ffb86a');
+	warm.addColorStop(0.35, '#e86a38');
+	warm.addColorStop(0.7, '#8a3018');
+	warm.addColorStop(1, 'transparent');
+	ctx.fillStyle = warm;
 	ctx.fillRect(0, 0, S, S);
 
-	// Portrait tone (center)
-	const face = ctx.createRadialGradient(S * 0.44, S * 0.5, S * 0.04, S * 0.44, S * 0.5, S * 0.4);
-	face.addColorStop(0, '#f2cdb0');
-	face.addColorStop(0.55, '#b87862');
-	face.addColorStop(1, 'transparent');
-	ctx.fillStyle = face;
+	// Small cool orb (right)
+	const cool = ctx.createRadialGradient(S * 0.72, S * 0.38, 0, S * 0.72, S * 0.38, S * 0.22);
+	cool.addColorStop(0, '#f0a8ff');
+	cool.addColorStop(0.4, '#b060e0');
+	cool.addColorStop(1, 'transparent');
+	ctx.fillStyle = cool;
 	ctx.fillRect(0, 0, S, S);
 
-	// Cheek highlight — Star Glow / Bloom
-	const highlight = ctx.createRadialGradient(S * 0.56, S * 0.4, 0, S * 0.56, S * 0.4, S * 0.14);
-	highlight.addColorStop(0, 'rgba(255, 240, 220, 0.85)');
-	highlight.addColorStop(1, 'transparent');
-	ctx.fillStyle = highlight;
+	// Soft ground glow
+	const floor = ctx.createLinearGradient(0, S * 0.65, 0, S);
+	floor.addColorStop(0, 'transparent');
+	floor.addColorStop(1, 'rgba(40, 50, 90, 0.55)');
+	ctx.fillStyle = floor;
 	ctx.fillRect(0, 0, S, S);
 
-	// Left shadow for contrast
-	const shade = ctx.createLinearGradient(0, 0, S * 0.55, 0);
-	shade.addColorStop(0, 'rgba(0, 0, 0, 0.45)');
-	shade.addColorStop(1, 'transparent');
-	ctx.fillStyle = shade;
-	ctx.fillRect(0, 0, S, S);
-
-	// Ground / horizon band
-	ctx.fillStyle = 'rgba(30, 35, 55, 0.6)';
-	ctx.fillRect(0, S * 0.72, S, S * 0.28);
-
-	// Small bright specular dots
-	ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+	// Specular highlights
+	ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
 	for (const [x, y, r] of [
-		[0.78, 0.22, 1.2],
-		[0.84, 0.28, 0.8],
-		[0.62, 0.35, 1.0]
+		[0.28, 0.4, 1.4],
+		[0.68, 0.3, 0.9],
+		[0.76, 0.42, 0.6]
 	] as const) {
 		ctx.beginPath();
 		ctx.arc(S * x, S * y, r, 0, Math.PI * 2);

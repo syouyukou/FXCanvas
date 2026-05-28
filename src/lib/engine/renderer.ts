@@ -1,12 +1,17 @@
+import type { GradientStop } from './gradient';
+import { gradientToUniforms } from './gradient';
+
+export type { GradientStop };
+
 export interface EffectParam {
 	name: string;
 	label: string;
-	type: 'float' | 'int' | 'bool' | 'color' | 'enum';
+	type: 'float' | 'int' | 'bool' | 'color' | 'enum' | 'gradient';
 	min?: number;
 	max?: number;
 	step?: number;
-	default: number | boolean | string;
-	value: number | boolean | string;
+	default: number | boolean | string | GradientStop[];
+	value?: number | boolean | string | GradientStop[];
 	options?: { value: number; label: string }[];
 }
 
@@ -31,11 +36,20 @@ export interface Effect {
 
 export interface AppliedEffect {
 	effect: Effect;
-	params: Record<string, number | boolean | string>;
+	params: Record<string, number | boolean | string | GradientStop[]>;
 }
 
 export interface RenderOptions {
 	fullRes?: boolean;
+	width?: number;
+	height?: number;
+}
+
+export interface ExportImageOptions {
+	format: 'png' | 'jpeg';
+	width: number;
+	height: number;
+	quality?: number;
 }
 
 const PREVIEW_MAX_DIM = 1280;
@@ -169,7 +183,12 @@ void main() { outColor = texture(u_texture, v_texCoord); }`;
 		this.renderHeight = 0;
 	}
 
-	private computeRenderSize(fullRes: boolean): { width: number; height: number } {
+	private computeRenderSize(options: RenderOptions): { width: number; height: number } {
+		if (options.width !== undefined && options.height !== undefined) {
+			return { width: options.width, height: options.height };
+		}
+
+		const fullRes = options.fullRes ?? false;
 		if (fullRes || Math.max(this.srcWidth, this.srcHeight) <= PREVIEW_MAX_DIM) {
 			return { width: this.srcWidth, height: this.srcHeight };
 		}
@@ -252,15 +271,40 @@ void main() { outColor = texture(u_texture, v_texCoord); }`;
 		if (loc) gl.uniform1i(loc, unit);
 	}
 
+	private setGradientUniforms(
+		cacheKey: string,
+		prog: WebGLProgram,
+		stops: GradientStop[]
+	): void {
+		const gl = this.gl;
+		const { colors, positions } = gradientToUniforms(stops);
+		const names = ['u_grad_0', 'u_grad_1', 'u_grad_2'] as const;
+		const posNames = ['u_grad_p0', 'u_grad_p1', 'u_grad_p2'] as const;
+		for (let i = 0; i < 3; i++) {
+			const loc = this.getUniform(cacheKey, prog, names[i]);
+			if (loc) gl.uniform3f(loc, colors[i][0], colors[i][1], colors[i][2]);
+			const pLoc = this.getUniform(cacheKey, prog, posNames[i]);
+			if (pLoc) gl.uniform1f(pLoc, positions[i]);
+		}
+	}
+
 	private setEffectParams(
 		cacheKey: string,
 		prog: WebGLProgram,
 		effect: Effect,
-		params: Record<string, number | boolean | string>
+		params: Record<string, number | boolean | string | GradientStop[]>
 	): void {
 		const gl = this.gl;
 		for (const param of effect.params) {
 			const val = params[param.name] ?? param.default;
+
+			if (param.type === 'gradient') {
+				if (effect.id === 'star_glow') {
+					this.setGradientUniforms(cacheKey, prog, val as GradientStop[]);
+				}
+				continue;
+			}
+
 			const loc = this.getUniform(cacheKey, prog, 'u_' + param.name);
 			if (loc === null) continue;
 
@@ -302,7 +346,7 @@ void main() { outColor = texture(u_texture, v_texCoord); }`;
 		if (!this.sourceTexture) return;
 		const gl = this.gl;
 		const canvas = gl.canvas as HTMLCanvasElement;
-		const { width, height } = this.computeRenderSize(options.fullRes ?? false);
+		const { width, height } = this.computeRenderSize(options);
 		this.ensureRenderTarget(width, height);
 
 		const enabled = appliedEffects.filter((a) => a.effect.enabled);
@@ -363,18 +407,32 @@ void main() { outColor = texture(u_texture, v_texCoord); }`;
 		gl.bindVertexArray(null);
 	}
 
-	exportCanvas(appliedEffects: AppliedEffect[]): string {
-		this.render(appliedEffects, { fullRes: true });
-		const url = (this.gl.canvas as HTMLCanvasElement).toDataURL('image/png');
+	exportImage(appliedEffects: AppliedEffect[], options: ExportImageOptions): string {
+		this.render(appliedEffects, { width: options.width, height: options.height });
+		const canvas = this.gl.canvas as HTMLCanvasElement;
+		const url =
+			options.format === 'jpeg'
+				? canvas.toDataURL('image/jpeg', options.quality ?? 0.92)
+				: canvas.toDataURL('image/png');
 		this.render(appliedEffects, { fullRes: false });
 		return url;
 	}
 
+	exportCanvas(appliedEffects: AppliedEffect[]): string {
+		return this.exportImage(appliedEffects, {
+			format: 'png',
+			width: this.srcWidth,
+			height: this.srcHeight
+		});
+	}
+
 	exportJPEG(appliedEffects: AppliedEffect[], quality = 0.92): string {
-		this.render(appliedEffects, { fullRes: true });
-		const url = (this.gl.canvas as HTMLCanvasElement).toDataURL('image/jpeg', quality);
-		this.render(appliedEffects, { fullRes: false });
-		return url;
+		return this.exportImage(appliedEffects, {
+			format: 'jpeg',
+			width: this.srcWidth,
+			height: this.srcHeight,
+			quality
+		});
 	}
 
 	get imageSize(): { width: number; height: number } {

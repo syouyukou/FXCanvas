@@ -1,7 +1,19 @@
 import type { Effect, EffectParam } from './renderer';
 import { getEffectPasses, hexToRgb } from './renderer';
+import { gradientToUniforms, type GradientStop } from './gradient';
 
-const THUMB = 96;
+export const THUMB_SIZE = 96;
+
+const THUMB = THUMB_SIZE;
+
+const PASSTHROUGH_FRAG = `#version 300 es
+precision highp float;
+in vec2 v_texCoord;
+uniform sampler2D u_texture;
+out vec4 fragColor;
+void main() {
+  fragColor = texture(u_texture, v_texCoord);
+}`;
 
 const VERT = `#version 300 es
 in vec2 a_position;
@@ -37,9 +49,21 @@ function setDefaultParams(
 	params: EffectParam[]
 ): void {
 	for (const p of params) {
+		const val = p.default;
+		if (p.type === 'gradient') {
+			const { colors, positions } = gradientToUniforms(val as GradientStop[]);
+			const names = ['u_grad_0', 'u_grad_1', 'u_grad_2'] as const;
+			const posNames = ['u_grad_p0', 'u_grad_p1', 'u_grad_p2'] as const;
+			for (let i = 0; i < 3; i++) {
+				const loc = gl.getUniformLocation(prog, names[i]);
+				if (loc) gl.uniform3f(loc, colors[i][0], colors[i][1], colors[i][2]);
+				const pLoc = gl.getUniformLocation(prog, posNames[i]);
+				if (pLoc) gl.uniform1f(pLoc, positions[i]);
+			}
+			continue;
+		}
 		const loc = gl.getUniformLocation(prog, 'u_' + p.name);
 		if (loc === null) continue;
-		const val = p.default;
 		if (p.type === 'bool') gl.uniform1i(loc, val ? 1 : 0);
 		else if (p.type === 'color') {
 			const [r, g, b] = hexToRgb(val as string);
@@ -54,6 +78,7 @@ export class ThumbnailRenderer {
 	private vao: WebGLVertexArrayObject;
 	private sourceTex: WebGLTexture | null = null;
 	private programs = new Map<string, WebGLProgram>();
+	private passthrough: WebGLProgram | null = null;
 	private fbos: [WebGLFramebuffer, WebGLTexture][] = [];
 
 	constructor() {
@@ -129,6 +154,27 @@ export class ThumbnailRenderer {
 		return prog;
 	}
 
+	renderSource(): string {
+		const gl = this.gl;
+		if (!this.sourceTex) return '';
+
+		if (!this.passthrough) {
+			this.passthrough = link(gl, VERT, PASSTHROUGH_FRAG);
+			if (!this.passthrough) return '';
+		}
+
+		gl.bindVertexArray(this.vao);
+		gl.viewport(0, 0, THUMB, THUMB);
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+		gl.useProgram(this.passthrough);
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gl.TEXTURE_2D, this.sourceTex);
+		gl.uniform1i(gl.getUniformLocation(this.passthrough, 'u_texture'), 0);
+		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+		gl.bindVertexArray(null);
+		return this.canvas.toDataURL('image/jpeg', 0.82);
+	}
+
 	renderEffect(effect: Effect): string {
 		const gl = this.gl;
 		if (!this.sourceTex) return '';
@@ -181,6 +227,7 @@ export class ThumbnailRenderer {
 	destroy() {
 		const gl = this.gl;
 		this.programs.forEach((p) => gl.deleteProgram(p));
+		if (this.passthrough) gl.deleteProgram(this.passthrough);
 		if (this.sourceTex) gl.deleteTexture(this.sourceTex);
 		for (const [fbo, tex] of this.fbos) {
 			gl.deleteFramebuffer(fbo);

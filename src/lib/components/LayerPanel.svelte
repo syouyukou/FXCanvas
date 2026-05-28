@@ -11,6 +11,8 @@
 		resetParams
 	} from '../stores/editor';
 	import type { EffectParam } from '../engine/renderer';
+	import type { GradientStop } from '../engine/gradient';
+	import GradientMapParam from './GradientMapParam.svelte';
 
 	let active = $derived(
 		$activeLayerIndex >= 0 ? $appliedEffects[$activeLayerIndex] : null
@@ -19,6 +21,7 @@
 	let draggingIndex = $state<number | null>(null);
 
 	function formatParamValue(param: EffectParam, value: unknown): string {
+		if (param.type === 'gradient') return '';
 		if (param.type === 'bool') return value ? 'ON' : 'OFF';
 		if (param.type === 'color') return String(value ?? param.default).toUpperCase();
 		if (param.type === 'enum') {
@@ -150,11 +153,18 @@
 				<div class="param-row">
 					<div class="param-meta">
 						<span class="param-label">{param.label.toUpperCase()}</span>
-						<span class="param-value">
-							{formatParamValue(param, active.params[param.name])}
-						</span>
+						{#if param.type !== 'gradient'}
+							<span class="param-value">
+								{formatParamValue(param, active.params[param.name])}
+							</span>
+						{/if}
 					</div>
-					{#if param.type === 'bool'}
+					{#if param.type === 'gradient'}
+						<GradientMapParam
+							stops={(active.params[param.name] ?? param.default) as GradientStop[]}
+							onchange={(stops) => updateParam($activeLayerIndex, param.name, stops)}
+						/>
+					{:else if param.type === 'bool'}
 						<button
 							class="toggle-pill"
 							class:on={active.params[param.name]}

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { EFFECTS, CATEGORIES } from '../effects/index';
-	import { addEffect, searchQuery, filteredEffects, favorites, leftTab, thumbnails, sourceImage } from '../stores/editor';
+	import { addEffect, searchQuery, filteredEffects, favorites, leftTab, thumbnails, sourceThumbnail, sourceImage } from '../stores/editor';
 	import type { Effect } from '../engine/renderer';
 
 	const categoryIcons: Record<string, string> = {
@@ -63,18 +63,29 @@
 					{#each effects as effect}
 						<div
 							class="effect-card"
-							class:disabled={!$sourceImage}
 							onclick={(e) => handleEffectClick(effect, e)}
 							role="button"
 							tabindex="0"
 							onkeydown={(e) => e.key === 'Enter' && handleEffectClick(effect, e as unknown as MouseEvent)}
 							title={$sourceImage
 								? `${effect.name} — Click: random · Shift+Click: defaults`
-								: 'Load an image first'}
+								: `${effect.name} — Click to add layer · Load media to preview`}
 						>
-							<!-- Thumbnail -->
+							<!-- Thumbnail: effect by default, original on hover -->
 							<div class="thumb-wrap">
-								{#if $thumbnails.has(effect.id)}
+								{#if $thumbnails.has(effect.id) && $sourceThumbnail}
+									<img
+										class="thumb-img thumb-after"
+										src={$thumbnails.get(effect.id)}
+										alt=""
+										aria-hidden="true"
+									/>
+									<img
+										class="thumb-img thumb-before"
+										src={$sourceThumbnail}
+										alt={effect.name}
+									/>
+								{:else if $thumbnails.has(effect.id)}
 									<img
 										class="thumb-img"
 										src={$thumbnails.get(effect.id)}
@@ -208,8 +219,6 @@
 		overflow: hidden;
 	}
 	.effect-card:hover { border-color: #333; }
-	.effect-card.disabled { opacity: 0.85; cursor: not-allowed; }
-	.effect-card.disabled:hover { border-color: transparent; }
 
 	.thumb-wrap {
 		position: relative;
@@ -225,6 +234,32 @@
 		height: 100%;
 		object-fit: cover;
 		display: block;
+	}
+
+	.thumb-after,
+	.thumb-before {
+		position: absolute;
+		inset: 0;
+		transition: opacity 0.18s ease;
+		pointer-events: none;
+	}
+
+	.thumb-after {
+		opacity: 1;
+		z-index: 1;
+	}
+
+	.thumb-before {
+		opacity: 0;
+		z-index: 2;
+	}
+
+	.thumb-wrap:hover .thumb-after {
+		opacity: 0;
+	}
+
+	.thumb-wrap:hover .thumb-before {
+		opacity: 1;
 	}
 
 	.thumb-placeholder {
