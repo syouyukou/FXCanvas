@@ -6,7 +6,9 @@
 		toggleEffect,
 		updateParam,
 		clearEffects,
-		moveEffect
+		moveEffect,
+		randomizeParams,
+		resetParams
 	} from '../stores/editor';
 
 	let active = $derived(
@@ -116,6 +118,20 @@
 	{#if active}
 		<div class="panel-header configure-label">
 			<span>{active.effect.name.toUpperCase()}</span>
+			<div class="config-actions">
+				<button class="cfg-btn" title="Randomize" onclick={() => randomizeParams($activeLayerIndex)}>
+					<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/>
+						<polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
+					</svg>
+				</button>
+				<button class="cfg-btn" title="Reset" onclick={() => resetParams($activeLayerIndex)}>
+					<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+						<polyline points="3 3 3 8 8 8"/>
+					</svg>
+				</button>
+			</div>
 		</div>
 		<div class="params-list">
 			{#each active.effect.params as param}
@@ -188,6 +204,24 @@
 		color: #888;
 		border-top: 1px solid #222;
 	}
+
+	.config-actions {
+		display: flex;
+		gap: 2px;
+	}
+
+	.cfg-btn {
+		background: none;
+		border: none;
+		cursor: pointer;
+		padding: 3px;
+		border-radius: 3px;
+		color: #444;
+		display: flex;
+		align-items: center;
+		transition: color 0.15s, background 0.15s;
+	}
+	.cfg-btn:hover { color: #aaa; background: #2a2a2a; }
 
 	.clear-btn {
 		background: none;

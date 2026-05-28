@@ -98,3 +98,33 @@ export function clearEffects() {
 	appliedEffects.set([]);
 	activeLayerIndex.set(-1);
 }
+
+export function randomizeParams(index: number) {
+	appliedEffects.update((list) =>
+		list.map((item, i) => {
+			if (i !== index) return item;
+			const newParams: Record<string, number | boolean | string> = {};
+			for (const p of item.effect.params) {
+				if (p.type === 'bool') {
+					newParams[p.name] = Math.random() > 0.5;
+				} else {
+					newParams[p.name] = parseFloat((p.min! + Math.random() * (p.max! - p.min!)).toFixed(3));
+				}
+			}
+			return { ...item, params: newParams };
+		})
+	);
+}
+
+export function resetParams(index: number) {
+	appliedEffects.update((list) =>
+		list.map((item, i) => {
+			if (i !== index) return item;
+			const newParams: Record<string, number | boolean | string> = {};
+			for (const p of item.effect.params) {
+				newParams[p.name] = p.default;
+			}
+			return { ...item, params: newParams };
+		})
+	);
+}

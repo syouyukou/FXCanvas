@@ -149,45 +149,54 @@ void main() {
 	{
 		id: 'noise',
 		name: 'Noise',
-		category: 'Generate',
+		category: 'Film',
 		enabled: true,
 		params: [
-			{
-				name: 'amount',
-				label: 'Amount',
-				type: 'float',
-				min: 0,
-				max: 1,
-				step: 0.01,
-				default: 0.2,
-				value: 0.2
-			},
-			{
-				name: 'monochrome',
-				label: 'Monochrome',
-				type: 'float',
-				min: 0,
-				max: 1,
-				step: 1,
-				default: 1,
-				value: 1
-			}
+			{ name: 'amount',    label: 'Amount',    type: 'float', min: 0,    max: 1,   step: 0.01, default: 0.3,  value: 0.3  },
+			{ name: 'size',      label: 'Size',      type: 'float', min: 0.5,  max: 4,   step: 0.1,  default: 1.0,  value: 1.0  },
+			{ name: 'chroma',    label: 'Chroma',    type: 'float', min: 0,    max: 1,   step: 0.01, default: 0.5,  value: 0.5  },
+			{ name: 'shadow',    label: 'Shadow',    type: 'float', min: 0,    max: 1,   step: 0.01, default: 1.0,  value: 1.0  },
+			{ name: 'midtone',   label: 'Mid-tone',  type: 'float', min: 0,    max: 1,   step: 0.01, default: 0.5,  value: 0.5  },
+			{ name: 'highlight', label: 'Highlight', type: 'float', min: 0,    max: 1,   step: 0.01, default: 0.3,  value: 0.3  }
 		],
 		fragmentShader:
 			HEADER +
 			`
 uniform float u_amount;
-uniform float u_monochrome;
+uniform float u_size;
+uniform float u_chroma;
+uniform float u_shadow;
+uniform float u_midtone;
+uniform float u_highlight;
 
-float rand(vec2 co) {
-  return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
+vec3 hash3(vec2 p) {
+  vec3 q = vec3(dot(p, vec2(127.1, 311.7)),
+                dot(p, vec2(269.5, 183.3)),
+                dot(p, vec2(419.2, 371.9)));
+  return fract(sin(q) * 43758.5453);
+}
+
+float hash1(vec2 p) {
+  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
 }
 
 void main() {
   vec4 col = texture(u_texture, v_texCoord);
-  float n = rand(v_texCoord * 1000.0) * 2.0 - 1.0;
-  vec3 noise = mix(vec3(n, rand(v_texCoord * 999.7) * 2.0 - 1.0, rand(v_texCoord * 998.3) * 2.0 - 1.0), vec3(n), u_monochrome);
-  outColor = vec4(clamp(col.rgb + noise * u_amount, 0.0, 1.0), col.a);
+  float lum = dot(col.rgb, vec3(0.299, 0.587, 0.114));
+
+  // zone weight: how much noise to apply based on luminance
+  float shadowW    = u_shadow    * (1.0 - smoothstep(0.0, 0.5, lum));
+  float highlightW = u_highlight * smoothstep(0.5, 1.0, lum);
+  float midW       = u_midtone   * (1.0 - abs(lum - 0.5) * 2.0);
+  float zoneWeight = clamp(shadowW + midW + highlightW, 0.0, 1.0);
+
+  // grain sampling
+  vec2 uv = floor(v_texCoord * u_resolution / u_size) * u_size / u_resolution;
+  vec3 colorNoise = (hash3(uv + 0.5) * 2.0 - 1.0);
+  float lumaNoiseVal = hash1(uv + 1.3) * 2.0 - 1.0;
+  vec3 grain = mix(vec3(lumaNoiseVal), colorNoise, u_chroma);
+
+  outColor = vec4(clamp(col.rgb + grain * u_amount * zoneWeight, 0.0, 1.0), col.a);
 }`
 	},
 
@@ -525,6 +534,113 @@ void main() {
   vec3 tint = vec3(u_tint_r, u_tint_g, u_tint_b);
   vec3 mono = lum * tint;
   outColor = vec4(mix(col.rgb, mono, u_mix), col.a);
+}`
+	},
+
+	// ─── DITHER ─────────────────────────────────────────────
+	{
+		id: 'dither',
+		name: 'Dither',
+		category: 'Effects',
+		enabled: true,
+		params: [
+			{ name: 'pattern',   label: 'Pattern Type',    type: 'float', min: 0, max: 2,  step: 1,    default: 0,   value: 0   },
+			{ name: 'palette',   label: 'Palette Type',    type: 'float', min: 0, max: 3,  step: 1,    default: 2,   value: 2   },
+			{ name: 'colors',    label: 'Color Count',     type: 'float', min: 2, max: 32, step: 1,    default: 8,   value: 8   },
+			{ name: 'strength',  label: 'Dither Strength', type: 'float', min: 0, max: 4,  step: 0.1,  default: 1.0, value: 1.0 },
+			{ name: 'gamma',     label: 'Gamma',           type: 'float', min: 0.5, max: 3, step: 0.1, default: 1.6, value: 1.6 },
+			{ name: 'pixelstep', label: 'Pixel Step',      type: 'float', min: 1, max: 8,  step: 1,    default: 1,   value: 1   }
+		],
+		fragmentShader:
+			HEADER +
+			`
+uniform float u_pattern;
+uniform float u_palette;
+uniform float u_colors;
+uniform float u_strength;
+uniform float u_gamma;
+uniform float u_pixelstep;
+
+// Bayer matrices (2x2, 4x4, 8x8)
+float bayer2(vec2 p) {
+  p = mod(p, 2.0);
+  float m[4] = float[](0.0, 2.0, 3.0, 1.0);
+  return m[int(p.x) + int(p.y)*2] / 4.0;
+}
+
+float bayer4(vec2 p) {
+  p = mod(p, 4.0);
+  float m[16] = float[]( 0., 8., 2.,10.,
+                         12., 4.,14., 6.,
+                          3.,11., 1., 9.,
+                         15., 7.,13., 5.);
+  return m[int(p.x) + int(p.y)*4] / 16.0;
+}
+
+float bayer8(vec2 p) {
+  p = mod(p, 8.0);
+  float m[64] = float[](
+     0.,32., 8.,40., 2.,34.,10.,42.,
+    48.,16.,56.,24.,50.,18.,58.,26.,
+    12.,44., 4.,36.,14.,46., 6.,38.,
+    60.,28.,52.,20.,62.,30.,54.,22.,
+     3.,35.,11.,43., 1.,33., 9.,41.,
+    51.,19.,59.,27.,49.,17.,57.,25.,
+    15.,47., 7.,39.,13.,45., 5.,37.,
+    63.,31.,55.,23.,61.,29.,53.,21.);
+  return m[int(p.x) + int(p.y)*8] / 64.0;
+}
+
+float quantize(float v, float steps) {
+  return floor(v * steps + 0.5) / steps;
+}
+
+void main() {
+  // pixel step (block size)
+  vec2 uv = floor(v_texCoord * u_resolution / u_pixelstep) * u_pixelstep / u_resolution;
+  vec4 col = texture(u_texture, uv);
+
+  // gamma correct
+  vec3 lin = pow(col.rgb, vec3(u_gamma));
+
+  // threshold pattern
+  vec2 px = floor(uv * u_resolution);
+  float threshold;
+  if (u_pattern < 0.5)       threshold = bayer2(px);
+  else if (u_pattern < 1.5)  threshold = bayer4(px);
+  else                        threshold = bayer8(px);
+
+  // add dithering bias
+  vec3 dithered = lin + (threshold - 0.5) * u_strength / u_colors;
+
+  // palette quantize
+  vec3 result;
+  float steps = max(u_colors - 1.0, 1.0);
+  if (u_palette < 0.5) {
+    // BW
+    float lum = dot(dithered, vec3(0.299, 0.587, 0.114));
+    float q = quantize(lum, 1.0);
+    result = vec3(q);
+  } else if (u_palette < 1.5) {
+    // Grayscale
+    float lum = dot(dithered, vec3(0.299, 0.587, 0.114));
+    result = vec3(quantize(lum, steps));
+  } else if (u_palette < 2.5) {
+    // RGB quantized
+    result = vec3(quantize(dithered.r, steps),
+                  quantize(dithered.g, steps),
+                  quantize(dithered.b, steps));
+  } else {
+    // Limited palette (R+G only, retro feel)
+    float r = quantize(dithered.r, floor(steps * 0.5));
+    float g = quantize(dithered.g, floor(steps * 0.5));
+    float b = step(0.5, dithered.b);
+    result = vec3(r, g, b);
+  }
+
+  // inverse gamma
+  result = pow(clamp(result, 0.0, 1.0), vec3(1.0 / u_gamma));
+  outColor = vec4(result, col.a);
 }`
 	}
 ];
