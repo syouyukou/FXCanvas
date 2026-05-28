@@ -23,6 +23,9 @@ export const sourceImage = writable<HTMLImageElement | ImageBitmap | null>(null)
 // Image dimensions (updated when image loads)
 export const imageSize = writable<{ width: number; height: number }>({ width: 0, height: 0 });
 
+// Thumbnail data URLs per effect id (updated when image loads)
+export const thumbnails = writable<Map<string, string>>(new Map());
+
 // Search query
 export const searchQuery = writable('');
 

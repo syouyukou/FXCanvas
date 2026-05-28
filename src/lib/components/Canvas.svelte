@@ -1,7 +1,11 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { Renderer } from '../engine/renderer';
-	import { appliedEffects, sourceImage, imageSize } from '../stores/editor';
+	import { appliedEffects, sourceImage, imageSize, thumbnails } from '../stores/editor';
+	import { ThumbnailRenderer } from '../engine/thumbnail';
+	import { EFFECTS } from '../effects/index';
+
+	let thumbRenderer: ThumbnailRenderer | null = null;
 
 	let { renderer = $bindable<Renderer | null>(null) } = $props();
 
@@ -19,10 +23,12 @@
 
 	onMount(() => {
 		renderer = new Renderer(canvas);
+		thumbRenderer = new ThumbnailRenderer();
 	});
 
 	onDestroy(() => {
 		renderer?.destroy();
+		thumbRenderer?.destroy();
 	});
 
 	$effect(() => {
@@ -33,6 +39,17 @@
 			canvas.height = sz.height;
 			imageSize.set(sz);
 			fitCanvas(sz);
+			// Generate thumbnails async so rendering doesn't block
+			if (thumbRenderer) {
+				thumbRenderer.loadImage($sourceImage);
+				setTimeout(() => {
+					const map = new Map<string, string>();
+					for (const effect of EFFECTS) {
+						map.set(effect.id, thumbRenderer!.renderEffect(effect));
+					}
+					thumbnails.set(map);
+				}, 0);
+			}
 		}
 	});
 
