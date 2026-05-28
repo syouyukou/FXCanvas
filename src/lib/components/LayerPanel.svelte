@@ -3,8 +3,11 @@
 		appliedEffects,
 		activeLayerIndex,
 		removeEffect,
+		duplicateEffect,
 		toggleEffect,
 		updateParam,
+		beginParamEdit,
+		applyParams,
 		clearEffects,
 		moveEffect,
 		randomizeParams,
@@ -12,6 +15,11 @@
 	} from '../stores/editor';
 	import type { EffectParam } from '../engine/renderer';
 	import type { GradientStop } from '../engine/gradient';
+	import {
+		DITHER_PRESETS,
+		DITHER_PALETTE_ZH,
+		DITHER_PATTERN_ZH
+	} from '../effects/dither';
 	import GradientMapParam from './GradientMapParam.svelte';
 
 	let active = $derived(
@@ -20,7 +28,11 @@
 
 	let draggingIndex = $state<number | null>(null);
 
-	function formatParamValue(param: EffectParam, value: unknown): string {
+	function formatParamValue(
+		param: EffectParam,
+		value: unknown,
+		effectId?: string
+	): string {
 		if (param.type === 'gradient') return '';
 		if (param.type === 'bool') return value ? 'ON' : 'OFF';
 		if (param.type === 'color') return String(value ?? param.default).toUpperCase();
@@ -28,8 +40,22 @@
 			const opt = param.options?.find((o) => o.value === value);
 			return opt?.label ?? String(value);
 		}
+		const n = Number(value ?? param.default);
+		if (effectId === 'dither' && param.name === 'pattern') {
+			return DITHER_PATTERN_ZH[n] ?? String(n);
+		}
+		if (effectId === 'dither' && param.name === 'palette') {
+			return DITHER_PALETTE_ZH[n] ?? String(n);
+		}
+		if (effectId === 'dither' && param.name === 'distance') {
+			return n < 0.5 ? 'RGB' : '自然';
+		}
 		const decimals = param.step && param.step < 0.1 ? 3 : param.step && param.step < 1 ? 2 : param.type === 'int' ? 0 : 1;
-		return Number(value ?? param.default).toFixed(decimals);
+		return n.toFixed(decimals);
+	}
+
+	function applyDitherPreset(params: (typeof DITHER_PRESETS)[number]['params']) {
+		applyParams($activeLayerIndex, params);
 	}
 
 	function onDragStart(i: number, e: DragEvent) {
@@ -90,6 +116,17 @@
 				<span class="layer-name">{item.effect.name.toUpperCase()}</span>
 
 				<div class="layer-actions">
+					<button
+						class="icon-btn"
+						title="Duplicate"
+						onclick={(e) => { e.stopPropagation(); duplicateEffect(i); }}
+					>
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+							<rect x="9" y="9" width="13" height="13" rx="2"/>
+							<path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+						</svg>
+					</button>
+
 					<!-- Delete -->
 					<button
 						class="icon-btn delete"
@@ -132,7 +169,10 @@
 	<!-- Configure panel -->
 	{#if active}
 		<div class="panel-header configure-label">
-			<span>{active.effect.name.toUpperCase()}</span>
+			<div class="controls-title">
+				<span>CONTROLS</span>
+				<span class="controls-effect">{active.effect.name.toUpperCase()}</span>
+			</div>
 			<div class="config-actions">
 				<button class="cfg-btn" title="Randomize" onclick={() => randomizeParams($activeLayerIndex)}>
 					<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -148,17 +188,36 @@
 				</button>
 			</div>
 		</div>
+		{#if active.effect.id === 'dither'}
+			<div class="preset-section">
+				<span class="preset-label">一鍵風格</span>
+				<div class="preset-grid">
+					{#each DITHER_PRESETS as preset (preset.id)}
+						<button
+							class="preset-btn"
+							title="套用 {preset.label} 參數"
+							onclick={() => applyDitherPreset(preset.params)}
+						>
+							{preset.label}
+						</button>
+					{/each}
+				</div>
+			</div>
+		{/if}
 		<div class="params-list">
 			{#each active.effect.params as param}
-				<div class="param-row">
+				<div class="param-row" title={param.hint ?? ''}>
 					<div class="param-meta">
 						<span class="param-label">{param.label.toUpperCase()}</span>
 						{#if param.type !== 'gradient'}
 							<span class="param-value">
-								{formatParamValue(param, active.params[param.name])}
+								{formatParamValue(param, active.params[param.name], active.effect.id)}
 							</span>
 						{/if}
 					</div>
+					{#if param.hint}
+						<p class="param-hint">{param.hint}</p>
+					{/if}
 					{#if param.type === 'gradient'}
 						<GradientMapParam
 							stops={(active.params[param.name] ?? param.default) as GradientStop[]}
@@ -168,7 +227,10 @@
 						<button
 							class="toggle-pill"
 							class:on={active.params[param.name]}
-							onclick={() => updateParam($activeLayerIndex, param.name, !active.params[param.name])}
+							onclick={() => {
+								beginParamEdit();
+								updateParam($activeLayerIndex, param.name, !active.params[param.name]);
+							}}
 						>
 							{active.params[param.name] ? 'ON' : 'OFF'}
 						</button>
@@ -176,12 +238,14 @@
 						<select
 							class="param-select"
 							value={active.params[param.name] ?? param.default}
-							onchange={(e) =>
+							onchange={(e) => {
+								beginParamEdit();
 								updateParam(
 									$activeLayerIndex,
 									param.name,
 									parseInt((e.target as HTMLSelectElement).value, 10)
-								)}
+								);
+							}}
 						>
 							{#each param.options as opt}
 								<option value={opt.value}>{opt.label}</option>
@@ -193,6 +257,7 @@
 								type="color"
 								class="color-input"
 								value={active.params[param.name] ?? param.default}
+								onpointerdown={beginParamEdit}
 								oninput={(e) =>
 									updateParam($activeLayerIndex, param.name, (e.target as HTMLInputElement).value)}
 							/>
@@ -205,6 +270,7 @@
 							max={param.max}
 							step={param.step ?? (param.type === 'int' ? 1 : 0.01)}
 							value={active.params[param.name] ?? param.default}
+							onpointerdown={beginParamEdit}
 							oninput={(e) => {
 								const raw = (e.target as HTMLInputElement).value;
 								updateParam(
@@ -252,6 +318,18 @@
 	.configure-label {
 		color: #888;
 		border-top: 1px solid #222;
+	}
+
+	.controls-title {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.controls-effect {
+		font-size: 9px;
+		color: #555;
+		letter-spacing: 0.1em;
 	}
 
 	.config-actions {
@@ -383,7 +461,54 @@
 		gap: 16px;
 	}
 
+	.preset-section {
+		padding: 10px 14px 0;
+		border-top: 1px solid #222;
+		flex-shrink: 0;
+	}
+
+	.preset-label {
+		display: block;
+		font-size: 9px;
+		font-weight: 700;
+		letter-spacing: 0.12em;
+		color: #555;
+		margin-bottom: 8px;
+	}
+
+	.preset-grid {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		margin-bottom: 4px;
+	}
+
+	.preset-btn {
+		background: #1e1e1e;
+		border: 1px solid #333;
+		border-radius: 4px;
+		color: #aaa;
+		font-size: 10px;
+		font-family: inherit;
+		padding: 5px 8px;
+		cursor: pointer;
+		transition: all 0.15s;
+	}
+
+	.preset-btn:hover {
+		background: #2a2a2a;
+		border-color: #555;
+		color: #fff;
+	}
+
 	.param-row { display: flex; flex-direction: column; gap: 6px; }
+
+	.param-hint {
+		font-size: 10px;
+		line-height: 1.45;
+		color: #444;
+		margin: -2px 0 0;
+	}
 
 	.param-meta {
 		display: flex;

@@ -6,6 +6,8 @@ export type { GradientStop };
 export interface EffectParam {
 	name: string;
 	label: string;
+	/** Plain-language tooltip (shown in UI). */
+	hint?: string;
 	type: 'float' | 'int' | 'bool' | 'color' | 'enum' | 'gradient';
 	min?: number;
 	max?: number;
@@ -52,7 +54,7 @@ export interface ExportImageOptions {
 	quality?: number;
 }
 
-const PREVIEW_MAX_DIM = 1280;
+const PREVIEW_MAX_DIM = 1920;
 
 const VERTEX_SHADER = `#version 300 es
 in vec2 a_position;

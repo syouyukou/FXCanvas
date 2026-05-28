@@ -113,17 +113,21 @@ function stopDevServer() {
 }
 
 function validateEffectsRegistry() {
-	const src = readFileSync(join(ROOT, 'src/lib/effects/index.ts'), 'utf8');
-	const ids = [...src.matchAll(/\{\n\t\tid: '([^']+)'/g)].map((m) => m[1]);
+	const src =
+		readFileSync(join(ROOT, 'src/lib/effects/index.ts'), 'utf8') +
+		readFileSync(join(ROOT, 'src/lib/effects/dither.ts'), 'utf8') +
+		readFileSync(join(ROOT, 'src/lib/effects/exposure.ts'), 'utf8') +
+		readFileSync(join(ROOT, 'src/lib/effects/levels.ts'), 'utf8');
+	const ids = [...src.matchAll(/\{\n\t*id: '([^']+)',\n\t*name:/g)].map((m) => m[1]);
 	const unique = new Set(ids);
 
-	if (ids.length < 13) fail('Effect count', `expected ≥13, got ${ids.length}`);
+	if (ids.length < 15) fail('Effect count', `expected ≥15, got ${ids.length}`);
 	else pass('Effect count', `${ids.length} effects`);
 
 	if (unique.size !== ids.length) fail('Effect ids unique', 'duplicate ids found');
 	else pass('Effect ids unique');
 
-	for (const id of ['gaussian_blur', 'bloom', 'dither', 'star_glow', 'duotone']) {
+	for (const id of ['gaussian_blur', 'bloom', 'dither', 'exposure', 'levels', 'star_glow', 'duotone']) {
 		if (!ids.includes(id)) fail(`Required effect: ${id}`);
 		else pass(`Required effect: ${id}`);
 	}
@@ -221,7 +225,7 @@ async function runPlaywrightSmoke() {
 		if (thumbCount >= 10) pass('Default effect thumbnails', `${thumbCount} visible`);
 		else fail('Default effect thumbnails', `only ${thumbCount}`);
 
-		const bloomCard = page.locator('.effect-card', { hasText: 'Bloom' });
+		const bloomCard = page.locator('.effect-card', { hasText: 'Bloom' }).first();
 		await bloomCard.hover();
 		await page.waitForTimeout(250);
 		const beforeOpacity = await bloomCard.locator('.thumb-before').evaluate((el) =>
@@ -238,7 +242,7 @@ async function runPlaywrightSmoke() {
 		);
 		pass('Load image fixture');
 
-		await page.getByText('Bloom', { exact: true }).click();
+		await page.getByText('Bloom', { exact: true }).first().click();
 		await page.locator('.layer-name', { hasText: 'BLOOM' }).waitFor({ timeout: 3000 });
 		pass('Add Bloom layer');
 
@@ -246,17 +250,17 @@ async function runPlaywrightSmoke() {
 		if (exportEnabled) pass('Export enabled with image');
 		else fail('Export enabled with image');
 
-		await page.getByText('Dither', { exact: true }).click();
+		await page.getByText('Dither', { exact: true }).first().click();
 		await page.waitForTimeout(400);
 		const ditherThumb = await thumbDataUrl(page, 'Dither');
 		if (ditherThumb && ditherThumb.length > 500) pass('Dither thumbnail renders');
 		else fail('Dither thumbnail renders', `len ${ditherThumb?.length ?? 0}`);
 
-		await page.getByText('Duotone', { exact: true }).click({ modifiers: ['Shift'] });
+		await page.getByText('Duotone', { exact: true }).first().click({ modifiers: ['Shift'] });
 		await page.locator('.layer-name', { hasText: 'DUOTONE' }).waitFor({ timeout: 3000 });
 		pass('Shift+click add Duotone');
 
-		await page.getByText('Star Glow', { exact: true }).click({ modifiers: ['Shift'] });
+		await page.getByText('Star Glow', { exact: true }).first().click({ modifiers: ['Shift'] });
 		await page.locator('.layer-name', { hasText: 'STAR GLOW' }).waitFor({ timeout: 3000 });
 		await page.locator('.grad-bar').waitFor({ timeout: 3000 });
 		pass('Star Glow gradient UI');
@@ -280,7 +284,7 @@ async function runPlaywrightSmoke() {
 		await page.waitForTimeout(200);
 		pass('Layer visibility toggle');
 
-		await page.getByText('Gaussian Blur', { exact: true }).click({ modifiers: ['Shift'] });
+		await page.getByText('Gaussian Blur', { exact: true }).first().click({ modifiers: ['Shift'] });
 		await page.locator('.layer-name', { hasText: 'GAUSSIAN BLUR' }).waitFor({ timeout: 3000 });
 		pass('Gaussian Blur multi-pass');
 

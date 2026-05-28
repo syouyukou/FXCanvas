@@ -3,9 +3,17 @@
 	import { addEffect, searchQuery, filteredEffects, favorites, leftTab, thumbnails, sourceThumbnail, sourceImage } from '../stores/editor';
 	import type { Effect } from '../engine/renderer';
 
+	const POPULAR_IDS = ['dither', 'levels', 'noise', 'exposure', 'crt', 'bloom'] as const;
+
 	const categoryIcons: Record<string, string> = {
 		Blur: '◎', Color: '◑', Distort: '◈', Effects: '✦', Generate: '❋', Film: '▤'
 	};
+
+	let popularEffects = $derived(
+		POPULAR_IDS.map((id) => EFFECTS.find((e) => e.id === id)).filter(Boolean) as Effect[]
+	);
+
+	let showPopular = $derived($leftTab === 'explore' && !$searchQuery.trim());
 
 	function handleEffectClick(effect: Effect, e: MouseEvent) {
 		addEffect(effect, { randomize: !e.shiftKey });
@@ -54,6 +62,42 @@
 
 	<!-- Effect list -->
 	<div class="effect-list">
+		{#if showPopular}
+			<div class="category-group">
+				<h3 class="category-label"><span>★</span> MOST POPULAR</h3>
+				<div class="grid">
+					{#each popularEffects as effect (effect.id)}
+						<div
+							class="effect-card"
+							onclick={(e) => handleEffectClick(effect, e)}
+							role="button"
+							tabindex="0"
+							onkeydown={(e) => e.key === 'Enter' && handleEffectClick(effect, e as unknown as MouseEvent)}
+							title="{effect.name} — Click: random · Shift+Click: defaults"
+						>
+							<div class="thumb-wrap">
+								{#if $thumbnails.has(effect.id) && $sourceThumbnail}
+									<img class="thumb-img thumb-after" src={$thumbnails.get(effect.id)} alt="" aria-hidden="true" />
+									<img class="thumb-img thumb-before" src={$sourceThumbnail} alt={effect.name} />
+								{:else if $thumbnails.has(effect.id)}
+									<img class="thumb-img" src={$thumbnails.get(effect.id)} alt={effect.name} />
+								{:else}
+									<div class="thumb-placeholder"></div>
+								{/if}
+								<button
+									class="fav-star"
+									class:active={$favorites.has(effect.id)}
+									onclick={(e) => { e.stopPropagation(); toggleFav(effect.id); }}
+									title="Favorite"
+								>{$favorites.has(effect.id) ? '★' : '☆'}</button>
+							</div>
+							<div class="card-name">{effect.name}</div>
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/if}
+
 		{#each Object.entries(grouped) as [cat, effects]}
 			<div class="category-group">
 				<h3 class="category-label">

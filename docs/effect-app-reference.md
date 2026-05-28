@@ -260,32 +260,87 @@
 
 ---
 
-## 與本專案（effect-clone）對照
+## 與本專案（FXCanvas）對照
 
-| 功能 | Effect.app | effect-clone（目前） |
-|------|------------|----------------------|
+> 最後更新：2026-05-28（含 Undo / Preset / Levels / Compare 改良）
+
+| 功能 | Effect.app | FXCanvas |
+|------|------------|----------|
 | 渲染引擎 | WebGL 2 | WebGL 2 |
-| 媒體類型 | 圖片 + 影片 | 圖片 |
-| 特效堆疊 | ✅ Layers | ✅ Layers |
-| 左側特效面板 | Explore / 分類 / 搜尋 | Explore / Favorites / 分類 / 搜尋 |
-| 縮圖預覽 | ✅ | ✅（thumbnail 生成） |
-| 匯出 PNG / JPEG | ✅ | ✅ |
-| 匯出 MP4 / WebM | ✅ | ❌ |
-| 動畫 / Keyframes | ✅（Animate） | ❌ |
-| Preset 儲存 | ✅ | ❌ |
-| 帳號 / 訂閱 | ✅ | ❌ |
+| 媒體類型 | 圖片 + 影片 | 圖片 only |
+| 特效堆疊 Layers | ✅ | ✅ |
+| 圖層複製 / 顯示隱藏 | ✅ | ✅ duplicate + eye toggle |
+| 左側特效面板 | Explore / 分類 / 搜尋 | Explore / Favorites / MOST POPULAR / 分類 / 搜尋 |
+| 縮圖 hover 前後對比 | ✅ | ✅ |
+| Canvas 原圖對比 | Media preview On/Off | ✅ 按住 Space 顯示原圖 |
+| Canvas 縮放 / 平移 | ✅ | ✅ 滾輪縮放 + 拖曳平移 + 雙擊重置 |
+| Undo / Redo | ✅（Version history 雲端） | ✅ 本機 stack 歷史（⌘Z / ⌘⇧Z，最多 50 步） |
+| Preset 儲存 | ✅ 雲端 + 社群 | ✅ localStorage（最多 20 組，整個 stack） |
+| 匯出 PNG / JPEG | ✅ | ✅ + 尺寸預設（Original / 50% / 1080p / 4K） |
+| 匯出 MP4 / WebM / 逐幀 | ✅ | ❌ |
+| 動畫 / Keyframes | ✅ Animate 方案 | ❌ |
+| Exposure / Levels / Dither | ✅ | ✅ |
+| 真・誤差擴散 Dither | ✅ Pro | ❌（ordered + serpentine 近似） |
+| Bloom / CRT / Glitch 等 | ✅ | ✅ 15 種特效 |
+| Favorites 持久化 | ✅ 帳號 | ✅ localStorage |
+| 帳號 / 訂閱 / 浮水印 | ✅ | ❌ |
 | Figma / Chrome 整合 | ✅ | ❌ |
 | 本地端處理 | ✅ | ✅ |
 
-### 本專案已實作特效（參考）
+### FXCanvas 已實作特效（15）
 
-- Blur：Gaussian Blur
-- Color：Brightness/Contrast、Hue/Saturation、Duotone、Monochrome
-- Film：Noise
-- Distort：Glitch
-- Effects：CRT、Vignette、Pixelate、Star Glow、Dither
+| 分類 | 特效 |
+|------|------|
+| Blur | Gaussian Blur, Bloom |
+| Color | Brightness/Contrast, Hue/Saturation, Duotone, Monochrome, **Exposure**, **Levels** |
+| Film | Noise |
+| Distort | Glitch, Pixelate |
+| Effects | CRT, Vignette, Star Glow, Dither |
 
-### Star Glow（effect.app 對照）
+### 技術對照摘要
+
+| 面向 | Effect.app | FXCanvas |
+|------|------------|----------|
+| 預覽解析度 | 動態 | `PREVIEW_MAX_DIM = 1920`，大圖降採樣預覽、匯出用原圖 |
+| 多 pass 特效 | ✅ Bloom 等 | ✅ ping-pong FBO |
+| Shader uniform | 內建 | `u_` + param name 自動綁定 |
+| 歷史紀錄 | 伺服器 version history | 記憶體 + snapshot（effectId + params） |
+| Preset | API + 社群審核 | `localStorage` JSON snapshot |
+
+### 仍待實作（優先序建議）
+
+1. **影片匯入 / MP4·WebM 匯出** — MediaRecorder + 逐幀 render loop
+2. **Keyframe 時間軸** — Animate 方案核心
+3. **真・Floyd-Steinberg dither** — CPU worker 或 compute pass
+4. **Ink Bleed / Film Grain** — Effect.app 熱門特效
+5. **圖層 opacity / blend mode**
+6. **Canvas 拖放載入** — 已有 drop zone，可強化 UX
+
+### Dither（effect.app 對照）
+
+Effect.app 使用 **WebGL 即時 shader**，參數以數值 slider 呈現（非下拉選單）。核心流程：
+
+1. **Gamma** — 線性空間運算
+2. **Pixel step** — 像素化取樣
+3. **Pattern type** — 抖動矩陣（Bayer / 誤差擴散系）
+4. **Palette type + color count** — 調色盤量化
+5. **Distance mode** — 調色盤最近色演算法（RGB / 感知）
+6. **Dither strength** — 閾值偏移強度
+7. **Inverse gamma** — 輸出
+
+| 參數 | 範圍 | FXCanvas 預設 | 說明 |
+|------|------|---------------|------|
+| pattern type | 0–9 | 9 | Bayer 2/4/8、Clustered、Diagonal、Blue noise、FS/Atkinson look、Cross hatch、Noise |
+| palette type | 0–6 | 6 | Mono、Gray、RGB、Game Boy、CGA、EGA、Risograph |
+| color count | 2–32 | 15 | 量化色階數 |
+| distance mode | 0–1 | 1 | 0=RGB² 距離，1=感知加權 |
+| dither strength | 0–4 | 2.0 | 抖動強度 |
+| gamma | 0.5–3 | 1.6 | 伽馬校正 |
+| pixelStep | 1–8 | 2 | 像素化步長 |
+
+**實作檔案：** `src/lib/effects/dither.ts`
+
+> Effect.app Pro 另有 Floyd-Steinberg / Atkinson 等 **真・誤差擴散**（需逐像素 CPU 或多 pass GPU）；FXCanvas 以 ordered + serpentine 近似，即時預覽零延遲。
 
 | 參數 | 說明 | 預設 |
 |------|------|------|

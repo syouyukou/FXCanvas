@@ -2,6 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { Renderer } from '../engine/renderer';
 	import { appliedEffects, sourceImage, imageSize } from '../stores/editor';
+	import { showOriginal } from '../stores/view';
 	import { refreshThumbnailsForImage } from '../engine/effectThumbnails';
 
 	const MIN_ZOOM = 0.25;
@@ -13,6 +14,11 @@
 	let userZoom = $state(1);
 	let panX = $state(0);
 	let panY = $state(0);
+	let isPanning = $state(false);
+	let panStartX = 0;
+	let panStartY = 0;
+	let panOriginX = 0;
+	let panOriginY = 0;
 
 	let { renderer = $bindable<Renderer | null>(null), viewZoom = $bindable(100) } = $props();
 
@@ -74,6 +80,27 @@
 		applyLayout(renderer.imageSize);
 	}
 
+	function onPointerDown(e: PointerEvent) {
+		if (!$sourceImage || e.button !== 0) return;
+		isPanning = true;
+		panStartX = e.clientX;
+		panStartY = e.clientY;
+		panOriginX = panX;
+		panOriginY = panY;
+		(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+	}
+
+	function onPointerMove(e: PointerEvent) {
+		if (!isPanning) return;
+		panX = panOriginX + (e.clientX - panStartX);
+		panY = panOriginY + (e.clientY - panStartY);
+	}
+
+	function onPointerUp(e: PointerEvent) {
+		isPanning = false;
+		(e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+	}
+
 	onMount(() => {
 		renderer = new Renderer(canvas);
 
@@ -95,7 +122,7 @@
 			return;
 		}
 
-		const stack = $appliedEffects;
+		const stack = $showOriginal ? [] : $appliedEffects;
 
 		if ($sourceImage !== lastImage) {
 			renderer.loadImage($sourceImage);
@@ -132,10 +159,15 @@
 
 <div
 	class="canvas-container"
+	class:panning={isPanning}
 	bind:this={container}
 	ondrop={onDrop}
 	ondragover={onDragOver}
 	onwheel={onWheel}
+	onpointerdown={onPointerDown}
+	onpointermove={onPointerMove}
+	onpointerup={onPointerUp}
+	onpointercancel={onPointerUp}
 	role="region"
 	aria-label="Canvas"
 >
@@ -160,6 +192,9 @@
 	>
 		<canvas bind:this={canvas}></canvas>
 	</div>
+	{#if $showOriginal && $sourceImage}
+		<div class="compare-badge">ORIGINAL</div>
+	{/if}
 </div>
 
 <style>
@@ -171,7 +206,11 @@
 		background: #111;
 		overflow: hidden;
 		position: relative;
-		cursor: default;
+		cursor: grab;
+	}
+
+	.canvas-container.panning {
+		cursor: grabbing;
 	}
 
 	.canvas-stage {
@@ -206,5 +245,21 @@
 	.empty-state span {
 		font-size: 13px;
 		color: #444;
+	}
+
+	.compare-badge {
+		position: absolute;
+		top: 12px;
+		left: 12px;
+		font-size: 10px;
+		font-weight: 700;
+		letter-spacing: 0.12em;
+		color: #fff;
+		background: rgba(0, 0, 0, 0.65);
+		border: 1px solid #444;
+		border-radius: 4px;
+		padding: 4px 8px;
+		pointer-events: none;
+		user-select: none;
 	}
 </style>

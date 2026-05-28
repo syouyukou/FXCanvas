@@ -1,5 +1,8 @@
 import type { Effect } from '../engine/renderer';
 import { DEFAULT_STAR_GLOW_GRADIENT } from '../engine/gradient';
+import { DITHER_EFFECT } from './dither';
+import { EXPOSURE_EFFECT } from './exposure';
+import { LEVELS_EFFECT } from './levels';
 
 const HEADER = `#version 300 es
 precision highp float;
@@ -65,6 +68,9 @@ export const EFFECTS: Effect[] = [
 	},
 
 	// ─── COLOR ──────────────────────────────────────────────
+	EXPOSURE_EFFECT,
+	LEVELS_EFFECT,
+
 	{
 		id: 'brightness_contrast',
 		name: 'Brightness / Contrast',
@@ -624,130 +630,7 @@ void main() {
 	},
 
 	// ─── DITHER ─────────────────────────────────────────────
-	{
-		id: 'dither',
-		name: 'Dither',
-		category: 'Effects',
-		enabled: true,
-		params: [
-			{
-				name: 'pattern',
-				label: 'Pattern Type',
-				type: 'enum',
-				default: 0,
-				value: 0,
-				options: [
-					{ value: 0, label: 'Bayer 2×2' },
-					{ value: 1, label: 'Bayer 4×4' },
-					{ value: 2, label: 'Bayer 8×8' }
-				]
-			},
-			{
-				name: 'palette',
-				label: 'Palette Type',
-				type: 'enum',
-				default: 2,
-				value: 2,
-				options: [
-					{ value: 0, label: 'Black & White' },
-					{ value: 1, label: 'Grayscale' },
-					{ value: 2, label: 'RGB' },
-					{ value: 3, label: 'Limited' }
-				]
-			},
-			{ name: 'colors',    label: 'Color Count',     type: 'int',   min: 2, max: 32, step: 1,    default: 8,   value: 8   },
-			{ name: 'strength',  label: 'Dither Strength', type: 'float', min: 0, max: 4,  step: 0.1,  default: 1.0, value: 1.0 },
-			{ name: 'gamma',     label: 'Gamma',           type: 'float', min: 0.5, max: 3, step: 0.1, default: 1.6, value: 1.6 },
-			{ name: 'pixelstep', label: 'Pixel Step',      type: 'int',   min: 1, max: 8,  step: 1,    default: 1,   value: 1   }
-		],
-		fragmentShader:
-			HEADER +
-			`
-uniform float u_pattern;
-uniform float u_palette;
-uniform float u_colors;
-uniform float u_strength;
-uniform float u_gamma;
-uniform float u_pixelstep;
-
-// Bayer matrices (2x2, 4x4, 8x8)
-float bayer2(vec2 p) {
-  p = mod(p, 2.0);
-  float m[4] = float[](0.0, 2.0, 3.0, 1.0);
-  return m[int(p.x) + int(p.y)*2] / 4.0;
-}
-
-float bayer4(vec2 p) {
-  p = mod(p, 4.0);
-  float m[16] = float[]( 0., 8., 2.,10.,
-                         12., 4.,14., 6.,
-                          3.,11., 1., 9.,
-                         15., 7.,13., 5.);
-  return m[int(p.x) + int(p.y)*4] / 16.0;
-}
-
-float bayer8(vec2 p) {
-  p = mod(p, 8.0);
-  float m[64] = float[](
-     0.,32., 8.,40., 2.,34.,10.,42.,
-    48.,16.,56.,24.,50.,18.,58.,26.,
-    12.,44., 4.,36.,14.,46., 6.,38.,
-    60.,28.,52.,20.,62.,30.,54.,22.,
-     3.,35.,11.,43., 1.,33., 9.,41.,
-    51.,19.,59.,27.,49.,17.,57.,25.,
-    15.,47., 7.,39.,13.,45., 5.,37.,
-    63.,31.,55.,23.,61.,29.,53.,21.);
-  return m[int(p.x) + int(p.y)*8] / 64.0;
-}
-
-float quantize(float v, float steps) {
-  return floor(v * steps + 0.5) / steps;
-}
-
-void main() {
-  float colors = max(u_colors, 1.0);
-  float pxStep = max(u_pixelstep, 1.0);
-
-  vec2 uv = floor(v_texCoord * u_resolution / pxStep) * pxStep / u_resolution;
-  vec4 col = texture(u_texture, uv);
-
-  vec3 lin = pow(max(col.rgb, 0.0), vec3(u_gamma));
-
-  vec2 px = floor(uv * u_resolution);
-  float threshold;
-  if (u_pattern < 0.5)       threshold = bayer2(px);
-  else if (u_pattern < 1.5)  threshold = bayer4(px);
-  else                        threshold = bayer8(px);
-
-  vec3 dithered = lin + (threshold - 0.5) * u_strength / colors;
-
-  vec3 result;
-  float steps = max(colors - 1.0, 1.0);
-  if (u_palette < 0.5) {
-    float lum = dot(dithered, vec3(0.299, 0.587, 0.114));
-    result = vec3(quantize(lum, steps));
-  } else if (u_palette < 1.5) {
-    // Grayscale
-    float lum = dot(dithered, vec3(0.299, 0.587, 0.114));
-    result = vec3(quantize(lum, steps));
-  } else if (u_palette < 2.5) {
-    // RGB quantized
-    result = vec3(quantize(dithered.r, steps),
-                  quantize(dithered.g, steps),
-                  quantize(dithered.b, steps));
-  } else {
-    // Limited palette (R+G only, retro feel)
-    float r = quantize(dithered.r, floor(steps * 0.5));
-    float g = quantize(dithered.g, floor(steps * 0.5));
-    float b = step(0.5, dithered.b);
-    result = vec3(r, g, b);
-  }
-
-  // inverse gamma
-  result = pow(clamp(result, 0.0, 1.0), vec3(1.0 / u_gamma));
-  outColor = vec4(result, col.a);
-}`
-	},
+	DITHER_EFFECT,
 
 	// ─── BLOOM ──────────────────────────────────────────────
 	{
