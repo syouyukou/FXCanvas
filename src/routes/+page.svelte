@@ -2,11 +2,11 @@
 	import EffectPanel from '$lib/components/EffectPanel.svelte';
 	import Canvas from '$lib/components/Canvas.svelte';
 	import LayerPanel from '$lib/components/LayerPanel.svelte';
-	import { sourceImage, imageSize } from '$lib/stores/editor';
+	import { sourceImage, imageSize, appliedEffects } from '$lib/stores/editor';
 	import type { Renderer } from '$lib/engine/renderer';
 
 	let renderer: Renderer | null = $state(null);
-	let fileInput: HTMLInputElement;
+	let fileInput = $state<HTMLInputElement | null>(null);
 
 	function loadFile(file: File) {
 		if (!file.type.startsWith('image/')) return;
@@ -20,13 +20,24 @@
 	}
 
 	function onFileChange(e: Event) {
-		const file = (e.target as HTMLInputElement).files?.[0];
+		const input = e.currentTarget as HTMLInputElement;
+		const file = input.files?.[0];
 		if (file) loadFile(file);
+		input.value = '';
+	}
+
+	function fileInputAction(node: HTMLInputElement) {
+		node.addEventListener('change', onFileChange);
+		return {
+			destroy() {
+				node.removeEventListener('change', onFileChange);
+			}
+		};
 	}
 
 	function exportPNG() {
 		if (!renderer?.hasImage()) return;
-		const url = renderer.exportCanvas();
+		const url = renderer.exportCanvas($appliedEffects);
 		const a = document.createElement('a');
 		a.href = url;
 		a.download = 'effect-export.png';
@@ -35,8 +46,7 @@
 
 	function exportJPEG() {
 		if (!renderer?.hasImage()) return;
-		const canvas = (renderer as any).gl.canvas as HTMLCanvasElement;
-		const url = canvas.toDataURL('image/jpeg', 0.92);
+		const url = renderer.exportJPEG($appliedEffects);
 		const a = document.createElement('a');
 		a.href = url;
 		a.download = 'effect-export.jpg';
@@ -55,7 +65,7 @@
 		<div class="header-center"></div>
 
 		<div class="header-actions">
-			<button class="btn-ghost" onclick={() => fileInput.click()}>
+			<button class="btn-ghost" onclick={() => fileInput?.click()}>
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 					<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
 					<polyline points="17 8 12 3 7 8"/>
@@ -65,10 +75,10 @@
 			</button>
 			<input
 				bind:this={fileInput}
+				use:fileInputAction
 				type="file"
 				accept="image/*"
 				class="hidden-input"
-				onchange={onFileChange}
 			/>
 
 			<div class="export-group">
@@ -101,11 +111,14 @@
 		<span class="footer-info">
 			{#if $sourceImage}
 				{$imageSize.width} × {$imageSize.height} px
+				{#if Math.max($imageSize.width, $imageSize.height) > 1280}
+					<span class="preview-badge">PREVIEW</span>
+				{/if}
 			{:else}
 				No media loaded
 			{/if}
 		</span>
-		<span class="footer-tip">Drag an image onto the canvas · Click effects to apply</span>
+		<span class="footer-tip">Drag image · Click effect (random) · Shift+click (defaults)</span>
 	</footer>
 </div>
 
@@ -268,6 +281,19 @@
 		font-size: 11px;
 		color: #555;
 		font-variant-numeric: tabular-nums;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.preview-badge {
+		font-size: 9px;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		color: #666;
+		border: 1px solid #333;
+		border-radius: 3px;
+		padding: 1px 5px;
 	}
 
 	.footer-tip {

@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { Renderer } from '../engine/renderer';
-	import { appliedEffects, sourceImage, imageSize, thumbnails } from '../stores/editor';
-	import { ThumbnailRenderer } from '../engine/thumbnail';
-	import { EFFECTS } from '../effects/index';
+	import { appliedEffects, sourceImage, imageSize } from '../stores/editor';
+	import { refreshThumbnailsForImage } from '../engine/effectThumbnails';
 
-	let thumbRenderer: ThumbnailRenderer | null = null;
+	let resizeObserver: ResizeObserver | null = null;
+	let lastImage = $state<HTMLImageElement | ImageBitmap | null>(null);
 
 	let { renderer = $bindable<Renderer | null>(null) } = $props();
 
@@ -13,7 +13,7 @@
 	let container: HTMLDivElement;
 
 	function fitCanvas(img: { width: number; height: number }) {
-		if (!container) return;
+		if (!container || !canvas) return;
 		const cw = container.clientWidth;
 		const ch = container.clientHeight;
 		const scale = Math.min(cw / img.width, ch / img.height, 1);
@@ -23,40 +23,35 @@
 
 	onMount(() => {
 		renderer = new Renderer(canvas);
-		thumbRenderer = new ThumbnailRenderer();
+
+		resizeObserver = new ResizeObserver(() => {
+			if ($sourceImage && renderer) fitCanvas(renderer.imageSize);
+		});
+		resizeObserver.observe(container);
 	});
 
 	onDestroy(() => {
+		resizeObserver?.disconnect();
 		renderer?.destroy();
-		thumbRenderer?.destroy();
 	});
 
 	$effect(() => {
-		if (renderer && $sourceImage) {
+		if (!renderer || !$sourceImage) {
+			lastImage = null;
+			return;
+		}
+
+		const stack = $appliedEffects;
+
+		if ($sourceImage !== lastImage) {
 			renderer.loadImage($sourceImage);
-			const sz = renderer.imageSize;
-			canvas.width = sz.width;
-			canvas.height = sz.height;
-			imageSize.set(sz);
-			fitCanvas(sz);
-			// Generate thumbnails async so rendering doesn't block
-			if (thumbRenderer) {
-				thumbRenderer.loadImage($sourceImage);
-				setTimeout(() => {
-					const map = new Map<string, string>();
-					for (const effect of EFFECTS) {
-						map.set(effect.id, thumbRenderer!.renderEffect(effect));
-					}
-					thumbnails.set(map);
-				}, 0);
-			}
+			lastImage = $sourceImage;
+			imageSize.set(renderer.imageSize);
+			fitCanvas(renderer.imageSize);
+			setTimeout(() => refreshThumbnailsForImage($sourceImage!), 0);
 		}
-	});
 
-	$effect(() => {
-		if (renderer && $sourceImage) {
-			renderer.render($appliedEffects);
-		}
+		renderer.render(stack);
 	});
 
 	function onDrop(e: DragEvent) {

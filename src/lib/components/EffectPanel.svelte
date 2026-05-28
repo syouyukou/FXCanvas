@@ -1,11 +1,15 @@
 <script lang="ts">
 	import { EFFECTS, CATEGORIES } from '../effects/index';
-	import { addEffect, searchQuery, filteredEffects, favorites, leftTab, thumbnails } from '../stores/editor';
+	import { addEffect, searchQuery, filteredEffects, favorites, leftTab, thumbnails, sourceImage } from '../stores/editor';
 	import type { Effect } from '../engine/renderer';
 
 	const categoryIcons: Record<string, string> = {
 		Blur: '◎', Color: '◑', Distort: '◈', Effects: '✦', Generate: '❋', Film: '▤'
 	};
+
+	function handleEffectClick(effect: Effect, e: MouseEvent) {
+		addEffect(effect, { randomize: !e.shiftKey });
+	}
 
 	function toggleFav(id: string) {
 		favorites.update((f) => {
@@ -59,11 +63,14 @@
 					{#each effects as effect}
 						<div
 							class="effect-card"
-							onclick={() => addEffect(effect)}
+							class:disabled={!$sourceImage}
+							onclick={(e) => handleEffectClick(effect, e)}
 							role="button"
 							tabindex="0"
-							onkeydown={(e) => e.key === 'Enter' && addEffect(effect)}
-							title={effect.name}
+							onkeydown={(e) => e.key === 'Enter' && handleEffectClick(effect, e as unknown as MouseEvent)}
+							title={$sourceImage
+								? `${effect.name} — Click: random · Shift+Click: defaults`
+								: 'Load an image first'}
 						>
 							<!-- Thumbnail -->
 							<div class="thumb-wrap">
@@ -74,9 +81,7 @@
 										alt={effect.name}
 									/>
 								{:else}
-									<div class="thumb-placeholder">
-										<span class="thumb-letter">{effect.name[0]}</span>
-									</div>
+									<div class="thumb-placeholder"></div>
 								{/if}
 
 								<!-- Favorite star -->
@@ -203,13 +208,15 @@
 		overflow: hidden;
 	}
 	.effect-card:hover { border-color: #333; }
+	.effect-card.disabled { opacity: 0.85; cursor: not-allowed; }
+	.effect-card.disabled:hover { border-color: transparent; }
 
 	.thumb-wrap {
 		position: relative;
 		width: 100%;
 		aspect-ratio: 1;
-		background: #1c1c1c;
-		border-radius: 5px;
+		background: #141414;
+		border-radius: 8px;
 		overflow: hidden;
 	}
 
@@ -226,13 +233,13 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: linear-gradient(135deg, #1c1c24, #241c1c);
+		background: #141414;
+		animation: pulse 1.2s ease-in-out infinite;
 	}
 
-	.thumb-letter {
-		font-size: 26px;
-		color: #2e2e2e;
-		font-weight: 800;
+	@keyframes pulse {
+		0%, 100% { opacity: 0.5; }
+		50% { opacity: 0.85; }
 	}
 
 	.fav-star {
@@ -255,15 +262,15 @@
 
 	.card-name {
 		font-size: 10px;
-		font-weight: 600;
-		letter-spacing: 0.05em;
-		color: #555;
-		padding: 0 3px 4px;
+		font-weight: 500;
+		letter-spacing: 0.02em;
+		color: #666;
+		padding: 0 2px 2px;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
-	.effect-card:hover .card-name { color: #888; }
+	.effect-card:hover .card-name { color: #999; }
 
 	.empty {
 		color: #333;

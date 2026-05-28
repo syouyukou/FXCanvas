@@ -1,4 +1,5 @@
-import type { Effect } from './renderer';
+import type { Effect, EffectParam } from './renderer';
+import { getEffectPasses, hexToRgb } from './renderer';
 
 const THUMB = 96;
 
@@ -21,12 +22,30 @@ function compile(gl: WebGL2RenderingContext, type: number, src: string): WebGLSh
 	return s;
 }
 
-function link(gl: WebGL2RenderingContext, vert: string, frag: string): WebGLProgram {
+function link(gl: WebGL2RenderingContext, vert: string, frag: string): WebGLProgram | null {
 	const p = gl.createProgram()!;
 	gl.attachShader(p, compile(gl, gl.VERTEX_SHADER, vert));
 	gl.attachShader(p, compile(gl, gl.FRAGMENT_SHADER, frag));
 	gl.linkProgram(p);
+	if (!gl.getProgramParameter(p, gl.LINK_STATUS)) return null;
 	return p;
+}
+
+function setDefaultParams(
+	gl: WebGL2RenderingContext,
+	prog: WebGLProgram,
+	params: EffectParam[]
+): void {
+	for (const p of params) {
+		const loc = gl.getUniformLocation(prog, 'u_' + p.name);
+		if (loc === null) continue;
+		const val = p.default;
+		if (p.type === 'bool') gl.uniform1i(loc, val ? 1 : 0);
+		else if (p.type === 'color') {
+			const [r, g, b] = hexToRgb(val as string);
+			gl.uniform3f(loc, r, g, b);
+		} else gl.uniform1f(loc, val as number);
+	}
 }
 
 export class ThumbnailRenderer {
@@ -35,6 +54,7 @@ export class ThumbnailRenderer {
 	private vao: WebGLVertexArrayObject;
 	private sourceTex: WebGLTexture | null = null;
 	private programs = new Map<string, WebGLProgram>();
+	private fbos: [WebGLFramebuffer, WebGLTexture][] = [];
 
 	constructor() {
 		this.canvas = document.createElement('canvas');
@@ -59,6 +79,30 @@ export class ThumbnailRenderer {
 		gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 0, 0);
 
 		gl.bindVertexArray(null);
+		this.ensureFBOs();
+	}
+
+	private ensureFBOs() {
+		const gl = this.gl;
+		for (const [fbo, tex] of this.fbos) {
+			gl.deleteFramebuffer(fbo);
+			gl.deleteTexture(tex);
+		}
+		this.fbos = [];
+		for (let i = 0; i < 2; i++) {
+			const tex = gl.createTexture()!;
+			gl.bindTexture(gl.TEXTURE_2D, tex);
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, THUMB, THUMB, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+			const fbo = gl.createFramebuffer()!;
+			gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+			gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+			this.fbos.push([fbo, tex]);
+		}
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	}
 
 	loadImage(image: HTMLImageElement | ImageBitmap) {
@@ -77,36 +121,60 @@ export class ThumbnailRenderer {
 		this.sourceTex = t;
 	}
 
+	private getProgram(effect: Effect, passId: string, frag: string): WebGLProgram | null {
+		const key = `${effect.id}:${passId}`;
+		if (this.programs.has(key)) return this.programs.get(key)!;
+		const prog = link(this.gl, VERT, frag);
+		if (prog) this.programs.set(key, prog);
+		return prog;
+	}
+
 	renderEffect(effect: Effect): string {
 		const gl = this.gl;
 		if (!this.sourceTex) return '';
 
-		let prog = this.programs.get(effect.id);
-		if (!prog) {
-			prog = link(gl, VERT, effect.fragmentShader);
-			this.programs.set(effect.id, prog);
-		}
-
-		gl.viewport(0, 0, THUMB, THUMB);
-		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+		const passes = getEffectPasses(effect);
 		gl.bindVertexArray(this.vao);
-		gl.useProgram(prog);
+		gl.viewport(0, 0, THUMB, THUMB);
 
-		gl.activeTexture(gl.TEXTURE0);
-		gl.bindTexture(gl.TEXTURE_2D, this.sourceTex);
-		gl.uniform1i(gl.getUniformLocation(prog, 'u_texture'), 0);
-		gl.uniform2f(gl.getUniformLocation(prog, 'u_resolution'), THUMB, THUMB);
+		let currentTex = this.sourceTex;
+		let pingPong = 0;
+		const effectInput = this.sourceTex;
+		let passInput = effectInput;
 
-		for (const p of effect.params) {
-			const loc = gl.getUniformLocation(prog, 'u_' + p.name);
-			if (loc === null) continue;
-			if (p.type === 'bool') gl.uniform1i(loc, p.default ? 1 : 0);
-			else gl.uniform1f(loc, p.default as number);
+		for (let p = 0; p < passes.length; p++) {
+			const pass = passes[p];
+			const isLast = p === passes.length - 1;
+			const prog = this.getProgram(effect, pass.id, pass.fragmentShader);
+			if (!prog) return '';
+
+			if (isLast) {
+				gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+			} else {
+				gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbos[pingPong % 2][0]);
+			}
+
+			gl.useProgram(prog);
+			gl.activeTexture(gl.TEXTURE0);
+			gl.bindTexture(gl.TEXTURE_2D, passInput);
+			gl.uniform1i(gl.getUniformLocation(prog, 'u_texture'), 0);
+			if (pass.useOriginal) {
+				gl.activeTexture(gl.TEXTURE1);
+				gl.bindTexture(gl.TEXTURE_2D, effectInput);
+				gl.uniform1i(gl.getUniformLocation(prog, 'u_original'), 1);
+			}
+			const resLoc = gl.getUniformLocation(prog, 'u_resolution');
+			if (resLoc) gl.uniform2f(resLoc, THUMB, THUMB);
+			setDefaultParams(gl, prog, effect.params);
+			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+			if (!isLast) {
+				passInput = this.fbos[pingPong % 2][1];
+				pingPong++;
+			}
 		}
 
-		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 		gl.bindVertexArray(null);
-
 		return this.canvas.toDataURL('image/jpeg', 0.8);
 	}
 
@@ -114,5 +182,9 @@ export class ThumbnailRenderer {
 		const gl = this.gl;
 		this.programs.forEach((p) => gl.deleteProgram(p));
 		if (this.sourceTex) gl.deleteTexture(this.sourceTex);
+		for (const [fbo, tex] of this.fbos) {
+			gl.deleteFramebuffer(fbo);
+			gl.deleteTexture(tex);
+		}
 	}
 }

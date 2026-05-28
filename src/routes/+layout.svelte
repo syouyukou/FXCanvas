@@ -1,7 +1,13 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import favicon from '$lib/assets/favicon.svg';
+	import { initDefaultThumbnails } from '$lib/engine/effectThumbnails';
 
 	let { children } = $props();
+
+	onMount(() => {
+		initDefaultThumbnails();
+	});
 </script>
 
 <svelte:head>

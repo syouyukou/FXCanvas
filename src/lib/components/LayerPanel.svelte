@@ -10,12 +10,24 @@
 		randomizeParams,
 		resetParams
 	} from '../stores/editor';
+	import type { EffectParam } from '../engine/renderer';
 
 	let active = $derived(
 		$activeLayerIndex >= 0 ? $appliedEffects[$activeLayerIndex] : null
 	);
 
-	let draggingIndex: number | null = null;
+	let draggingIndex = $state<number | null>(null);
+
+	function formatParamValue(param: EffectParam, value: unknown): string {
+		if (param.type === 'bool') return value ? 'ON' : 'OFF';
+		if (param.type === 'color') return String(value ?? param.default).toUpperCase();
+		if (param.type === 'enum') {
+			const opt = param.options?.find((o) => o.value === value);
+			return opt?.label ?? String(value);
+		}
+		const decimals = param.step && param.step < 0.1 ? 3 : param.step && param.step < 1 ? 2 : param.type === 'int' ? 0 : 1;
+		return Number(value ?? param.default).toFixed(decimals);
+	}
 
 	function onDragStart(i: number, e: DragEvent) {
 		draggingIndex = i;
@@ -139,11 +151,7 @@
 					<div class="param-meta">
 						<span class="param-label">{param.label.toUpperCase()}</span>
 						<span class="param-value">
-							{typeof active.params[param.name] === 'boolean'
-								? active.params[param.name] ? 'ON' : 'OFF'
-								: Number(active.params[param.name] ?? param.default).toFixed(
-										param.step && param.step < 0.1 ? 3 : param.step && param.step < 1 ? 2 : 1
-									)}
+							{formatParamValue(param, active.params[param.name])}
 						</span>
 					</div>
 					{#if param.type === 'bool'}
@@ -154,16 +162,47 @@
 						>
 							{active.params[param.name] ? 'ON' : 'OFF'}
 						</button>
+					{:else if param.type === 'enum' && param.options}
+						<select
+							class="param-select"
+							value={active.params[param.name] ?? param.default}
+							onchange={(e) =>
+								updateParam(
+									$activeLayerIndex,
+									param.name,
+									parseInt((e.target as HTMLSelectElement).value, 10)
+								)}
+						>
+							{#each param.options as opt}
+								<option value={opt.value}>{opt.label}</option>
+							{/each}
+						</select>
+					{:else if param.type === 'color'}
+						<div class="color-row">
+							<input
+								type="color"
+								class="color-input"
+								value={active.params[param.name] ?? param.default}
+								oninput={(e) =>
+									updateParam($activeLayerIndex, param.name, (e.target as HTMLInputElement).value)}
+							/>
+							<span class="color-hex">{formatParamValue(param, active.params[param.name])}</span>
+						</div>
 					{:else}
 						<input
 							type="range"
 							min={param.min}
 							max={param.max}
-							step={param.step ?? 0.01}
+							step={param.step ?? (param.type === 'int' ? 1 : 0.01)}
 							value={active.params[param.name] ?? param.default}
-							oninput={(e) =>
-								updateParam($activeLayerIndex, param.name,
-									parseFloat((e.target as HTMLInputElement).value))}
+							oninput={(e) => {
+								const raw = (e.target as HTMLInputElement).value;
+								updateParam(
+									$activeLayerIndex,
+									param.name,
+									param.type === 'int' ? parseInt(raw, 10) : parseFloat(raw)
+								);
+							}}
 						/>
 					{/if}
 				</div>
@@ -376,6 +415,40 @@
 		transition: all 0.15s;
 	}
 	.toggle-pill.on { background: #fff; color: #000; border-color: #fff; }
+
+	.param-select {
+		width: 100%;
+		background: #1e1e1e;
+		border: 1px solid #333;
+		border-radius: 4px;
+		color: #bbb;
+		font-size: 10px;
+		font-family: inherit;
+		padding: 6px 8px;
+		cursor: pointer;
+	}
+
+	.color-row {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.color-input {
+		width: 32px;
+		height: 24px;
+		padding: 0;
+		border: 1px solid #333;
+		border-radius: 4px;
+		background: none;
+		cursor: pointer;
+	}
+
+	.color-hex {
+		font-size: 10px;
+		color: #555;
+		letter-spacing: 0.05em;
+	}
 
 	.hint {
 		color: #2e2e2e;

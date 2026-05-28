@@ -1,8 +1,7 @@
-import { writable, derived } from 'svelte/store';
+import { writable, derived, get } from 'svelte/store';
 import { EFFECTS } from '../effects/index';
-import type { Effect, AppliedEffect } from '../engine/renderer';
+import type { Effect, AppliedEffect, EffectParam } from '../engine/renderer';
 
-// Deep clone an effect with fresh param values
 function cloneEffect(effect: Effect): Effect {
 	return {
 		...effect,
@@ -11,48 +10,53 @@ function cloneEffect(effect: Effect): Effect {
 	};
 }
 
-// Applied effects stack (layers)
+function randomParamValue(param: EffectParam): number | boolean | string {
+	switch (param.type) {
+		case 'bool':
+			return Math.random() > 0.5;
+		case 'enum':
+			if (param.options?.length) {
+				return param.options[Math.floor(Math.random() * param.options.length)].value;
+			}
+			return param.default;
+		case 'color':
+			return (
+				'#' +
+				Math.floor(Math.random() * 0xffffff)
+					.toString(16)
+					.padStart(6, '0')
+			);
+		case 'int':
+			return Math.round(param.min! + Math.random() * (param.max! - param.min!));
+		default:
+			return parseFloat((param.min! + Math.random() * (param.max! - param.min!)).toFixed(3));
+	}
+}
+
 export const appliedEffects = writable<AppliedEffect[]>([]);
-
-// Active layer index (for configure panel)
 export const activeLayerIndex = writable<number>(-1);
-
-// Source image
 export const sourceImage = writable<HTMLImageElement | ImageBitmap | null>(null);
-
-// Image dimensions (updated when image loads)
 export const imageSize = writable<{ width: number; height: number }>({ width: 0, height: 0 });
-
-// Thumbnail data URLs per effect id (updated when image loads)
 export const thumbnails = writable<Map<string, string>>(new Map());
-
-// Search query
 export const searchQuery = writable('');
-
-// Active tab in left panel
 export const leftTab = writable<'explore' | 'favorites'>('explore');
-
-// Favorites set
 export const favorites = writable<Set<string>>(new Set());
 
-// Filtered effects
-export const filteredEffects = derived(
-	[searchQuery],
-	([$search]) => {
-		if (!$search.trim()) return EFFECTS;
-		const q = $search.toLowerCase();
-		return EFFECTS.filter(
-			(e) =>
-				e.name.toLowerCase().includes(q) || e.category.toLowerCase().includes(q)
-		);
-	}
-);
+export const filteredEffects = derived([searchQuery], ([$search]) => {
+	if (!$search.trim()) return EFFECTS;
+	const q = $search.toLowerCase();
+	return EFFECTS.filter(
+		(e) => e.name.toLowerCase().includes(q) || e.category.toLowerCase().includes(q)
+	);
+});
 
-export function addEffect(effectTemplate: Effect) {
+export function addEffect(effectTemplate: Effect, options?: { randomize?: boolean }) {
+	if (!get(sourceImage)) return;
+
 	const cloned = cloneEffect(effectTemplate);
 	const params: Record<string, number | boolean | string> = {};
 	for (const p of cloned.params) {
-		params[p.name] = p.default;
+		params[p.name] = options?.randomize ? randomParamValue(p) : p.default;
 	}
 	appliedEffects.update((list) => {
 		const newList = [...list, { effect: cloned, params }];
@@ -105,11 +109,7 @@ export function randomizeParams(index: number) {
 			if (i !== index) return item;
 			const newParams: Record<string, number | boolean | string> = {};
 			for (const p of item.effect.params) {
-				if (p.type === 'bool') {
-					newParams[p.name] = Math.random() > 0.5;
-				} else {
-					newParams[p.name] = parseFloat((p.min! + Math.random() * (p.max! - p.min!)).toFixed(3));
-				}
+				newParams[p.name] = randomParamValue(p);
 			}
 			return { ...item, params: newParams };
 		})

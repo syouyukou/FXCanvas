@@ -1,19 +1,30 @@
 export interface EffectParam {
 	name: string;
 	label: string;
-	type: 'float' | 'int' | 'bool' | 'color';
+	type: 'float' | 'int' | 'bool' | 'color' | 'enum';
 	min?: number;
 	max?: number;
 	step?: number;
 	default: number | boolean | string;
 	value: number | boolean | string;
+	options?: { value: number; label: string }[];
+}
+
+export interface EffectPass {
+	id: string;
+	fragmentShader: string;
+	/** Bind chain input at start of this effect to u_original (TEXTURE1). */
+	useOriginal?: boolean;
 }
 
 export interface Effect {
 	id: string;
 	name: string;
 	category: string;
-	fragmentShader: string;
+	/** Single-pass shader (used when passes is omitted). */
+	fragmentShader?: string;
+	/** Multi-pass shaders run in order within one layer. */
+	passes?: EffectPass[];
 	params: EffectParam[];
 	enabled: boolean;
 }
@@ -23,6 +34,12 @@ export interface AppliedEffect {
 	params: Record<string, number | boolean | string>;
 }
 
+export interface RenderOptions {
+	fullRes?: boolean;
+}
+
+const PREVIEW_MAX_DIM = 1280;
+
 const VERTEX_SHADER = `#version 300 es
 in vec2 a_position;
 in vec2 a_texCoord;
@@ -31,6 +48,27 @@ void main() {
   gl_Position = vec4(a_position, 0.0, 1.0);
   v_texCoord = a_texCoord;
 }`;
+
+const QUAD_POSITIONS = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
+const QUAD_TEXCOORDS = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
+
+export function getEffectPasses(effect: Effect): EffectPass[] {
+	if (effect.passes?.length) return effect.passes;
+	if (!effect.fragmentShader) {
+		throw new Error(`Effect "${effect.id}" has no shader`);
+	}
+	return [{ id: 'main', fragmentShader: effect.fragmentShader }];
+}
+
+export function hexToRgb(hex: string): [number, number, number] {
+	const h = hex.replace('#', '');
+	if (h.length !== 6) return [1, 1, 1];
+	return [
+		parseInt(h.slice(0, 2), 16) / 255,
+		parseInt(h.slice(2, 4), 16) / 255,
+		parseInt(h.slice(4, 6), 16) / 255
+	];
+}
 
 function createShader(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader {
 	const shader = gl.createShader(type)!;
@@ -63,14 +101,10 @@ function createProgram(
 	return prog;
 }
 
-const QUAD_POSITIONS = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
-// Standard texcoords (0,0 at bottom-left). Source image loaded with UNPACK_FLIP_Y_WEBGL
-// so all passes (source→FBO and FBO→FBO) use identical coords — no even-layer flip.
-const QUAD_TEXCOORDS = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
-
 export class Renderer {
 	private gl: WebGL2RenderingContext;
 	private programs = new Map<string, WebGLProgram>();
+	private uniformCache = new Map<string, WebGLUniformLocation | null>();
 	private sourceTexture: WebGLTexture | null = null;
 	private fbos: [WebGLFramebuffer, WebGLTexture][] = [];
 	private vao: WebGLVertexArrayObject;
@@ -78,13 +112,14 @@ export class Renderer {
 
 	private srcWidth = 0;
 	private srcHeight = 0;
+	private renderWidth = 0;
+	private renderHeight = 0;
 
 	constructor(canvas: HTMLCanvasElement) {
 		const gl = canvas.getContext('webgl2');
 		if (!gl) throw new Error('WebGL2 not supported');
 		this.gl = gl;
 
-		// Setup fullscreen quad VAO
 		this.vao = gl.createVertexArray()!;
 		gl.bindVertexArray(this.vao);
 
@@ -102,7 +137,6 @@ export class Renderer {
 
 		gl.bindVertexArray(null);
 
-		// Pass-through program (no effect)
 		const passFrag = `#version 300 es
 precision highp float;
 in vec2 v_texCoord;
@@ -131,20 +165,42 @@ void main() { outColor = texture(u_texture, v_texCoord); }`;
 		const h = 'naturalHeight' in image ? image.naturalHeight : image.height;
 		this.srcWidth = w;
 		this.srcHeight = h;
+		this.renderWidth = 0;
+		this.renderHeight = 0;
+	}
 
-		this.ensureFBOs(w, h);
+	private computeRenderSize(fullRes: boolean): { width: number; height: number } {
+		if (fullRes || Math.max(this.srcWidth, this.srcHeight) <= PREVIEW_MAX_DIM) {
+			return { width: this.srcWidth, height: this.srcHeight };
+		}
+		const scale = PREVIEW_MAX_DIM / Math.max(this.srcWidth, this.srcHeight);
+		return {
+			width: Math.max(1, Math.round(this.srcWidth * scale)),
+			height: Math.max(1, Math.round(this.srcHeight * scale))
+		};
+	}
+
+	private ensureRenderTarget(width: number, height: number): void {
+		const gl = this.gl;
+		const canvas = gl.canvas as HTMLCanvasElement;
+
+		if (width === this.renderWidth && height === this.renderHeight) return;
+
+		this.renderWidth = width;
+		this.renderHeight = height;
+		canvas.width = width;
+		canvas.height = height;
+		this.ensureFBOs(width, height);
 	}
 
 	private ensureFBOs(w: number, h: number) {
 		const gl = this.gl;
-		// Free old FBOs
 		for (const [fbo, tex] of this.fbos) {
 			gl.deleteFramebuffer(fbo);
 			gl.deleteTexture(tex);
 		}
 		this.fbos = [];
 
-		// Create 2 ping-pong FBOs
 		for (let i = 0; i < 2; i++) {
 			const tex = gl.createTexture()!;
 			gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -162,91 +218,171 @@ void main() { outColor = texture(u_texture, v_texCoord); }`;
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	}
 
-	getProgram(effect: Effect): WebGLProgram {
-		if (this.programs.has(effect.id)) return this.programs.get(effect.id)!;
-		const prog = createProgram(this.gl, VERTEX_SHADER, effect.fragmentShader);
-		this.programs.set(effect.id, prog);
+	private programKey(effectId: string, passId: string): string {
+		return `${effectId}:${passId}`;
+	}
+
+	private getProgram(effectId: string, pass: EffectPass): WebGLProgram {
+		const key = this.programKey(effectId, pass.id);
+		if (this.programs.has(key)) return this.programs.get(key)!;
+		const prog = createProgram(this.gl, VERTEX_SHADER, pass.fragmentShader);
+		this.programs.set(key, prog);
 		return prog;
 	}
 
-	render(appliedEffects: AppliedEffect[]): void {
+	private getUniform(cacheKey: string, prog: WebGLProgram, name: string): WebGLUniformLocation | null {
+		const key = `${cacheKey}:${name}`;
+		if (!this.uniformCache.has(key)) {
+			this.uniformCache.set(key, this.gl.getUniformLocation(prog, name));
+		}
+		return this.uniformCache.get(key)!;
+	}
+
+	private bindTexture(
+		cacheKey: string,
+		unit: number,
+		texture: WebGLTexture,
+		uniformName: string,
+		prog: WebGLProgram
+	): void {
+		const gl = this.gl;
+		gl.activeTexture(gl.TEXTURE0 + unit);
+		gl.bindTexture(gl.TEXTURE_2D, texture);
+		const loc = this.getUniform(cacheKey, prog, uniformName);
+		if (loc) gl.uniform1i(loc, unit);
+	}
+
+	private setEffectParams(
+		cacheKey: string,
+		prog: WebGLProgram,
+		effect: Effect,
+		params: Record<string, number | boolean | string>
+	): void {
+		const gl = this.gl;
+		for (const param of effect.params) {
+			const val = params[param.name] ?? param.default;
+			const loc = this.getUniform(cacheKey, prog, 'u_' + param.name);
+			if (loc === null) continue;
+
+			switch (param.type) {
+				case 'bool':
+					gl.uniform1i(loc, val ? 1 : 0);
+					break;
+				case 'color': {
+					const [r, g, b] = hexToRgb(val as string);
+					gl.uniform3f(loc, r, g, b);
+					break;
+				}
+				case 'int':
+				case 'enum':
+				case 'float':
+				default:
+					gl.uniform1f(loc, val as number);
+					break;
+			}
+		}
+	}
+
+	private bindPassTextures(
+		cacheKey: string,
+		prog: WebGLProgram,
+		inputTex: WebGLTexture,
+		originalTex: WebGLTexture | null,
+		useOriginal: boolean
+	): void {
+		this.bindTexture(cacheKey, 0, inputTex, 'u_texture', prog);
+		if (useOriginal && originalTex) {
+			this.bindTexture(cacheKey, 1, originalTex, 'u_original', prog);
+		}
+		const resLoc = this.getUniform(cacheKey, prog, 'u_resolution');
+		if (resLoc) this.gl.uniform2f(resLoc, this.renderWidth, this.renderHeight);
+	}
+
+	render(appliedEffects: AppliedEffect[], options: RenderOptions = {}): void {
 		if (!this.sourceTexture) return;
 		const gl = this.gl;
 		const canvas = gl.canvas as HTMLCanvasElement;
+		const { width, height } = this.computeRenderSize(options.fullRes ?? false);
+		this.ensureRenderTarget(width, height);
 
 		const enabled = appliedEffects.filter((a) => a.effect.enabled);
 
 		gl.bindVertexArray(this.vao);
-		gl.viewport(0, 0, this.srcWidth, this.srcHeight);
+		gl.viewport(0, 0, width, height);
 
 		let currentTex = this.sourceTexture;
 		let pingPong = 0;
 
 		if (enabled.length === 0) {
-			// Draw directly to canvas
 			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-			gl.viewport(0, 0, canvas.width, canvas.height);
 			gl.useProgram(this.passThrough);
-			gl.activeTexture(gl.TEXTURE0);
-			gl.bindTexture(gl.TEXTURE_2D, currentTex);
-			gl.uniform1i(gl.getUniformLocation(this.passThrough, 'u_texture'), 0);
+			this.bindTexture('__passthrough__', 0, currentTex, 'u_texture', this.passThrough);
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+			gl.bindVertexArray(null);
 			return;
 		}
 
 		for (let i = 0; i < enabled.length; i++) {
 			const { effect, params } = enabled[i];
-			const isLast = i === enabled.length - 1;
-			const prog = this.getProgram(effect);
+			const isLastEffect = i === enabled.length - 1;
+			const passes = getEffectPasses(effect);
+			const effectInput = currentTex;
+			let passInput = effectInput;
 
-			if (isLast) {
-				gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-				gl.viewport(0, 0, canvas.width, canvas.height);
-			} else {
-				gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbos[pingPong % 2][0]);
-				gl.viewport(0, 0, this.srcWidth, this.srcHeight);
-			}
+			for (let p = 0; p < passes.length; p++) {
+				const pass = passes[p];
+				const isLastPass = p === passes.length - 1;
+				const drawToScreen = isLastPass && isLastEffect;
+				const cacheKey = this.programKey(effect.id, pass.id);
 
-			gl.useProgram(prog);
-			gl.activeTexture(gl.TEXTURE0);
-			gl.bindTexture(gl.TEXTURE_2D, currentTex);
-			gl.uniform1i(gl.getUniformLocation(prog, 'u_texture'), 0);
-			gl.uniform2f(
-				gl.getUniformLocation(prog, 'u_resolution'),
-				this.srcWidth,
-				this.srcHeight
-			);
-
-			// Set effect params
-			for (const param of effect.params) {
-				const val = params[param.name] ?? param.default;
-				const loc = gl.getUniformLocation(prog, 'u_' + param.name);
-				if (loc === null) continue;
-				if (param.type === 'bool') {
-					gl.uniform1i(loc, val ? 1 : 0);
+				if (drawToScreen) {
+					gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+					gl.viewport(0, 0, canvas.width, canvas.height);
 				} else {
-					gl.uniform1f(loc, val as number);
+					gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbos[pingPong % 2][0]);
+					gl.viewport(0, 0, width, height);
+				}
+
+				const prog = this.getProgram(effect.id, pass);
+				gl.useProgram(prog);
+				this.bindPassTextures(cacheKey, prog, passInput, effectInput, pass.useOriginal ?? false);
+				this.setEffectParams(cacheKey, prog, effect, params);
+				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+				if (!drawToScreen) {
+					passInput = this.fbos[pingPong % 2][1];
+					pingPong++;
 				}
 			}
 
-			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-			if (!isLast) {
-				currentTex = this.fbos[pingPong % 2][1];
-				pingPong++;
+			if (!isLastEffect) {
+				currentTex = passInput;
 			}
 		}
+
 		gl.bindVertexArray(null);
 	}
 
-	exportCanvas(): string {
-		const gl = this.gl;
-		const canvas = gl.canvas as HTMLCanvasElement;
-		return canvas.toDataURL('image/png');
+	exportCanvas(appliedEffects: AppliedEffect[]): string {
+		this.render(appliedEffects, { fullRes: true });
+		const url = (this.gl.canvas as HTMLCanvasElement).toDataURL('image/png');
+		this.render(appliedEffects, { fullRes: false });
+		return url;
+	}
+
+	exportJPEG(appliedEffects: AppliedEffect[], quality = 0.92): string {
+		this.render(appliedEffects, { fullRes: true });
+		const url = (this.gl.canvas as HTMLCanvasElement).toDataURL('image/jpeg', quality);
+		this.render(appliedEffects, { fullRes: false });
+		return url;
 	}
 
 	get imageSize(): { width: number; height: number } {
 		return { width: this.srcWidth, height: this.srcHeight };
+	}
+
+	get isPreviewScaled(): boolean {
+		return this.srcWidth !== this.renderWidth || this.srcHeight !== this.renderHeight;
 	}
 
 	hasImage(): boolean {

@@ -8,6 +8,36 @@ uniform sampler2D u_texture;
 uniform vec2 u_resolution;
 `;
 
+const BLUR_H = HEADER + `
+uniform float u_radius;
+void main() {
+  vec2 texel = vec2(1.0 / u_resolution.x, 0.0);
+  vec4 color = vec4(0.0);
+  float total = 0.0;
+  float r = min(u_radius, 20.0);
+  for (float x = -r; x <= r; x += 1.0) {
+    float w = exp(-(x * x) / (2.0 * r * r + 0.001));
+    color += texture(u_texture, v_texCoord + texel * x) * w;
+    total += w;
+  }
+  outColor = color / total;
+}`;
+
+const BLUR_V = HEADER + `
+uniform float u_radius;
+void main() {
+  vec2 texel = vec2(0.0, 1.0 / u_resolution.y);
+  vec4 color = vec4(0.0);
+  float total = 0.0;
+  float r = min(u_radius, 20.0);
+  for (float y = -r; y <= r; y += 1.0) {
+    float w = exp(-(y * y) / (2.0 * r * r + 0.001));
+    color += texture(u_texture, v_texCoord + texel * y) * w;
+    total += w;
+  }
+  outColor = color / total;
+}`;
+
 export const EFFECTS: Effect[] = [
 	// ─── BLUR ───────────────────────────────────────────────
 	{
@@ -27,24 +57,10 @@ export const EFFECTS: Effect[] = [
 				value: 5
 			}
 		],
-		fragmentShader:
-			HEADER +
-			`
-uniform float u_radius;
-void main() {
-  vec2 texel = 1.0 / u_resolution;
-  vec4 color = vec4(0.0);
-  float total = 0.0;
-  float r = u_radius;
-  for (float x = -r; x <= r; x += 1.0) {
-    for (float y = -r; y <= r; y += 1.0) {
-      float w = exp(-(x*x + y*y) / (2.0 * r * r + 0.001));
-      color += texture(u_texture, v_texCoord + vec2(x, y) * texel) * w;
-      total += w;
-    }
-  }
-  outColor = color / total;
-}`
+		passes: [
+			{ id: 'blur_h', fragmentShader: BLUR_H },
+			{ id: 'blur_v', fragmentShader: BLUR_V }
+		]
 	},
 
 	// ─── COLOR ──────────────────────────────────────────────
@@ -272,82 +288,30 @@ void main() {
 		enabled: true,
 		params: [
 			{
-				name: 'shadow_r',
-				label: 'Shadow R',
-				type: 'float',
-				min: 0,
-				max: 1,
-				step: 0.01,
-				default: 0.13,
-				value: 0.13
+				name: 'shadow',
+				label: 'Shadow',
+				type: 'color',
+				default: '#21125f',
+				value: '#21125f'
 			},
 			{
-				name: 'shadow_g',
-				label: 'Shadow G',
-				type: 'float',
-				min: 0,
-				max: 1,
-				step: 0.01,
-				default: 0.07,
-				value: 0.07
-			},
-			{
-				name: 'shadow_b',
-				label: 'Shadow B',
-				type: 'float',
-				min: 0,
-				max: 1,
-				step: 0.01,
-				default: 0.37,
-				value: 0.37
-			},
-			{
-				name: 'highlight_r',
-				label: 'Highlight R',
-				type: 'float',
-				min: 0,
-				max: 1,
-				step: 0.01,
-				default: 0.99,
-				value: 0.99
-			},
-			{
-				name: 'highlight_g',
-				label: 'Highlight G',
-				type: 'float',
-				min: 0,
-				max: 1,
-				step: 0.01,
-				default: 0.87,
-				value: 0.87
-			},
-			{
-				name: 'highlight_b',
-				label: 'Highlight B',
-				type: 'float',
-				min: 0,
-				max: 1,
-				step: 0.01,
-				default: 0.38,
-				value: 0.38
+				name: 'highlight',
+				label: 'Highlight',
+				type: 'color',
+				default: '#fcde61',
+				value: '#fcde61'
 			}
 		],
 		fragmentShader:
 			HEADER +
 			`
-uniform float u_shadow_r;
-uniform float u_shadow_g;
-uniform float u_shadow_b;
-uniform float u_highlight_r;
-uniform float u_highlight_g;
-uniform float u_highlight_b;
+uniform vec3 u_shadow;
+uniform vec3 u_highlight;
 
 void main() {
   vec4 col = texture(u_texture, v_texCoord);
   float lum = dot(col.rgb, vec3(0.299, 0.587, 0.114));
-  vec3 shadow = vec3(u_shadow_r, u_shadow_g, u_shadow_b);
-  vec3 highlight = vec3(u_highlight_r, u_highlight_g, u_highlight_b);
-  outColor = vec4(mix(shadow, highlight, lum), col.a);
+  outColor = vec4(mix(u_shadow, u_highlight, lum), col.a);
 }`
 	},
 
@@ -490,49 +454,23 @@ void main() {
 				value: 1
 			},
 			{
-				name: 'tint_r',
-				label: 'Tint R',
-				type: 'float',
-				min: 0,
-				max: 1,
-				step: 0.01,
-				default: 1,
-				value: 1
-			},
-			{
-				name: 'tint_g',
-				label: 'Tint G',
-				type: 'float',
-				min: 0,
-				max: 1,
-				step: 0.01,
-				default: 1,
-				value: 1
-			},
-			{
-				name: 'tint_b',
-				label: 'Tint B',
-				type: 'float',
-				min: 0,
-				max: 1,
-				step: 0.01,
-				default: 1,
-				value: 1
+				name: 'tint',
+				label: 'Tint',
+				type: 'color',
+				default: '#ffffff',
+				value: '#ffffff'
 			}
 		],
 		fragmentShader:
 			HEADER +
 			`
 uniform float u_mix;
-uniform float u_tint_r;
-uniform float u_tint_g;
-uniform float u_tint_b;
+uniform vec3 u_tint;
 
 void main() {
   vec4 col = texture(u_texture, v_texCoord);
   float lum = dot(col.rgb, vec3(0.299, 0.587, 0.114));
-  vec3 tint = vec3(u_tint_r, u_tint_g, u_tint_b);
-  vec3 mono = lum * tint;
+  vec3 mono = lum * u_tint;
   outColor = vec4(mix(col.rgb, mono, u_mix), col.a);
 }`
 	},
@@ -636,12 +574,35 @@ void main() {
 		category: 'Effects',
 		enabled: true,
 		params: [
-			{ name: 'pattern',   label: 'Pattern Type',    type: 'float', min: 0, max: 2,  step: 1,    default: 0,   value: 0   },
-			{ name: 'palette',   label: 'Palette Type',    type: 'float', min: 0, max: 3,  step: 1,    default: 2,   value: 2   },
-			{ name: 'colors',    label: 'Color Count',     type: 'float', min: 2, max: 32, step: 1,    default: 8,   value: 8   },
+			{
+				name: 'pattern',
+				label: 'Pattern Type',
+				type: 'enum',
+				default: 0,
+				value: 0,
+				options: [
+					{ value: 0, label: 'Bayer 2×2' },
+					{ value: 1, label: 'Bayer 4×4' },
+					{ value: 2, label: 'Bayer 8×8' }
+				]
+			},
+			{
+				name: 'palette',
+				label: 'Palette Type',
+				type: 'enum',
+				default: 2,
+				value: 2,
+				options: [
+					{ value: 0, label: 'Black & White' },
+					{ value: 1, label: 'Grayscale' },
+					{ value: 2, label: 'RGB' },
+					{ value: 3, label: 'Limited' }
+				]
+			},
+			{ name: 'colors',    label: 'Color Count',     type: 'int',   min: 2, max: 32, step: 1,    default: 8,   value: 8   },
 			{ name: 'strength',  label: 'Dither Strength', type: 'float', min: 0, max: 4,  step: 0.1,  default: 1.0, value: 1.0 },
 			{ name: 'gamma',     label: 'Gamma',           type: 'float', min: 0.5, max: 3, step: 0.1, default: 1.6, value: 1.6 },
-			{ name: 'pixelstep', label: 'Pixel Step',      type: 'float', min: 1, max: 8,  step: 1,    default: 1,   value: 1   }
+			{ name: 'pixelstep', label: 'Pixel Step',      type: 'int',   min: 1, max: 8,  step: 1,    default: 1,   value: 1   }
 		],
 		fragmentShader:
 			HEADER +
@@ -688,31 +649,27 @@ float quantize(float v, float steps) {
 }
 
 void main() {
-  // pixel step (block size)
-  vec2 uv = floor(v_texCoord * u_resolution / u_pixelstep) * u_pixelstep / u_resolution;
+  float colors = max(u_colors, 1.0);
+  float pxStep = max(u_pixelstep, 1.0);
+
+  vec2 uv = floor(v_texCoord * u_resolution / pxStep) * pxStep / u_resolution;
   vec4 col = texture(u_texture, uv);
 
-  // gamma correct
-  vec3 lin = pow(col.rgb, vec3(u_gamma));
+  vec3 lin = pow(max(col.rgb, 0.0), vec3(u_gamma));
 
-  // threshold pattern
   vec2 px = floor(uv * u_resolution);
   float threshold;
   if (u_pattern < 0.5)       threshold = bayer2(px);
   else if (u_pattern < 1.5)  threshold = bayer4(px);
   else                        threshold = bayer8(px);
 
-  // add dithering bias
-  vec3 dithered = lin + (threshold - 0.5) * u_strength / u_colors;
+  vec3 dithered = lin + (threshold - 0.5) * u_strength / colors;
 
-  // palette quantize
   vec3 result;
-  float steps = max(u_colors - 1.0, 1.0);
+  float steps = max(colors - 1.0, 1.0);
   if (u_palette < 0.5) {
-    // BW
     float lum = dot(dithered, vec3(0.299, 0.587, 0.114));
-    float q = quantize(lum, 1.0);
-    result = vec3(q);
+    result = vec3(quantize(lum, steps));
   } else if (u_palette < 1.5) {
     // Grayscale
     float lum = dot(dithered, vec3(0.299, 0.587, 0.114));
@@ -734,6 +691,56 @@ void main() {
   result = pow(clamp(result, 0.0, 1.0), vec3(1.0 / u_gamma));
   outColor = vec4(result, col.a);
 }`
+	},
+
+	// ─── BLOOM ──────────────────────────────────────────────
+	{
+		id: 'bloom',
+		name: 'Bloom',
+		category: 'Effects',
+		enabled: true,
+		params: [
+			{ name: 'threshold', label: 'Threshold', type: 'float', min: 0, max: 1, step: 0.01, default: 0.6, value: 0.6 },
+			{ name: 'softness', label: 'Softness', type: 'float', min: 0, max: 0.5, step: 0.01, default: 0.1, value: 0.1 },
+			{ name: 'radius', label: 'Radius', type: 'float', min: 1, max: 30, step: 0.5, default: 8, value: 8 },
+			{ name: 'intensity', label: 'Intensity', type: 'float', min: 0, max: 2, step: 0.01, default: 0.8, value: 0.8 }
+		],
+		passes: [
+			{
+				id: 'extract',
+				fragmentShader:
+					HEADER +
+					`
+uniform float u_threshold;
+uniform float u_softness;
+void main() {
+  vec4 col = texture(u_texture, v_texCoord);
+  float lum = max(col.r, max(col.g, col.b));
+  float knee = max(u_softness, 0.001);
+  float contrib = smoothstep(u_threshold - knee, u_threshold + knee, lum);
+  outColor = vec4(col.rgb * contrib, 1.0);
+}`
+			},
+			{ id: 'blur_h', fragmentShader: BLUR_H },
+			{ id: 'blur_v', fragmentShader: BLUR_V },
+			{
+				id: 'composite',
+				useOriginal: true,
+				fragmentShader:
+					`#version 300 es
+precision highp float;
+in vec2 v_texCoord;
+out vec4 outColor;
+uniform sampler2D u_texture;
+uniform sampler2D u_original;
+uniform float u_intensity;
+void main() {
+  vec3 base = texture(u_original, v_texCoord).rgb;
+  vec3 glow = texture(u_texture, v_texCoord).rgb;
+  outColor = vec4(base + glow * u_intensity, 1.0);
+}`
+			}
+		]
 	}
 ];
 
