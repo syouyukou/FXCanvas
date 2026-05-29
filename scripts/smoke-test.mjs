@@ -285,6 +285,14 @@ async function runPlaywrightSmoke() {
 		await page.waitForTimeout(200);
 		pass('Layer visibility toggle');
 
+		await page.locator('.layer-row', { hasText: 'DUOTONE' }).locator('.icon-btn.delete').click();
+		await page.waitForFunction(
+			() => !document.body.textContent?.includes('DUOTONE'),
+			null,
+			{ timeout: 3000 }
+		);
+		pass('Delete stacked layer');
+
 		await page.locator('.layer-row', { hasText: 'BLOOM' }).click();
 		await page.locator('.opacity-slider').waitFor({ timeout: 3000 });
 		await page.locator('.opacity-slider').fill('0.5');

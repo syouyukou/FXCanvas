@@ -143,7 +143,12 @@ export function removeEffect(index: number) {
 	pushHistory();
 	appliedEffects.update((list) => {
 		const newList = list.filter((_, i) => i !== index);
-		activeLayerIndex.update((idx) => (idx >= newList.length ? newList.length - 1 : idx));
+		activeLayerIndex.update((idx) => {
+			if (newList.length === 0) return -1;
+			if (idx > index) return idx - 1;
+			if (idx === index) return Math.min(index, newList.length - 1);
+			return idx >= newList.length ? newList.length - 1 : idx;
+		});
 		return newList;
 	});
 }

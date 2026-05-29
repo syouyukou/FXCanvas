@@ -59,6 +59,24 @@
 		applyParams($activeLayerIndex, params);
 	}
 
+	function matchesDitherPreset(
+		current: Record<string, unknown>,
+		preset: (typeof DITHER_PRESETS)[number]['params']
+	): boolean {
+		return (Object.keys(preset) as (keyof typeof preset)[]).every((key) => current[key] === preset[key]);
+	}
+
+	function onLayerKeyDown(e: KeyboardEvent, i: number) {
+		if (e.key === 'Enter') {
+			activeLayerIndex.set(i);
+			return;
+		}
+		if ((e.key === 'Delete' || e.key === 'Backspace') && i === $activeLayerIndex) {
+			e.preventDefault();
+			removeEffect(i);
+		}
+	}
+
 	function onDragStart(i: number, e: DragEvent) {
 		draggingIndex = i;
 		e.dataTransfer!.effectAllowed = 'move';
@@ -101,7 +119,7 @@
 				onclick={() => activeLayerIndex.set(i)}
 				role="button"
 				tabindex="0"
-				onkeydown={(e) => e.key === 'Enter' && activeLayerIndex.set(i)}
+				onkeydown={(e) => onLayerKeyDown(e, i)}
 				ondragover={(e) => onDragOver(i, e)}
 				ondrop={(e) => onDrop(i, e)}
 			>
@@ -169,6 +187,7 @@
 
 	<!-- Configure panel -->
 	{#if active}
+		<div class="configure-area">
 		<div class="panel-header configure-label">
 			<div class="controls-title">
 				<span>CONTROLS</span>
@@ -196,6 +215,7 @@
 					{#each DITHER_PRESETS as preset (preset.id)}
 						<button
 							class="preset-btn"
+							class:active={matchesDitherPreset(active.params, preset.params)}
 							title="套用 {preset.label} 參數"
 							onclick={() => applyDitherPreset(preset.params)}
 						>
@@ -302,6 +322,7 @@
 				</div>
 			{/each}
 		</div>
+		</div>
 	{:else if $appliedEffects.length > 0}
 		<div class="hint">Click a layer to configure</div>
 	{/if}
@@ -386,8 +407,12 @@
 		display: flex;
 		flex-direction: column;
 		overflow-y: auto;
-		max-height: 300px;
-		flex-shrink: 0;
+		overflow-x: hidden;
+		flex: 0 1 auto;
+		min-height: 0;
+		max-height: min(240px, 32vh);
+		position: relative;
+		z-index: 1;
 	}
 
 	.empty {
@@ -409,6 +434,7 @@
 		transition: background 0.1s;
 		gap: 8px;
 		min-height: 42px;
+		flex-shrink: 0;
 	}
 	.layer-row:hover { background: #1e1e1e; }
 	.layer-row.selected { background: #1e1e1e; }
@@ -444,13 +470,18 @@
 		align-items: center;
 		gap: 2px;
 		flex-shrink: 0;
-		/* Show on hover/selected, hidden otherwise */
-		opacity: 0;
-		transition: opacity 0.15s;
 	}
-	.layer-row:hover .layer-actions,
-	.layer-row.selected .layer-actions,
-	.hidden-layer .layer-actions { opacity: 1; }
+
+	.configure-area {
+		flex: 1;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		background: #161616;
+		position: relative;
+		z-index: 2;
+	}
 
 	.icon-btn {
 		background: none;
@@ -511,8 +542,8 @@
 	}
 
 	.preset-grid {
-		display: flex;
-		flex-wrap: wrap;
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 6px;
 		margin-bottom: 4px;
 	}
@@ -527,11 +558,21 @@
 		padding: 5px 8px;
 		cursor: pointer;
 		transition: all 0.15s;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		text-align: center;
 	}
 
 	.preset-btn:hover {
 		background: #2a2a2a;
 		border-color: #555;
+		color: #fff;
+	}
+
+	.preset-btn.active {
+		background: #2a2a2a;
+		border-color: #888;
 		color: #fff;
 	}
 

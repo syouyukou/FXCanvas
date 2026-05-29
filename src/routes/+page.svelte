@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { get } from 'svelte/store';
 	import EffectPanel from '$lib/components/EffectPanel.svelte';
 	import Canvas from '$lib/components/Canvas.svelte';
 	import LayerPanel from '$lib/components/LayerPanel.svelte';
 	import ExportMenu from '$lib/components/ExportMenu.svelte';
 	import PresetMenu from '$lib/components/PresetMenu.svelte';
-	import { sourceImage, imageSize } from '$lib/stores/editor';
+	import { sourceImage, imageSize, activeLayerIndex, removeEffect } from '$lib/stores/editor';
 	import { canUndo, canRedo, undo, redo } from '$lib/stores/history';
 	import { showOriginal } from '$lib/stores/view';
 	import type { Renderer } from '$lib/engine/renderer';
@@ -65,6 +66,14 @@
 			if (e.code === 'Space' && !e.repeat) {
 				e.preventDefault();
 				showOriginal.set(true);
+				return;
+			}
+			if (e.key === 'Delete') {
+				const idx = get(activeLayerIndex);
+				if (idx >= 0) {
+					e.preventDefault();
+					removeEffect(idx);
+				}
 			}
 		};
 
