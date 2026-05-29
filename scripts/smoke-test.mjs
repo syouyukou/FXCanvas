@@ -118,6 +118,8 @@ function validateEffectsRegistry() {
 		readFileSync(join(ROOT, 'src/lib/effects/dither.ts'), 'utf8') +
 		readFileSync(join(ROOT, 'src/lib/effects/exposure.ts'), 'utf8') +
 		readFileSync(join(ROOT, 'src/lib/effects/levels.ts'), 'utf8') +
+		readFileSync(join(ROOT, 'src/lib/effects/curves.ts'), 'utf8') +
+		readFileSync(join(ROOT, 'src/lib/effects/sharpen.ts'), 'utf8') +
 		readFileSync(join(ROOT, 'src/lib/effects/glitch.ts'), 'utf8');
 	const ids = [...src.matchAll(/\{\n\t*id: '([^']+)',\n\t*name:/g)].map((m) => m[1]);
 	const unique = new Set(ids);
@@ -382,7 +384,7 @@ async function runPlaywrightSmoke() {
 
 		await page.getByRole('button', { name: 'Export', exact: true }).click();
 		await page.locator('#export-format').selectOption('jpeg');
-		await page.getByRole('button', { name: 'Download' }).click();
+		await page.getByRole('button', { name: 'Download', exact: true }).click();
 		pass('Export JPEG download');
 
 		if (pageErrors.length === 0) pass('No page JS errors');

@@ -1,8 +1,9 @@
 import type { Effect, EffectParam } from './renderer';
 import { getEffectPasses, hexToRgb } from './renderer';
 import { gradientToUniforms, type GradientStop } from './gradient';
+import { getThumbnailParams } from './thumbnailParams';
 
-export const THUMB_SIZE = 96;
+export const THUMB_SIZE = 256;
 
 const THUMB = THUMB_SIZE;
 
@@ -43,13 +44,14 @@ function link(gl: WebGL2RenderingContext, vert: string, frag: string): WebGLProg
 	return p;
 }
 
-function setDefaultParams(
+function setEffectParams(
 	gl: WebGL2RenderingContext,
 	prog: WebGLProgram,
-	params: EffectParam[]
+	params: EffectParam[],
+	overrides?: Record<string, number | boolean | string | GradientStop[]>
 ): void {
 	for (const p of params) {
-		const val = p.default;
+		const val = overrides?.[p.name] ?? p.default;
 		if (p.type === 'gradient') {
 			const { colors, positions } = gradientToUniforms(val as GradientStop[]);
 			const names = ['u_grad_0', 'u_grad_1', 'u_grad_2'] as const;
@@ -175,6 +177,12 @@ export class ThumbnailRenderer {
 		return this.canvas.toDataURL('image/jpeg', 0.82);
 	}
 
+	private resolveThumbnailParams(
+		effect: Effect
+	): Record<string, number | boolean | string | GradientStop[]> | undefined {
+		return effect.thumbnailParams ?? getThumbnailParams(effect.id);
+	}
+
 	renderEffect(effect: Effect): string {
 		const gl = this.gl;
 		if (!this.sourceTex) return '';
@@ -211,7 +219,7 @@ export class ThumbnailRenderer {
 			}
 			const resLoc = gl.getUniformLocation(prog, 'u_resolution');
 			if (resLoc) gl.uniform2f(resLoc, THUMB, THUMB);
-			setDefaultParams(gl, prog, effect.params);
+			setEffectParams(gl, prog, effect.params, this.resolveThumbnailParams(effect));
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
 			if (!isLast) {

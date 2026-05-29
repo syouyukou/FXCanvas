@@ -17,11 +17,12 @@ export const zhCN: MessageTree = {
 		resizePanel: '调整效果面板宽度',
 		noMedia: '尚未载入媒体',
 		preview: '预览',
-		footerTip: '拖拽边缘调整宽度 · 拖窄可折叠 · 宽屏三列 · 滚轮缩放 · ⌘Z 撤销'
+		footerTip: '拖拽边缘调整宽度 · 滚轮缩放 · ⌘Z 撤销 · ⌘V 粘贴 · 自动保存会话'
 	},
 	canvas: {
 		dropImage: '将图片拖放到这里',
 		orClickLoad: '或点击载入媒体',
+		pasteHint: '⌘V 从剪贴板粘贴',
 		original: '原图',
 		ariaCanvas: '画布',
 		ariaPreview: '预览画布'
@@ -31,6 +32,14 @@ export const zhCN: MessageTree = {
 		clearAll: '全部清除',
 		controls: '控制项',
 		opacity: '不透明度',
+		blendMode: '混合',
+		blendModes: {
+			normal: '正常',
+			multiply: '相乘',
+			screen: '滤色',
+			overlay: '叠加',
+			'soft-light': '柔光'
+		},
 		empty: '尚未应用效果。',
 		emptyHint: '点击左侧效果以添加。',
 		selectHint: '点击图层以调整参数',
@@ -85,6 +94,8 @@ export const zhCN: MessageTree = {
 		size: '尺寸',
 		png: 'PNG',
 		jpeg: 'JPEG',
+		webp: 'WebP',
+		downloadLayers: '下载图层 PNG 序列',
 		sizeLabel: '{label} — {w} × {h}',
 		px: '{w} × {h} px',
 		exceedsLimit: '超过 {max}px 上限 — 请选择较小尺寸',
@@ -150,6 +161,23 @@ export const zhCN: MessageTree = {
 	},
 	effects: {
 		gaussian_blur: { name: '高斯模糊', params: { radius: { label: '半径' } } },
+		sharpen: {
+			name: '锐化',
+			params: {
+				amount: { label: '强度', hint: '锐化强度。' },
+				radius: { label: '半径', hint: '反锐化蒙版的模糊半径。' },
+				threshold: { label: '阈值', hint: '低于此值的差异会被忽略。' }
+			}
+		},
+		curves: {
+			name: '曲线',
+			params: {
+				shadows: { label: '暗部', hint: '提亮或压暗暗部。' },
+				darks: { label: '深调', hint: '调整四分之一色调。' },
+				lights: { label: '浅调', hint: '调整四分之三色调。' },
+				highlights: { label: '亮部', hint: '压缩或拉开高光。' }
+			}
+		},
 		exposure: {
 			name: '曝光',
 			params: {
@@ -337,6 +365,24 @@ export const zhCN: MessageTree = {
 				'印刷边框',
 				'暗角'
 			]
+		},
+		glitch_cyber: {
+			name: '赛博故障',
+			group: '数字',
+			description: '数字坏档、霓虹光晕、压暗暗角。',
+			layerLabels: ['数字故障', '色相/饱和', '光晕', '暗角']
+		},
+		lofi_vhs: {
+			name: 'Lo-fi VHS',
+			group: '复古',
+			description: '旧磁带、CRT 扫描线、暖色双色调、颗粒。',
+			layerLabels: ['VHS 故障', 'CRT', '噪点', '双色调', '暗角']
+		},
+		film_noir: {
+			name: '黑色电影',
+			group: '胶片',
+			description: '压缩曲线、银色单色、叠加颗粒、重暗角。',
+			layerLabels: ['曲线', '单色', '噪点', '暗角']
 		}
 	}
 };

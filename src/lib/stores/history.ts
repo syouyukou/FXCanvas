@@ -1,6 +1,6 @@
 import { get, writable } from 'svelte/store';
 import { EFFECTS } from '../effects/index';
-import type { AppliedEffect } from '../engine/renderer';
+import type { AppliedEffect, BlendMode } from '../engine/renderer';
 import { cloneGradient, type GradientStop } from '../engine/gradient';
 import { activeLayerIndex, appliedEffects, layerGroups, type LayerGroup } from './editor';
 
@@ -15,10 +15,11 @@ export interface LayerGroupSnapshot {
 }
 
 export interface StackSnapshot {
-	layers: {
+		layers: {
 		effectId: string;
 		enabled: boolean;
 		opacity?: number;
+		blendMode?: BlendMode;
 		groupId?: string;
 		params: Record<string, number | boolean | string | GradientStop[]>;
 	}[];
@@ -46,6 +47,7 @@ export function toSnapshot(
 			effectId: item.effect.id,
 			enabled: item.effect.enabled,
 			opacity: item.opacity ?? 1,
+			...(item.blendMode && item.blendMode !== 'normal' ? { blendMode: item.blendMode } : {}),
 			...(item.groupId ? { groupId: item.groupId } : {}),
 			params: cloneParams(item.params)
 		})),
@@ -101,6 +103,7 @@ export function fromSnapshot(snapshot: StackSnapshot): {
 			},
 			params: cloneParams(layer.params),
 			opacity: layer.opacity ?? 1,
+			...(layer.blendMode ? { blendMode: layer.blendMode } : {}),
 			...(layer.groupId ? { groupId: layer.groupId } : {})
 		});
 	}
@@ -120,6 +123,12 @@ const future = writable<StackSnapshot[]>([]);
 function syncFlags() {
 	canUndo.set(get(past).length > 0);
 	canRedo.set(get(future).length > 0);
+}
+
+export function resetHistory() {
+	past.set([]);
+	future.set([]);
+	syncFlags();
 }
 
 /** Save current stack before a mutating action. */

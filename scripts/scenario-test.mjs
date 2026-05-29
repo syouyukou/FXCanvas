@@ -192,7 +192,7 @@ async function runScenarios() {
 		pass('Layer visibility toggle');
 
 		await page.locator('.btn-icon[title*="Undo"]').click();
-		await page.waitForTimeout(200);
+		await page.locator('.btn-icon[title*="Redo"]:not([disabled])').waitFor({ timeout: 3000 });
 		pass('Undo');
 
 		await page.locator('.btn-icon[title*="Redo"]').click();
@@ -234,7 +234,7 @@ async function runScenarios() {
 
 		await page.getByRole('button', { name: 'Export', exact: true }).click();
 		await page.locator('#export-format').selectOption('jpeg');
-		await page.getByRole('button', { name: 'Download' }).click();
+		await page.getByRole('button', { name: 'Download', exact: true }).click();
 		pass('Export JPEG');
 
 		if (errors.length === 0) pass('No JS errors (en export)');
@@ -393,7 +393,7 @@ async function runScenarios() {
 	{
 		const { page, errors } = await newPage(browser, 'en-zh');
 		await loadFixture(page);
-		await page.getByText('Exposure', { exact: true }).first().click();
+		await page.getByText(/Exposure.*曝光/i).first().click();
 		await page.locator('.param-label', { hasText: /Exposure.*曝光/i }).waitFor({ timeout: 3000 });
 		pass('Bilingual param label (Exposure / 曝光)');
 

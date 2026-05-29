@@ -17,11 +17,12 @@ export const ja: MessageTree = {
 		noMedia: 'メディア未読み込み',
 		preview: 'プレビュー',
 		footerTip:
-			'端をドラッグで幅変更 · 狭くすると折りたたみ · 広いと3列 · スクロールでズーム · ⌘Z で元に戻す'
+			'端をドラッグで幅変更 · スクロールでズーム · ⌘Z 元に戻す · ⌘V 貼り付け · セッション自動保存'
 	},
 	canvas: {
 		dropImage: 'ここに画像をドロップ',
 		orClickLoad: 'またはメディアを読み込む',
+		pasteHint: '⌘V でクリップボードから貼り付け',
 		original: 'オリジナル',
 		ariaCanvas: 'キャンバス',
 		ariaPreview: 'プレビューキャンバス'
@@ -31,6 +32,14 @@ export const ja: MessageTree = {
 		clearAll: 'すべてクリア',
 		controls: 'コントロール',
 		opacity: '不透明度',
+		blendMode: '合成',
+		blendModes: {
+			normal: '通常',
+			multiply: '乗算',
+			screen: 'スクリーン',
+			overlay: 'オーバーレイ',
+			'soft-light': 'ソフトライト'
+		},
 		empty: 'エフェクトがありません。',
 		emptyHint: '左のエフェクトをクリックして追加。',
 		selectHint: 'レイヤーをクリックして調整',
@@ -85,6 +94,8 @@ export const ja: MessageTree = {
 		size: 'サイズ',
 		png: 'PNG',
 		jpeg: 'JPEG',
+		webp: 'WebP',
+		downloadLayers: 'レイヤー PNG シーケンス',
 		sizeLabel: '{label} — {w} × {h}',
 		px: '{w} × {h} px',
 		exceedsLimit: '{max}px の上限を超えています — 小さいサイズを選択',
@@ -150,6 +161,23 @@ export const ja: MessageTree = {
 	},
 	effects: {
 		gaussian_blur: { name: 'ガウスぼかし', params: { radius: { label: '半径' } } },
+		sharpen: {
+			name: 'シャープ',
+			params: {
+				amount: { label: '強度', hint: 'シャープネスの強さ。' },
+				radius: { label: '半径', hint: 'アンシャープマスクのぼかし半径。' },
+				threshold: { label: 'しきい値', hint: 'この値未満の差分は無視。' }
+			}
+		},
+		curves: {
+			name: 'トーンカーブ',
+			params: {
+				shadows: { label: 'シャドウ', hint: '深い影を持ち上げ／潰す。' },
+				darks: { label: 'ダーク', hint: '1/4 トーンを調整。' },
+				lights: { label: 'ライト', hint: '3/4 トーンを調整。' },
+				highlights: { label: 'ハイライト', hint: 'ハイライトのロールオフ。' }
+			}
+		},
 		exposure: {
 			name: '露出',
 			params: {
@@ -334,6 +362,24 @@ export const ja: MessageTree = {
 				'プリント枠',
 				'ビネット'
 			]
+		},
+		glitch_cyber: {
+			name: 'グリッチサイバー',
+			group: 'デジタル',
+			description: 'デジタル破損、ネオングロー、強いビネット。',
+			layerLabels: ['デジタルグリッチ', '色相/彩度', 'ブルーム', 'ビネット']
+		},
+		lofi_vhs: {
+			name: 'Lo-fi VHS',
+			group: 'レトロ',
+			description: '古いテープ、CRT走査線、暖色デュオトーン、グレイン。',
+			layerLabels: ['VHSグリッチ', 'CRT', 'ノイズ', 'デュオトーン', 'ビネット']
+		},
+		film_noir: {
+			name: 'フィルムノワール',
+			group: 'フィルム',
+			description: '潰したカーブ、シルバーモノクロ、オーバーレイグレイン。',
+			layerLabels: ['カーブ', 'モノクロ', 'ノイズ', 'ビネット']
 		}
 	}
 };

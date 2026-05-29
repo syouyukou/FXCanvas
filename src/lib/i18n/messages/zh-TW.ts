@@ -16,11 +16,12 @@ export const zhTW: MessageTree = {
 		resizePanel: '調整效果面板寬度',
 		noMedia: '尚未載入媒體',
 		preview: '預覽',
-		footerTip: '拖曳邊緣調整寬度 · 拖窄可收合 · 寬螢幕三欄 · 滾輪縮放 · ⌘Z 復原'
+		footerTip: '拖曳邊緣調整寬度 · 滾輪縮放 · ⌘Z 復原 · ⌘V 貼上 · 自動儲存工作階段'
 	},
 	canvas: {
 		dropImage: '將圖片拖放到這裡',
 		orClickLoad: '或點擊載入媒體',
+		pasteHint: '⌘V 從剪貼簿貼上',
 		original: '原圖',
 		ariaCanvas: '畫布',
 		ariaPreview: '預覽畫布'
@@ -30,6 +31,14 @@ export const zhTW: MessageTree = {
 		clearAll: '全部清除',
 		controls: '控制項',
 		opacity: '不透明度',
+		blendMode: '混合',
+		blendModes: {
+			normal: '正常',
+			multiply: '相乘',
+			screen: '濾色',
+			overlay: '疊加',
+			'soft-light': '柔光'
+		},
 		empty: '尚未套用效果。',
 		emptyHint: '點選左側效果以加入。',
 		selectHint: '點選圖層以調整參數',
@@ -84,6 +93,8 @@ export const zhTW: MessageTree = {
 		size: '尺寸',
 		png: 'PNG',
 		jpeg: 'JPEG',
+		webp: 'WebP',
+		downloadLayers: '下載圖層 PNG 序列',
 		sizeLabel: '{label} — {w} × {h}',
 		px: '{w} × {h} px',
 		exceedsLimit: '超過 {max}px 上限 — 請選較小尺寸',
@@ -159,6 +170,23 @@ export const zhTW: MessageTree = {
 	},
 	effects: {
 		gaussian_blur: { name: '高斯模糊', params: { radius: { label: '半徑' } } },
+		sharpen: {
+			name: '銳化',
+			params: {
+				amount: { label: '強度', hint: '銳化強度。' },
+				radius: { label: '半徑', hint: '反銳化遮罩的模糊半徑。' },
+				threshold: { label: '閾值', hint: '低於此值的差異會被忽略。' }
+			}
+		},
+		curves: {
+			name: '曲線',
+			params: {
+				shadows: { label: '暗部', hint: '提亮或壓暗暗部。' },
+				darks: { label: '深調', hint: '調整四分之一色調。' },
+				lights: { label: '淺調', hint: '調整四分之三色調。' },
+				highlights: { label: '亮部', hint: '壓縮或拉開高光。' }
+			}
+		},
 		exposure: {
 			name: '曝光',
 			params: {
@@ -346,6 +374,24 @@ export const zhTW: MessageTree = {
 				'印刷邊框',
 				'暗角'
 			]
+		},
+		glitch_cyber: {
+			name: '賽博故障',
+			group: '數位',
+			description: '數位壞檔、霓虹光暈、壓暗暗角。',
+			layerLabels: ['數位故障', '色相/飽和', '光暈', '暗角']
+		},
+		lofi_vhs: {
+			name: 'Lo-fi VHS',
+			group: '復古',
+			description: '舊磁帶、CRT 掃描線、暖色雙色調、顆粒。',
+			layerLabels: ['VHS 故障', 'CRT', '噪點', '雙色調', '暗角']
+		},
+		film_noir: {
+			name: '黑色電影',
+			group: '底片',
+			description: '壓縮曲線、銀色單色、疊加顆粒、重暗角。',
+			layerLabels: ['曲線', '單色', '噪點', '暗角']
 		}
 	}
 };

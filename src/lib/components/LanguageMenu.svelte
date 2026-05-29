@@ -70,17 +70,21 @@
 		width: 32px;
 		height: 32px;
 		background: none;
-		border: 1px solid #333;
-		border-radius: 6px;
-		color: #bbb;
+		border: 1px solid var(--border-default);
+		border-radius: var(--radius-sm);
+		color: var(--text-secondary);
 		cursor: pointer;
-		transition: all 0.15s;
+		transition:
+			background var(--transition-fast),
+			border-color var(--transition-fast),
+			color var(--transition-fast);
 	}
 
-	.lang-btn:hover {
-		background: #252525;
-		border-color: #555;
-		color: #fff;
+	.lang-btn:hover,
+	.lang-btn:focus-visible {
+		background: var(--bg-hover);
+		border-color: var(--border-strong);
+		color: var(--text-primary);
 	}
 
 	.lang-menu {
@@ -88,10 +92,10 @@
 		top: calc(100% + 6px);
 		right: 0;
 		min-width: 168px;
-		background: #1e1e1e;
-		border: 1px solid #333;
-		border-radius: 8px;
-		padding: 4px;
+		background: var(--bg-dropdown);
+		border: 1px solid var(--border-default);
+		border-radius: var(--radius-md);
+		padding: var(--space-1);
 		list-style: none;
 		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 		z-index: 100;
@@ -102,21 +106,24 @@
 		text-align: left;
 		background: none;
 		border: none;
-		border-radius: 6px;
-		padding: 8px 12px;
-		color: #bbb;
-		font-size: 13px;
+		border-radius: var(--radius-sm);
+		padding: var(--space-2) var(--space-3);
+		color: var(--text-secondary);
+		font-size: var(--text-base);
 		cursor: pointer;
-		transition: background 0.12s, color 0.12s;
+		transition:
+			background var(--transition-fast),
+			color var(--transition-fast);
 	}
 
-	.lang-option:hover {
-		background: #2a2a2a;
-		color: #fff;
+	.lang-option:hover,
+	.lang-option:focus-visible {
+		background: var(--border-subtle);
+		color: var(--text-primary);
 	}
 
 	.lang-option.active {
-		background: #333;
-		color: #fff;
+		background: var(--border-default);
+		color: var(--text-primary);
 	}
 </style>

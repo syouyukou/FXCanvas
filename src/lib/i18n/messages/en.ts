@@ -7,7 +7,7 @@ export const en: MessageTree = {
 		zhCN: '简体中文',
 		ja: '日本語',
 		en: 'English',
-		enZh: 'English & Chinese'
+		enZh: 'English & 中文'
 	},
 	app: {
 		loadMedia: 'Load Media',
@@ -17,11 +17,12 @@ export const en: MessageTree = {
 		noMedia: 'No media loaded',
 		preview: 'PREVIEW',
 		footerTip:
-			'Drag edge to resize · Narrow drag collapses · Wide = 3 columns · Scroll zoom · ⌘Z undo'
+			'Drag edge to resize · Scroll zoom · ⌘Z undo · ⌘V paste · Session auto-saves'
 	},
 	canvas: {
 		dropImage: 'Drop an image here',
 		orClickLoad: 'or click Load Media',
+		pasteHint: '⌘V to paste from clipboard',
 		original: 'ORIGINAL',
 		ariaCanvas: 'Canvas',
 		ariaPreview: 'Preview canvas'
@@ -31,6 +32,14 @@ export const en: MessageTree = {
 		clearAll: 'CLEAR ALL',
 		controls: 'CONTROLS',
 		opacity: 'OPACITY',
+		blendMode: 'BLEND',
+		blendModes: {
+			normal: 'Normal',
+			multiply: 'Multiply',
+			screen: 'Screen',
+			overlay: 'Overlay',
+			'soft-light': 'Soft light'
+		},
 		empty: 'No effects applied.',
 		emptyHint: 'Click an effect to add it.',
 		selectHint: 'Click a layer to configure',
@@ -85,6 +94,8 @@ export const en: MessageTree = {
 		size: 'Size',
 		png: 'PNG',
 		jpeg: 'JPEG',
+		webp: 'WebP',
+		downloadLayers: 'Download layer PNGs',
 		sizeLabel: '{label} — {w} × {h}',
 		px: '{w} × {h} px',
 		exceedsLimit: 'Exceeds {max}px limit — choose a smaller size',
@@ -160,6 +171,23 @@ export const en: MessageTree = {
 	},
 	effects: {
 		gaussian_blur: { name: 'Gaussian Blur', params: { radius: { label: 'Radius' } } },
+		sharpen: {
+			name: 'Sharpen',
+			params: {
+				amount: { label: 'Amount', hint: 'Sharpening strength.' },
+				radius: { label: 'Radius', hint: 'Blur radius for unsharp mask.' },
+				threshold: { label: 'Threshold', hint: 'Ignore subtle differences below this level.' }
+			}
+		},
+		curves: {
+			name: 'Curves',
+			params: {
+				shadows: { label: 'Shadows', hint: 'Lift or crush deep shadows.' },
+				darks: { label: 'Darks', hint: 'Adjust quarter-tone response.' },
+				lights: { label: 'Lights', hint: 'Adjust three-quarter tones.' },
+				highlights: { label: 'Highlights', hint: 'Compress or open highlight roll-off.' }
+			}
+		},
 		exposure: {
 			name: 'Exposure',
 			params: {
@@ -348,6 +376,24 @@ export const en: MessageTree = {
 				'PRINT STAMP',
 				'VIGNETTE'
 			]
+		},
+		glitch_cyber: {
+			name: 'Glitch cyber',
+			group: 'DIGITAL',
+			description: 'Digital corruption, neon bloom, and crushed vignette.',
+			layerLabels: ['GLITCH DIGITAL', 'HUE/SAT', 'BLOOM', 'VIGNETTE']
+		},
+		lofi_vhs: {
+			name: 'Lo-fi VHS',
+			group: 'RETRO',
+			description: 'Worn tape, CRT scanlines, warm duotone, and grain.',
+			layerLabels: ['GLITCH VHS', 'CRT', 'NOISE', 'DUOTONE', 'VIGNETTE']
+		},
+		film_noir: {
+			name: 'Film noir',
+			group: 'FILM',
+			description: 'Crushed curves, silver monochrome, overlay grain, heavy vignette.',
+			layerLabels: ['CURVES', 'MONOCHROME', 'NOISE', 'VIGNETTE']
 		}
 	}
 };

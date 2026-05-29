@@ -1,0 +1,20 @@
+{
+	"_comment": "Three category heroes (Unsplash License). Run: npm run previews:fetch",
+	"heroes": {
+		"hero-portrait": {
+			"url": "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=640&h=480&fit=crop&auto=format&fm=webp&q=85",
+			"photographer": "Ali Pazani",
+			"shot": "Fashion portrait — Blur / Color / Film"
+		},
+		"hero-neon": {
+			"url": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=640&h=480&fit=crop&auto=format&fm=webp&q=85",
+			"photographer": "Milad Fakurian",
+			"shot": "Neon abstract — Distort / CRT / Glitch"
+		},
+		"hero-night": {
+			"url": "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=640&h=480&fit=crop&auto=format&fm=webp&q=85",
+			"photographer": "Luca Bravo",
+			"shot": "Sunset highlights — Bloom / Star Glow / Dither"
+		}
+	}
+}

@@ -22,6 +22,10 @@ async function main() {
 		if (msg.type() === 'error') pageErrors.push(`console: ${msg.text()}`);
 	});
 
+	await page.addInitScript(() => {
+		localStorage.setItem('fxcanvas-locale', 'en');
+	});
+
 	await page.goto(BASE_URL, { waitUntil: 'networkidle', timeout: 20000 });
 	await page.waitForFunction(() => document.querySelectorAll('.effect-card .thumb-after').length >= 10, null, { timeout: 15000 });
 
@@ -34,6 +38,7 @@ async function main() {
 	await page.locator('.btn-icon[title*="Undo"]').click();
 	await page.waitForFunction(() => !document.body.textContent?.includes('BLOOM'), null, { timeout: 3000 });
 	pass('Undo removes layer');
+	await page.locator('.btn-icon[title*="Redo"]:not([disabled])').waitFor({ timeout: 3000 });
 	await page.locator('.btn-icon[title*="Redo"]').click();
 	await page.locator('.layer-name', { hasText: 'BLOOM' }).waitFor({ timeout: 3000 });
 	pass('Redo restores layer');
@@ -77,7 +82,7 @@ async function main() {
 	await page.keyboard.press('Escape');
 
 	// Presets save/load
-	await page.getByRole('button', { name: 'Presets' }).click();
+	await page.locator('.header-actions .preset-menu button').click();
 	await page.getByText('Save current stack').click();
 	await page.locator('.save-row input').fill('Smoke Preset');
 	await page.locator('.save-btn').click();
@@ -87,36 +92,36 @@ async function main() {
 	else fail('Preset menu closes after save', 'backdrop still visible');
 	await page.locator('.layer-row', { hasText: 'BLOOM' }).locator('.icon-btn.delete').click();
 	await page.waitForFunction(() => !document.body.textContent?.includes('BLOOM'), null, { timeout: 3000 });
-	await page.getByRole('button', { name: 'Presets' }).click();
+	await page.locator('.header-actions .preset-menu button').click();
 	await page.getByText('Smoke Preset').click();
 	await page.locator('.layer-name', { hasText: 'BLOOM' }).waitFor({ timeout: 3000 });
 	pass('Preset save and load');
 
-	// Dither 高對比黑白 preset
+	// Dither quick style preset
 	await page.getByText('Dither', { exact: true }).first().click({ modifiers: ['Shift'] });
 	await page.locator('.layer-name', { hasText: 'DITHER' }).waitFor();
-	const ditherPreset = page.getByText('高對比黑白', { exact: true });
+	const ditherPreset = page.getByText('High-contrast B&W', { exact: true });
 	if (await ditherPreset.count()) {
 		await ditherPreset.click();
-		pass('Dither 高對比黑白 preset');
+		pass('Dither High-contrast B&W preset');
 	} else {
-		fail('Dither 高對比黑白 preset', 'button not found');
+		fail('Dither High-contrast B&W preset', 'button not found');
 	}
 
 	// Favorites
-	await page.getByRole('button', { name: 'FAVORITES' }).click();
+	await page.locator('.effect-panel .tabs button').nth(1).click();
 	const favCount = await page.locator('.effect-card').count();
 	if (favCount === 0) pass('Favorites tab empty initially');
 	else fail('Favorites tab empty initially', `${favCount} cards`);
 
-	await page.getByRole('button', { name: 'EXPLORE' }).click();
+	await page.locator('.effect-panel .tabs button').nth(0).click();
 	await page.locator('.effect-card', { hasText: 'Bloom' }).first().locator('.fav-star').click();
-	await page.getByRole('button', { name: 'FAVORITES' }).click();
+	await page.locator('.effect-panel .tabs button').nth(1).click();
 	await page.locator('.effect-card', { hasText: 'Bloom' }).waitFor({ timeout: 3000 });
 	pass('Favorite star adds to Favorites tab');
 
 	// Space compare
-	await page.getByRole('button', { name: 'EXPLORE' }).click();
+	await page.locator('.effect-panel .tabs button').nth(0).click();
 	await page.keyboard.down('Space');
 	await page.waitForTimeout(200);
 	const compareVisible = await page.locator('.compare-badge').isVisible();
@@ -129,7 +134,7 @@ async function main() {
 	let renderFails = [];
 	for (const name of effectCards.slice(0, 8)) {
 		const before = pageErrors.length;
-		await page.getByRole('button', { name: 'EXPLORE' }).click().catch(() => {});
+		await page.locator('.effect-panel .tabs button').nth(0).click().catch(() => {});
 		await page.locator('.search').fill('');
 		await page.getByText(name.trim(), { exact: true }).first().click({ modifiers: ['Shift'] });
 		await page.waitForTimeout(250);

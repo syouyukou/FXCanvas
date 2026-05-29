@@ -9,6 +9,16 @@ FXCanvas 版本更新紀錄（對應 [GitHub Releases](https://github.com/syouyu
 3. 建立並 push tag：`git tag vX.Y.Z && git push origin vX.Y.Z`
 4. GitHub Actions 會自動從對應區塊建立 Release
 
+## v0.10.0 — 2026-05-29
+
+- 新增 **Curves**、**Sharpen** 效果
+- 工作階段自動儲存（IndexedDB）：重開瀏覽器可還原圖片與圖層堆疊
+- 效果縮圖改為分類 hero 圖（portrait / neon / night），支援 WebP 與 `previews:fetch`
+- Export 新增 WebP 格式與逐層序列匯出
+- 內建 Preset 擴充：Glitch Cyber、Lo-fi VHS、Film Noir 等
+- Preset 支援 blend mode；LayerPanel / ExportMenu UI 強化
+- 設計 token（`tokens.css`）與 preview 文件、素材 credits
+
 ## v0.9.0 — 2026-05-29
 
 - 多語系支援：English、繁體中文、简体中文、日本語

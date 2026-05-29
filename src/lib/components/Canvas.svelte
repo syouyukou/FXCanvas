@@ -180,6 +180,7 @@
 			</svg>
 			<p>{$i18n.t('canvas.dropImage')}</p>
 			<span>{$i18n.t('canvas.orClickLoad')}</span>
+			<span class="paste-hint">{$i18n.t('canvas.pasteHint')}</span>
 		</div>
 	{/if}
 	<div
@@ -244,6 +245,11 @@
 	.empty-state span {
 		font-size: 13px;
 		color: #444;
+	}
+
+	.paste-hint {
+		font-size: 12px;
+		color: #3a3a3a;
 	}
 
 	.compare-badge {

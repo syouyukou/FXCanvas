@@ -256,13 +256,20 @@
 										<img
 											class="thumb-img thumb-before"
 											src={$sourceThumbnails.get(effect.id)}
-											alt={effect.name}
+											alt=""
+											aria-hidden="true"
 										/>
 									{:else if $thumbnails.has(effect.id)}
-										<img class="thumb-img" src={$thumbnails.get(effect.id)} alt={effect.name} />
+										<img
+											class="thumb-img"
+											src={$thumbnails.get(effect.id)}
+											alt=""
+											aria-hidden="true"
+										/>
 									{:else}
 										<div class="thumb-placeholder"></div>
 									{/if}
+									<span class="card-name">{displayEffectName(effect)}</span>
 									<button
 										class="fav-star"
 										class:active={$favorites.has(effect.id)}
@@ -275,7 +282,6 @@
 										{$favorites.has(effect.id) ? '★' : '☆'}
 									</button>
 								</div>
-								<div class="card-name">{displayEffectName(effect)}</div>
 							</div>
 						{/each}
 					</div>
@@ -301,11 +307,11 @@
 	.effect-panel {
 		width: 100%;
 		height: 100%;
-		background: #161616;
+		background: var(--bg-surface);
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
-		font-family: 'SF Mono', 'Fira Code', monospace;
+		font-family: var(--font-mono);
 	}
 
 	.collapse-btn {
@@ -325,9 +331,10 @@
 			background 0.15s;
 	}
 
-	.collapse-btn:hover {
-		color: #aaa;
-		background: #1a1a1a;
+	.collapse-btn:hover,
+	.collapse-btn:focus-visible {
+		color: var(--accent);
+		background: var(--bg-raised);
 	}
 
 	.collapsed .collapse-btn svg {
@@ -346,7 +353,7 @@
 	}
 
 	.compact .card-name {
-		font-size: 8px;
+		font-size: var(--text-panel-label);
 	}
 
 	.compact .effect-list {
@@ -377,16 +384,16 @@
 		z-index: 1000;
 		pointer-events: none;
 		padding: 6px 10px;
-		background: #111;
-		border: 1px solid #3a3a3a;
-		border-radius: 6px;
-		color: #eee;
-		font-size: 11px;
+		background: var(--bg-inset);
+		border: 1px solid var(--border-default);
+		border-radius: var(--radius-sm);
+		color: var(--text-primary);
+		font-size: var(--text-panel-body);
 		font-weight: 500;
 		letter-spacing: 0.04em;
 		white-space: nowrap;
 		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
-		font-family: 'SF Mono', 'Fira Code', monospace;
+		font-family: var(--font-mono);
 	}
 
 	.collapsed .thumb-wrap {
@@ -400,28 +407,31 @@
 	}
 	.tabs button {
 		flex: 1;
-		padding: 9px 4px;
+		padding: 7px 4px;
 		background: none;
 		border: none;
-		color: #3a3a3a;
-		font-size: 8px;
+		color: var(--text-faint);
+		font-size: var(--text-panel-label);
 		font-weight: 700;
 		letter-spacing: 0.08em;
 		cursor: pointer;
 		border-bottom: 2px solid transparent;
 		font-family: inherit;
-		transition: color 0.15s;
+		transition: color var(--transition-fast);
 	}
 	.tabs button.active {
-		color: #eee;
-		border-bottom-color: #eee;
-		background: #1a1a1a;
+		color: var(--text-primary);
+		border-bottom-color: var(--text-primary);
+		background: var(--bg-raised);
+	}
+	.tabs button:focus-visible {
+		color: var(--text-secondary);
 	}
 
 	.search-wrap {
 		position: relative;
-		padding: 8px 10px;
-		border-bottom: 1px solid #222;
+		padding: 6px 10px;
+		border-bottom: 1px solid var(--border-panel);
 		display: flex;
 		align-items: center;
 		gap: 6px;
@@ -435,11 +445,15 @@
 		flex: 1;
 		background: none;
 		border: none;
-		color: #aaa;
-		font-size: 11px;
+		color: var(--accent);
+		font-size: var(--text-panel-body);
 		font-family: inherit;
-		outline: none;
 		letter-spacing: 0.05em;
+	}
+	.search:focus-visible {
+		outline: 2px solid var(--border-strong);
+		outline-offset: 0;
+		border-radius: 2px;
 	}
 	.search::placeholder {
 		color: #333;
@@ -447,79 +461,79 @@
 	.clear-search {
 		background: none;
 		border: none;
-		color: #333;
+		color: var(--text-faint);
 		cursor: pointer;
-		font-size: 10px;
+		font-size: var(--text-panel-label);
 		padding: 0;
 		flex-shrink: 0;
 	}
-	.clear-search:hover {
-		color: #777;
+	.clear-search:hover,
+	.clear-search:focus-visible {
+		color: var(--text-muted);
 	}
 
 	.effect-list {
 		flex: 1;
 		overflow-y: auto;
-		padding: 10px 10px 16px;
+		padding: var(--space-2) var(--space-2) var(--space-3);
 	}
 
 	.category-group {
-		margin-bottom: 20px;
+		margin-bottom: 14px;
 	}
 
 	.category-label {
-		font-size: 9px;
+		font-size: var(--text-panel-label);
 		font-weight: 700;
 		letter-spacing: 0.12em;
-		color: #333;
-		margin: 0 0 8px 2px;
+		color: var(--text-faint);
+		margin: 0 0 var(--space-1) 2px;
 		display: flex;
 		align-items: center;
 		gap: 5px;
 	}
 
 	.category-label--major {
-		font-size: 11px;
+		font-size: var(--text-panel-body);
 		font-weight: 800;
-		letter-spacing: 0.14em;
-		color: #e8e8e8;
-		margin: 0 0 10px 4px;
+		letter-spacing: 0.12em;
+		color: var(--text-primary);
+		margin: 0 0 var(--space-2) 4px;
 	}
 
 	.grid {
 		display: grid;
 		grid-template-columns: repeat(var(--grid-cols, 2), 1fr);
-		gap: 8px;
-		transition: gap 0.15s ease;
+		gap: 6px;
+		transition: gap var(--transition-fast);
 	}
 
 	.effect-card {
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
 		cursor: pointer;
-		border-radius: 6px;
+		border-radius: var(--radius-md);
 		padding: 0;
 		background: none;
-		border: 1px solid transparent;
-		transition: border-color 0.15s;
+		border: none;
+		transition: border-color var(--transition-fast);
 		overflow: hidden;
-	}
-	.effect-card:hover {
-		border-color: #333;
-	}
-
-	.preset-card:hover {
-		border-color: #555;
 	}
 
 	.thumb-wrap {
 		position: relative;
 		width: 100%;
-		aspect-ratio: 1;
-		background: #141414;
-		border-radius: 8px;
+		aspect-ratio: 4 / 3;
+		background: var(--bg-thumb);
+		border-radius: var(--radius-md);
 		overflow: hidden;
+		border: 1px solid transparent;
+		transition: border-color var(--transition-fast);
+	}
+
+	.effect-card:hover .thumb-wrap,
+	.effect-card:focus-visible .thumb-wrap {
+		border-color: var(--border-default);
 	}
 
 	.thumb-img {
@@ -558,10 +572,7 @@
 	.thumb-placeholder {
 		width: 100%;
 		height: 100%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: #141414;
+		background: var(--bg-thumb);
 		animation: pulse 1.2s ease-in-out infinite;
 	}
 
@@ -585,6 +596,23 @@
 		opacity: 0.7;
 	}
 
+	.preset-card:hover .thumb-wrap,
+	.preset-card:focus-visible .thumb-wrap {
+		border-color: var(--border-strong);
+	}
+
+	.preset-card .card-name {
+		position: static;
+		background: none;
+		padding: 4px 2px 0;
+		color: var(--text-muted);
+	}
+
+	.preset-card:hover .card-name,
+	.preset-card:focus-visible .card-name {
+		color: var(--text-secondary);
+	}
+
 	@keyframes pulse {
 		0%,
 		100% {
@@ -599,6 +627,7 @@
 		position: absolute;
 		top: 4px;
 		right: 4px;
+		z-index: 4;
 		background: rgba(0, 0, 0, 0.5);
 		border: none;
 		color: #444;
@@ -621,33 +650,42 @@
 	}
 
 	.card-name {
-		font-size: 9px;
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 3;
+		padding: 24px 8px 6px;
+		background: linear-gradient(to top, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.35) 55%, transparent 100%);
+		font-size: var(--text-panel-body);
 		font-weight: 500;
 		letter-spacing: 0.02em;
-		color: #666;
-		padding: 0 2px;
+		color: var(--text-secondary);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
-		line-height: 1.2;
+		line-height: 1.25;
+		pointer-events: none;
 	}
-	.effect-card:hover .card-name {
-		color: #999;
+
+	.effect-card:hover .card-name,
+	.effect-card:focus-visible .card-name {
+		color: var(--text-primary);
 	}
 
 	.preset-meta {
-		font-size: 8px;
-		color: #444;
+		font-size: var(--text-panel-label);
+		color: var(--text-faint);
 		padding: 0 2px 2px;
 		letter-spacing: 0.04em;
 	}
 
 	.empty {
-		color: #333;
-		font-size: 10px;
+		color: var(--text-faint);
+		font-size: var(--text-panel-label);
 		letter-spacing: 0.08em;
 		text-align: center;
-		padding: 24px;
+		padding: var(--space-5);
 	}
 
 	.effect-list::-webkit-scrollbar {

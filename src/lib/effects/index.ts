@@ -1,7 +1,9 @@
 import type { Effect } from '../engine/renderer';
 import { DEFAULT_STAR_GLOW_GRADIENT } from '../engine/gradient';
+import { CURVES_EFFECT } from './curves';
 import { DITHER_EFFECT } from './dither';
 import { EXPOSURE_EFFECT } from './exposure';
+import { SHARPEN_EFFECT } from './sharpen';
 import { GLITCH_DIGITAL_EFFECT, GLITCH_VHS_EFFECT } from './glitch';
 import { LEVELS_EFFECT } from './levels';
 import { PAPER_GRAIN_EFFECT } from './paper_grain';
@@ -49,6 +51,7 @@ void main() {
 
 export const EFFECTS: Effect[] = [
 	// ─── BLUR ───────────────────────────────────────────────
+	SHARPEN_EFFECT,
 	{
 		id: 'gaussian_blur',
 		name: 'Gaussian Blur',
@@ -74,6 +77,7 @@ export const EFFECTS: Effect[] = [
 
 	// ─── COLOR ──────────────────────────────────────────────
 	EXPOSURE_EFFECT,
+	CURVES_EFFECT,
 	LEVELS_EFFECT,
 
 	{

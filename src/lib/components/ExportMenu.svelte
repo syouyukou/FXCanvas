@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { appliedEffects, sourceImage, imageSize } from '$lib/stores/editor';
 	import {
+		downloadDataUrl,
+		downloadLayerSequence,
+		exportLayerSequence,
 		getExportFilename,
 		getExportSizeOptions,
 		MAX_EXPORT_DIM,
@@ -46,10 +49,18 @@
 			width: currentSize.width,
 			height: currentSize.height
 		});
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = getExportFilename(format);
-		a.click();
+		downloadDataUrl(url, getExportFilename(format));
+		closeMenu();
+	}
+
+	function downloadLayers() {
+		if (!renderer?.hasImage() || !currentSize || $appliedEffects.length === 0) return;
+		const frames = exportLayerSequence(renderer, $appliedEffects, {
+			format,
+			width: currentSize.width,
+			height: currentSize.height
+		});
+		downloadLayerSequence(frames);
 		closeMenu();
 	}
 
@@ -90,6 +101,7 @@
 				<select id="export-format" class="export-select" bind:value={format}>
 					<option value="png">{$i18n.t('export.png')}</option>
 					<option value="jpeg">{$i18n.t('export.jpeg')}</option>
+					<option value="webp">{$i18n.t('export.webp')}</option>
 				</select>
 			</div>
 
@@ -116,6 +128,13 @@
 			<button class="btn-download" onclick={download} disabled={!currentSize || currentSize.tooLarge}>
 				{$i18n.t('export.download')}
 			</button>
+			<button
+				class="btn-download btn-download--secondary"
+				onclick={downloadLayers}
+				disabled={!currentSize || currentSize.tooLarge || $appliedEffects.length === 0}
+			>
+				{$i18n.t('export.downloadLayers')}
+			</button>
 		</div>
 	{/if}
 </div>
@@ -129,15 +148,15 @@
 		display: flex;
 		align-items: center;
 		gap: 6px;
-		background: #fff;
-		color: #000;
+		background: var(--bg-light);
+		color: var(--text-on-light);
 		border: none;
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		padding: 6px 14px;
-		font-size: 13px;
+		font-size: var(--text-base);
 		font-weight: 600;
 		cursor: pointer;
-		transition: opacity 0.15s;
+		transition: opacity var(--transition-fast);
 	}
 
 	.btn-export:disabled {
@@ -145,7 +164,8 @@
 		cursor: default;
 	}
 
-	.btn-export:not(:disabled):hover {
+	.btn-export:not(:disabled):hover,
+	.btn-export:not(:disabled):focus-visible {
 		opacity: 0.9;
 	}
 
@@ -191,35 +211,40 @@
 		cursor: pointer;
 	}
 
-	.export-select:focus {
-		outline: none;
-		border-color: #555;
+	.export-select:focus-visible {
+		border-color: var(--border-strong);
 	}
 
 	.export-dim {
-		font-size: 11px;
-		color: #666;
+		font-size: var(--text-xs);
+		color: var(--text-muted);
 		font-variant-numeric: tabular-nums;
 		margin: -4px 0 0;
 	}
 
 	.export-warn {
-		font-size: 10px;
-		color: #c66;
+		font-size: var(--text-2xs);
+		color: var(--text-danger);
 		line-height: 1.4;
 		margin: -4px 0 0;
 	}
 
 	.btn-download {
-		background: #fff;
-		color: #000;
+		background: var(--bg-light);
+		color: var(--text-on-light);
 		border: none;
-		border-radius: 6px;
-		padding: 8px 12px;
-		font-size: 13px;
+		border-radius: var(--radius-sm);
+		padding: var(--space-2) var(--space-3);
+		font-size: var(--text-base);
 		font-weight: 600;
 		cursor: pointer;
-		transition: opacity 0.15s;
+		transition: opacity var(--transition-fast);
+	}
+
+	.btn-download--secondary {
+		background: transparent;
+		color: var(--text-secondary);
+		border: 1px solid var(--border-default);
 	}
 
 	.btn-download:disabled {
@@ -227,7 +252,8 @@
 		cursor: default;
 	}
 
-	.btn-download:not(:disabled):hover {
+	.btn-download:not(:disabled):hover,
+	.btn-download:not(:disabled):focus-visible {
 		opacity: 0.9;
 	}
 </style>

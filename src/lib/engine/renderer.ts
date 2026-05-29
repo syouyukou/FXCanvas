@@ -33,6 +33,8 @@ export interface Effect {
 	/** Multi-pass shaders run in order within one layer. */
 	passes?: EffectPass[];
 	params: EffectParam[];
+	/** Optional per-effect thumbnail param overrides (see thumbnailParams.ts). */
+	thumbnailParams?: Record<string, number | boolean | string | GradientStop[]>;
 	enabled: boolean;
 }
 
@@ -41,9 +43,21 @@ export interface AppliedEffect {
 	params: Record<string, number | boolean | string | GradientStop[]>;
 	/** Layer blend strength 0–1 (default 1). */
 	opacity: number;
+	/** Compositing mode when blending onto the stack below. */
+	blendMode?: BlendMode;
 	/** Preset / stack group this layer belongs to (contiguous block in the list). */
 	groupId?: string;
 }
+
+export type BlendMode = 'normal' | 'multiply' | 'screen' | 'overlay' | 'soft-light';
+
+const BLEND_MODE_INDEX: Record<BlendMode, number> = {
+	normal: 0,
+	multiply: 1,
+	screen: 2,
+	overlay: 3,
+	'soft-light': 4
+};
 
 export interface RenderOptions {
 	fullRes?: boolean;
@@ -52,7 +66,7 @@ export interface RenderOptions {
 }
 
 export interface ExportImageOptions {
-	format: 'png' | 'jpeg';
+	format: 'png' | 'jpeg' | 'webp';
 	width: number;
 	height: number;
 	quality?: number;
@@ -173,10 +187,32 @@ out vec4 outColor;
 uniform sampler2D u_base;
 uniform sampler2D u_effect;
 uniform float u_opacity;
+uniform int u_blend_mode;
+
+vec3 blendMultiply(vec3 base, vec3 blend) { return base * blend; }
+vec3 blendScreen(vec3 base, vec3 blend) { return 1.0 - (1.0 - base) * (1.0 - blend); }
+vec3 blendOverlay(vec3 base, vec3 blend) {
+  return mix(2.0 * base * blend, 1.0 - 2.0 * (1.0 - base) * (1.0 - blend), step(0.5, base));
+}
+vec3 blendSoftLight(vec3 base, vec3 blend) {
+  vec3 low = base - (1.0 - 2.0 * blend) * base * (1.0 - base);
+  vec3 high = base + (2.0 * blend - 1.0) * (sqrt(base) - base);
+  return mix(low, high, step(0.5, blend));
+}
+
+vec3 applyBlend(vec3 base, vec3 effect, int mode) {
+  if (mode == 1) return blendMultiply(base, effect);
+  if (mode == 2) return blendScreen(base, effect);
+  if (mode == 3) return blendOverlay(base, effect);
+  if (mode == 4) return blendSoftLight(base, effect);
+  return effect;
+}
+
 void main() {
   vec4 base = texture(u_base, v_texCoord);
   vec4 effect = texture(u_effect, v_texCoord);
-  outColor = mix(base, effect, u_opacity);
+  vec3 blended = applyBlend(base.rgb, effect.rgb, u_blend_mode);
+  outColor = vec4(mix(base.rgb, blended, u_opacity), effect.a);
 }`;
 		this.opacityBlend = createProgram(gl, VERTEX_SHADER, opacityFrag);
 	}
@@ -363,15 +399,16 @@ void main() {
 		if (resLoc) this.gl.uniform2f(resLoc, this.renderWidth, this.renderHeight);
 	}
 
-	private blendLayerOpacity(
+	private blendLayer(
 		baseTex: WebGLTexture,
 		effectTex: WebGLTexture,
 		opacity: number,
+		blendMode: BlendMode,
 		toScreen: boolean,
 		pingPong: number
 	): WebGLTexture | null {
 		const gl = this.gl;
-		const cacheKey = '__opacity_blend__';
+		const cacheKey = '__layer_blend__';
 		if (toScreen) {
 			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 			gl.viewport(0, 0, (gl.canvas as HTMLCanvasElement).width, (gl.canvas as HTMLCanvasElement).height);
@@ -384,6 +421,8 @@ void main() {
 		this.bindTexture(cacheKey, 1, effectTex, 'u_effect', this.opacityBlend);
 		const opacityLoc = this.getUniform(cacheKey, this.opacityBlend, 'u_opacity');
 		if (opacityLoc) gl.uniform1f(opacityLoc, opacity);
+		const modeLoc = this.getUniform(cacheKey, this.opacityBlend, 'u_blend_mode');
+		if (modeLoc) gl.uniform1i(modeLoc, BLEND_MODE_INDEX[blendMode]);
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 		return toScreen ? null : this.fbos[pingPong % 2][1];
 	}
@@ -416,7 +455,8 @@ void main() {
 			const item = enabled[i];
 			const { effect, params } = item;
 			const opacity = item.opacity ?? 1;
-			const needsBlend = opacity < 0.999;
+			const blendMode = item.blendMode ?? 'normal';
+			const needsBlend = blendMode !== 'normal' || opacity < 0.999;
 			const isLastEffect = i === enabled.length - 1;
 			const passes = getEffectPasses(effect);
 			const baseTex = currentTex;
@@ -453,10 +493,11 @@ void main() {
 			}
 
 			if (needsBlend) {
-				const blended = this.blendLayerOpacity(
+				const blended = this.blendLayer(
 					baseTex,
 					effectOutput,
 					opacity,
+					blendMode,
 					isLastEffect,
 					pingPong
 				);
@@ -473,10 +514,14 @@ void main() {
 	exportImage(appliedEffects: AppliedEffect[], options: ExportImageOptions): string {
 		this.render(appliedEffects, { width: options.width, height: options.height });
 		const canvas = this.gl.canvas as HTMLCanvasElement;
-		const url =
-			options.format === 'jpeg'
-				? canvas.toDataURL('image/jpeg', options.quality ?? 0.92)
-				: canvas.toDataURL('image/png');
+		let url: string;
+		if (options.format === 'jpeg') {
+			url = canvas.toDataURL('image/jpeg', options.quality ?? 0.92);
+		} else if (options.format === 'webp') {
+			url = canvas.toDataURL('image/webp', options.quality ?? 0.92);
+		} else {
+			url = canvas.toDataURL('image/png');
+		}
 		this.render(appliedEffects, { fullRes: false });
 		return url;
 	}

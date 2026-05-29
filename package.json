@@ -12,6 +12,7 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"previews:generate": "node scripts/generate-preview-sources.mjs",
+		"previews:fetch": "node scripts/fetch-preview-sources.mjs",
 		"smoke": "node scripts/smoke-test.mjs",
 		"test:scenarios": "node scripts/scenario-test.mjs",
 		"test": "npm run check && npm run build && npm run smoke && npm run test:scenarios"

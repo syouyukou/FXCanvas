@@ -1,8 +1,9 @@
 import { get } from 'svelte/store';
 import { exportSizeLabel } from '$lib/i18n';
 import { locale } from '$lib/i18n';
+import type { AppliedEffect, Renderer } from './renderer';
 
-export type ExportFormat = 'png' | 'jpeg';
+export type ExportFormat = 'png' | 'jpeg' | 'webp';
 export type ExportSizePreset = 'half' | '1x' | '2x' | '3x' | '4x' | '1080p' | '4k';
 
 /** Conservative browser canvas limit (most GPUs allow 8192–16384). */
@@ -32,6 +33,12 @@ const CAP_PRESETS: CapPreset[] = [
 	{ id: '1080p', label: '1080p (long edge)', maxLongEdge: 1920 },
 	{ id: '4k', label: '4K (long edge)', maxLongEdge: 3840 }
 ];
+
+const FORMAT_EXT: Record<ExportFormat, string> = {
+	png: 'png',
+	jpeg: 'jpg',
+	webp: 'webp'
+};
 
 function dimsForScale(srcW: number, srcH: number, scale: number) {
 	return {
@@ -71,7 +78,6 @@ export function getExportSizeOptions(srcW: number, srcH: number): ExportSizeOpti
 		});
 	};
 
-	// Touch locale so export options refresh when language changes.
 	void get(locale);
 
 	for (const preset of SCALE_PRESETS) {
@@ -87,6 +93,45 @@ export function getExportSizeOptions(srcW: number, srcH: number): ExportSizeOpti
 	return options;
 }
 
-export function getExportFilename(format: ExportFormat): string {
-	return format === 'jpeg' ? 'effect-export.jpg' : 'effect-export.png';
+export function getExportFilename(format: ExportFormat, suffix = 'effect-export'): string {
+	return `${suffix}.${FORMAT_EXT[format]}`;
+}
+
+export function downloadDataUrl(url: string, filename: string) {
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = filename;
+	a.click();
+}
+
+export interface LayerExportFrame {
+	filename: string;
+	url: string;
+}
+
+/** Export cumulative stack at each layer as numbered PNG/WebP files. */
+export function exportLayerSequence(
+	renderer: Renderer,
+	effects: AppliedEffect[],
+	options: { format: ExportFormat; width: number; height: number; quality?: number }
+): LayerExportFrame[] {
+	const frames: LayerExportFrame[] = [];
+	const ext = FORMAT_EXT[options.format];
+
+	for (let i = 0; i < effects.length; i++) {
+		const stack = effects.slice(0, i + 1);
+		const url = renderer.exportImage(stack, options);
+		frames.push({
+			filename: `layer-${String(i + 1).padStart(3, '0')}.${ext}`,
+			url
+		});
+	}
+
+	return frames;
+}
+
+export function downloadLayerSequence(frames: LayerExportFrame[]) {
+	for (const frame of frames) {
+		downloadDataUrl(frame.url, frame.filename);
+	}
 }

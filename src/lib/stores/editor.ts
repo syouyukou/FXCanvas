@@ -1,6 +1,6 @@
 import { get, writable, derived } from 'svelte/store';
 import { EFFECTS } from '../effects/index';
-import type { Effect, AppliedEffect, EffectParam } from '../engine/renderer';
+import type { Effect, AppliedEffect, EffectParam, BlendMode } from '../engine/renderer';
 import { cloneGradient, type GradientStop } from '../engine/gradient';
 import { createI18n } from '$lib/i18n';
 import { locale } from '$lib/i18n';
@@ -100,6 +100,35 @@ export const leftTab = writable<'effects' | 'favorites' | 'presets'>('effects');
 export const favorites = writable<Set<string>>(loadFavorites());
 
 favorites.subscribe((favs) => persistFavorites(favs));
+
+export type { BlendMode };
+
+export function loadImageFile(file: File): Promise<void> {
+	return new Promise((resolve, reject) => {
+		if (!file.type.startsWith('image/')) {
+			reject(new Error('Not an image'));
+			return;
+		}
+		const url = URL.createObjectURL(file);
+		const img = new Image();
+		img.onload = () => {
+			sourceImage.set(img);
+			URL.revokeObjectURL(url);
+			resolve();
+		};
+		img.onerror = () => {
+			URL.revokeObjectURL(url);
+			reject(new Error('Failed to load image'));
+		};
+		img.src = url;
+	});
+}
+
+export function updateLayerBlendMode(index: number, blendMode: BlendMode) {
+	appliedEffects.update((list) =>
+		list.map((item, i) => (i === index ? { ...item, blendMode } : item))
+	);
+}
 
 export const filteredEffects = derived([searchQuery, locale], ([$search, $lang]) => {
 	if (!$search.trim()) return EFFECTS;
@@ -268,6 +297,7 @@ export function duplicateEffect(index: number) {
 			effect: cloneEffect(item.effect),
 			params: cloneParams(item.params),
 			opacity: item.opacity ?? 1,
+			...(item.blendMode ? { blendMode: item.blendMode } : {}),
 			...(item.groupId ? { groupId: item.groupId } : {})
 		};
 		copy.effect.enabled = item.effect.enabled;

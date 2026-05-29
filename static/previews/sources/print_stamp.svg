@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
-<rect width="256" height="256" fill="#0a0a0c"/>
-<rect x="30" y="50" width="196" height="156" fill="#e8e0d0"/>
-<text x="48" y="120" fill="#1a1a1a" font-size="42" font-family="Georgia, serif" font-weight="700">FX</text>
-<text x="48" y="155" fill="#444" font-size="14" font-family="monospace">PRINT</text>
-</svg>

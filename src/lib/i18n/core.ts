@@ -69,7 +69,11 @@ export function createI18n(lang: LocaleId): I18nApi {
 	};
 
 	const effectName = (effectId: string, fallback: string): string => {
-		if (lang === 'en-zh') return fallback;
+		if (lang === 'en-zh') {
+			const en = deepGetString(catalogs.en, `effects.${effectId}.name`) ?? fallback;
+			const zh = deepGetString(zhCatalog(), `effects.${effectId}.name`) ?? fallback;
+			return bilingual(en, zh);
+		}
 		return deepGetString(uiCatalog(lang), `effects.${effectId}.name`) ?? fallback;
 	};
 

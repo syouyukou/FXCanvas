@@ -13,13 +13,14 @@
 		beginParamEdit,
 		applyParams,
 		updateLayerOpacity,
+		updateLayerBlendMode,
 		clearEffects,
 		moveEffect,
 		randomizeParams,
 		resetParams,
 		type LayerGroup
 	} from '../stores/editor';
-	import type { AppliedEffect } from '../engine/renderer';
+	import type { AppliedEffect, BlendMode } from '../engine/renderer';
 	import type { EffectParam } from '../engine/renderer';
 	import type { GradientStop } from '../engine/gradient';
 	import { DITHER_PRESETS } from '../effects/dither';
@@ -43,6 +44,7 @@
 		children: { index: number; item: AppliedEffect }[];
 	};
 	type ListSegment = LayerSegment | GroupSegment;
+	const BLEND_MODES: BlendMode[] = ['normal', 'multiply', 'screen', 'overlay', 'soft-light'];
 
 	function buildSegments(effects: AppliedEffect[], groups: LayerGroup[]): ListSegment[] {
 		const groupMap = new Map(groups.map((g) => [g.id, g]));
@@ -512,6 +514,26 @@
 					updateLayerOpacity($activeLayerIndex, parseFloat((e.target as HTMLInputElement).value))}
 			/>
 		</div>
+		<div class="layer-blend">
+			<div class="param-meta">
+				<span class="param-label">{$i18n.t('layers.blendMode')}</span>
+			</div>
+			<select
+				class="param-select"
+				value={active.blendMode ?? 'normal'}
+				onchange={(e) => {
+					beginParamEdit();
+					updateLayerBlendMode(
+						$activeLayerIndex,
+						(e.target as HTMLSelectElement).value as BlendMode
+					);
+				}}
+			>
+				{#each BLEND_MODES as mode}
+					<option value={mode}>{$i18n.t(`layers.blendModes.${mode}`)}</option>
+				{/each}
+			</select>
+		</div>
 		<div class="params-list">
 			{#each active.effect.params as param}
 				<div
@@ -607,22 +629,22 @@
 	.layer-panel {
 		width: 260px;
 		min-width: 220px;
-		background: #161616;
-		border-left: 1px solid #222;
+		background: var(--bg-surface);
+		border-left: 1px solid var(--border-panel);
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
-		font-family: 'SF Mono', 'Fira Code', monospace;
+		font-family: var(--font-mono);
 	}
 
 	/* ── Header ── */
 	.panel-header {
-		padding: 10px 14px;
-		font-size: 10px;
+		padding: var(--panel-padding-y) var(--panel-padding-x);
+		font-size: var(--text-panel-label);
 		font-weight: 700;
 		letter-spacing: 0.12em;
-		color: #444;
-		border-bottom: 1px solid #222;
+		color: var(--text-muted);
+		border-bottom: 1px solid var(--border-panel);
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -630,20 +652,20 @@
 	}
 
 	.configure-label {
-		color: #888;
-		border-top: 1px solid #222;
+		color: var(--accent);
+		border-top: 1px solid var(--border-panel);
 	}
 
 	.controls-title {
 		display: flex;
 		flex-direction: column;
-		gap: 2px;
+		gap: var(--panel-gap-tight);
 	}
 
 	.controls-effect {
-		font-size: 9px;
-		color: #555;
-		letter-spacing: 0.1em;
+		font-size: var(--text-panel-body);
+		color: var(--text-muted);
+		letter-spacing: 0.06em;
 	}
 
 	.config-actions {
@@ -662,20 +684,28 @@
 		align-items: center;
 		transition: color 0.15s, background 0.15s;
 	}
-	.cfg-btn:hover { color: #aaa; background: #2a2a2a; }
+	.cfg-btn:hover,
+	.cfg-btn:focus-visible {
+		color: var(--accent);
+		background: var(--border-subtle);
+	}
 
 	.clear-btn {
 		background: none;
 		border: none;
-		color: #3a3a3a;
-		font-size: 9px;
+		color: var(--text-faint);
+		font-size: var(--text-panel-label);
 		font-weight: 700;
 		letter-spacing: 0.1em;
 		cursor: pointer;
 		font-family: inherit;
-		transition: color 0.15s;
+		transition: color var(--transition-fast);
 	}
-	.clear-btn:hover { color: #c44; }
+
+	.clear-btn:hover,
+	.clear-btn:focus-visible {
+		color: var(--text-danger);
+	}
 
 	/* ── Layer rows ── */
 	.layers-list {
@@ -691,27 +721,30 @@
 	}
 
 	.empty {
-		color: #333;
-		font-size: 11px;
+		color: var(--text-faint);
+		font-size: var(--text-panel-body);
 		text-align: center;
-		padding: 20px 12px;
-		line-height: 1.7;
-		letter-spacing: 0.05em;
+		padding: var(--space-4) var(--panel-padding-x);
+		line-height: 1.5;
+		letter-spacing: 0.04em;
 		font-family: inherit;
 	}
 
 	.layer-row {
 		display: flex;
 		align-items: center;
-		padding: 10px 14px;
-		border-bottom: 1px solid #1e1e1e;
+		padding: 6px var(--panel-padding-x);
+		border-bottom: 1px solid var(--bg-muted);
 		cursor: pointer;
-		transition: background 0.1s;
-		gap: 8px;
-		min-height: 42px;
+		transition: background var(--transition-fast);
+		gap: 6px;
+		min-height: var(--panel-row-height);
 		flex-shrink: 0;
 	}
-	.layer-row:hover { background: #1e1e1e; }
+	.layer-row:hover,
+	.layer-row:focus-visible {
+		background: var(--bg-muted);
+	}
 	.layer-row.selected { background: #1e1e1e; }
 	.layer-row.dragging { opacity: 0.4; }
 
@@ -727,14 +760,14 @@
 
 	.layer-name {
 		flex: 1;
-		font-size: 11px;
+		font-size: var(--text-panel-body);
 		font-weight: 700;
-		letter-spacing: 0.1em;
-		color: #ccc;
+		letter-spacing: 0.08em;
+		color: var(--text-body);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
-		transition: color 0.15s;
+		transition: color var(--transition-fast);
 	}
 
 	.hidden-layer .layer-name { color: #3a3a3a; }
@@ -746,11 +779,11 @@
 	.group-header {
 		display: flex;
 		align-items: center;
-		padding: 10px 14px 10px 10px;
+		padding: 6px var(--panel-padding-x) 6px var(--space-2);
 		gap: 6px;
 		cursor: default;
 		background: #121212;
-		min-height: 42px;
+		min-height: var(--panel-row-height);
 	}
 
 	.group-header.selected { background: #1e1e1e; }
@@ -791,7 +824,7 @@
 		width: 18px;
 		flex-shrink: 0;
 		align-self: stretch;
-		min-height: 42px;
+		min-height: var(--panel-row-height);
 	}
 
 	.tree-line-v {
@@ -854,12 +887,20 @@
 
 	/* ── Configure ── */
 	.layer-opacity {
-		padding: 12px 14px 0;
+		padding: var(--panel-padding-y) var(--panel-padding-x) 0;
 		display: flex;
 		flex-direction: column;
-		gap: 6px;
+		gap: var(--panel-gap-tight);
 		flex-shrink: 0;
-		border-top: 1px solid #222;
+		border-top: 1px solid var(--border-panel);
+	}
+
+	.layer-blend {
+		padding: var(--panel-padding-y) var(--panel-padding-x) 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--panel-gap-tight);
+		flex-shrink: 0;
 	}
 
 	.opacity-slider {
@@ -872,25 +913,25 @@
 	.params-list {
 		flex: 1;
 		overflow-y: auto;
-		padding: 12px 14px;
+		padding: var(--panel-padding-y) var(--panel-padding-x);
 		display: flex;
 		flex-direction: column;
-		gap: 16px;
+		gap: var(--panel-gap);
 	}
 
 	.preset-section {
-		padding: 10px 14px 0;
-		border-top: 1px solid #222;
+		padding: var(--panel-padding-y) var(--panel-padding-x) 0;
+		border-top: 1px solid var(--border-panel);
 		flex-shrink: 0;
 	}
 
 	.preset-label {
 		display: block;
-		font-size: 9px;
+		font-size: var(--text-panel-label);
 		font-weight: 700;
 		letter-spacing: 0.12em;
-		color: #555;
-		margin-bottom: 8px;
+		color: var(--text-muted);
+		margin-bottom: 6px;
 	}
 
 	.preset-grid {
@@ -901,25 +942,29 @@
 	}
 
 	.preset-btn {
-		background: #1e1e1e;
-		border: 1px solid #333;
+		background: var(--bg-muted);
+		border: 1px solid var(--border-default);
 		border-radius: 4px;
-		color: #aaa;
-		font-size: 10px;
+		color: var(--accent);
+		font-size: var(--text-panel-label);
 		font-family: inherit;
-		padding: 5px 8px;
+		padding: 4px 6px;
 		cursor: pointer;
-		transition: all 0.15s;
+		transition:
+			background var(--transition-fast),
+			border-color var(--transition-fast),
+			color var(--transition-fast);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		text-align: center;
 	}
 
-	.preset-btn:hover {
-		background: #2a2a2a;
-		border-color: #555;
-		color: #fff;
+	.preset-btn:hover,
+	.preset-btn:focus-visible {
+		background: var(--border-subtle);
+		border-color: var(--border-strong);
+		color: var(--text-primary);
 	}
 
 	.preset-btn.active {
@@ -928,12 +973,12 @@
 		color: #fff;
 	}
 
-	.param-row { display: flex; flex-direction: column; gap: 6px; }
+	.param-row { display: flex; flex-direction: column; gap: var(--panel-gap-tight); }
 
 	.param-hint {
-		font-size: 10px;
-		line-height: 1.45;
-		color: #444;
+		font-size: var(--text-panel-label);
+		line-height: 1.4;
+		color: var(--text-faint);
 		margin: -2px 0 0;
 	}
 
@@ -944,15 +989,15 @@
 	}
 
 	.param-label {
-		font-size: 9px;
+		font-size: var(--text-panel-label);
 		font-weight: 700;
-		letter-spacing: 0.12em;
-		color: #555;
+		letter-spacing: 0.1em;
+		color: var(--text-muted);
 	}
 
 	.param-value {
-		font-size: 10px;
-		color: #555;
+		font-size: var(--text-panel-body);
+		color: var(--text-muted);
 		font-variant-numeric: tabular-nums;
 	}
 
@@ -964,29 +1009,39 @@
 	}
 
 	.toggle-pill {
-		background: #1e1e1e;
-		border: 1px solid #333;
+		background: var(--bg-muted);
+		border: 1px solid var(--border-default);
 		border-radius: 4px;
-		padding: 4px 12px;
-		font-size: 9px;
+		padding: 4px 10px;
+		font-size: var(--text-panel-label);
 		font-weight: 700;
 		letter-spacing: 0.1em;
-		color: #555;
+		color: var(--text-muted);
 		cursor: pointer;
 		font-family: inherit;
-		transition: all 0.15s;
+		transition:
+			background var(--transition-fast),
+			border-color var(--transition-fast),
+			color var(--transition-fast);
 	}
-	.toggle-pill.on { background: #fff; color: #000; border-color: #fff; }
+	.toggle-pill.on {
+		background: var(--bg-light);
+		color: var(--text-on-light);
+		border-color: var(--bg-light);
+	}
+	.toggle-pill:focus-visible {
+		border-color: var(--border-strong);
+	}
 
 	.param-select {
 		width: 100%;
-		background: #1e1e1e;
-		border: 1px solid #333;
+		background: var(--bg-muted);
+		border: 1px solid var(--border-default);
 		border-radius: 4px;
-		color: #bbb;
-		font-size: 10px;
+		color: var(--text-secondary);
+		font-size: var(--text-panel-body);
 		font-family: inherit;
-		padding: 6px 8px;
+		padding: 5px 8px;
 		cursor: pointer;
 	}
 
@@ -1007,17 +1062,17 @@
 	}
 
 	.color-hex {
-		font-size: 10px;
-		color: #555;
+		font-size: var(--text-panel-body);
+		color: var(--text-muted);
 		letter-spacing: 0.05em;
 	}
 
 	.hint {
-		color: #2e2e2e;
-		font-size: 10px;
-		letter-spacing: 0.1em;
+		color: var(--text-faint);
+		font-size: var(--text-panel-label);
+		letter-spacing: 0.08em;
 		text-align: center;
-		padding: 16px;
+		padding: var(--space-4);
 	}
 
 	.layers-list::-webkit-scrollbar,

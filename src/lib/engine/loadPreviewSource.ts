@@ -1,4 +1,4 @@
-import { previewSourceUrl } from './effectPreviewSources';
+import { previewSourceCandidates } from './effectPreviewSources';
 import { createFallbackPreviewImage } from './previewImage';
 
 function loadImageElement(src: string): Promise<HTMLImageElement> {
@@ -10,12 +10,14 @@ function loadImageElement(src: string): Promise<HTMLImageElement> {
 	});
 }
 
-/** Load curated static source, or procedural fallback if the asset is missing. */
+/** Load curated static source (webp → photo → svg), or procedural fallback. */
 export async function loadPreviewSourceImage(effectId: string): Promise<HTMLImageElement> {
-	const url = previewSourceUrl(effectId);
-	try {
-		return await loadImageElement(url);
-	} catch {
-		return createFallbackPreviewImage(effectId);
+	for (const url of previewSourceCandidates(effectId)) {
+		try {
+			return await loadImageElement(url);
+		} catch {
+			// try next format
+		}
 	}
+	return createFallbackPreviewImage(effectId);
 }

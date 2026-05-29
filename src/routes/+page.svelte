@@ -8,8 +8,9 @@
 	import PresetMenu from '$lib/components/PresetMenu.svelte';
 	import LanguageMenu from '$lib/components/LanguageMenu.svelte';
 	import { i18n } from '$lib/i18n';
-	import { sourceImage, imageSize, activeLayerIndex, removeEffect } from '$lib/stores/editor';
+	import { sourceImage, imageSize, activeLayerIndex, removeEffect, loadImageFile } from '$lib/stores/editor';
 	import { canUndo, canRedo, undo, redo } from '$lib/stores/history';
+	import { initSessionAutosave, restoreSession } from '$lib/stores/session';
 	import {
 		showOriginal,
 		effectPanelWidth,
@@ -94,14 +95,21 @@
 	}
 
 	function loadFile(file: File) {
-		if (!file.type.startsWith('image/')) return;
-		const url = URL.createObjectURL(file);
-		const img = new Image();
-		img.onload = () => {
-			sourceImage.set(img);
-			URL.revokeObjectURL(url);
-		};
-		img.src = url;
+		void loadImageFile(file);
+	}
+
+	function onPaste(e: ClipboardEvent) {
+		if (isEditableTarget(e.target)) return;
+		const items = e.clipboardData?.items;
+		if (!items) return;
+		for (const item of items) {
+			if (item.type.startsWith('image/')) {
+				e.preventDefault();
+				const file = item.getAsFile();
+				if (file) void loadImageFile(file);
+				return;
+			}
+		}
 	}
 
 	function onFileChange(e: Event) {
@@ -127,6 +135,9 @@
 	}
 
 	onMount(() => {
+		void restoreSession();
+		initSessionAutosave();
+
 		const onKeyDown = (e: KeyboardEvent) => {
 			if (isEditableTarget(e.target)) return;
 
@@ -164,10 +175,12 @@
 		window.addEventListener('keydown', onKeyDown);
 		window.addEventListener('keyup', onKeyUp);
 		window.addEventListener('blur', onBlur);
+		window.addEventListener('paste', onPaste);
 		return () => {
 			window.removeEventListener('keydown', onKeyDown);
 			window.removeEventListener('keyup', onKeyUp);
 			window.removeEventListener('blur', onBlur);
+			window.removeEventListener('paste', onPaste);
 		};
 	});
 </script>
@@ -264,8 +277,8 @@
 	}
 
 	:global(body) {
-		background: #111;
-		color: #ccc;
+		background: var(--bg-app);
+		color: var(--text-body);
 		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 		overflow: hidden;
 	}
@@ -277,15 +290,14 @@
 		width: 100vw;
 	}
 
-	/* ── Header ─────────────────────────── */
 	.header {
-		height: 48px;
-		background: #161616;
-		border-bottom: 1px solid #2a2a2a;
+		height: var(--header-height);
+		background: var(--bg-surface);
+		border-bottom: 1px solid var(--border-subtle);
 		display: flex;
 		align-items: center;
-		padding: 0 16px;
-		gap: 16px;
+		padding: 0 var(--space-4);
+		gap: var(--space-4);
 		flex-shrink: 0;
 		z-index: 10;
 	}
@@ -293,25 +305,25 @@
 	.logo {
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		font-size: 16px;
+		gap: var(--space-2);
+		font-size: var(--text-lg);
 		font-weight: 700;
-		color: #fff;
+		color: var(--text-primary);
 		letter-spacing: -0.01em;
 		user-select: none;
 	}
 
 	.logo-icon {
 		font-size: 18px;
-		color: #aaa;
+		color: var(--accent);
 	}
 
 	.logo-text {
-		color: #eee;
+		color: var(--text-primary);
 	}
 
 	.logo-dot {
-		color: #888;
+		color: var(--accent);
 	}
 
 	.header-center {
@@ -322,7 +334,7 @@
 
 	.history-btns {
 		display: flex;
-		gap: 4px;
+		gap: var(--space-1);
 	}
 
 	.btn-icon {
@@ -332,17 +344,21 @@
 		width: 32px;
 		height: 32px;
 		background: none;
-		border: 1px solid #333;
-		border-radius: 6px;
-		color: #bbb;
+		border: 1px solid var(--border-default);
+		border-radius: var(--radius-sm);
+		color: var(--text-secondary);
 		cursor: pointer;
-		transition: all 0.15s;
+		transition:
+			background var(--transition-fast),
+			border-color var(--transition-fast),
+			color var(--transition-fast);
 	}
 
-	.btn-icon:hover:not(:disabled) {
-		background: #252525;
-		border-color: #555;
-		color: #fff;
+	.btn-icon:hover:not(:disabled),
+	.btn-icon:focus-visible:not(:disabled) {
+		background: var(--bg-hover);
+		border-color: var(--border-strong);
+		color: var(--text-primary);
 	}
 
 	.btn-icon:disabled {
@@ -353,7 +369,7 @@
 	.header-actions {
 		display: flex;
 		align-items: center;
-		gap: 8px;
+		gap: var(--space-2);
 	}
 
 	.btn-ghost {
@@ -361,26 +377,29 @@
 		align-items: center;
 		gap: 6px;
 		background: none;
-		border: 1px solid #333;
-		border-radius: 6px;
-		padding: 6px 12px;
-		color: #bbb;
-		font-size: 13px;
+		border: 1px solid var(--border-default);
+		border-radius: var(--radius-sm);
+		padding: 6px var(--space-3);
+		color: var(--text-secondary);
+		font-size: var(--text-base);
 		cursor: pointer;
-		transition: all 0.15s;
+		transition:
+			background var(--transition-fast),
+			border-color var(--transition-fast),
+			color var(--transition-fast);
 	}
 
-	.btn-ghost:hover {
-		background: #252525;
-		border-color: #555;
-		color: #fff;
+	.btn-ghost:hover,
+	.btn-ghost:focus-visible {
+		background: var(--bg-hover);
+		border-color: var(--border-strong);
+		color: var(--text-primary);
 	}
 
 	.hidden-input {
 		display: none;
 	}
 
-	/* ── Main ───────────────────────────── */
 	.main {
 		flex: 1;
 		display: flex;
@@ -400,12 +419,7 @@
 		position: relative;
 		flex-shrink: 0;
 		display: flex;
-		border-right: 1px solid #222;
-		transition: width 0.18s ease;
-	}
-
-	.main.resizing-panel .effect-shell {
-		transition: none;
+		border-right: 1px solid var(--border-panel);
 	}
 
 	.panel-resize-handle {
@@ -428,57 +442,59 @@
 		width: 2px;
 		height: 32px;
 		border-radius: 2px;
-		background: #333;
+		background: var(--border-default);
 		opacity: 0;
-		transition: opacity 0.15s, background 0.15s;
+		transition:
+			opacity var(--transition-fast),
+			background var(--transition-fast);
 	}
 
 	.panel-resize-handle:hover::after,
-	.panel-resize-handle.active::after {
+	.panel-resize-handle.active::after,
+	.panel-resize-handle:focus-visible::after {
 		opacity: 1;
-		background: #666;
+		background: var(--text-muted);
 	}
 
-	/* ── Footer ─────────────────────────── */
 	.footer {
-		height: 30px;
-		background: #161616;
-		border-top: 1px solid #2a2a2a;
+		height: var(--footer-height);
+		background: var(--bg-surface);
+		border-top: 1px solid var(--border-subtle);
 		display: flex;
 		align-items: center;
-		padding: 0 16px;
-		gap: 16px;
+		padding: 0 var(--space-4);
+		gap: var(--space-4);
 		flex-shrink: 0;
 	}
 
 	.footer-info {
-		font-size: 11px;
-		color: #555;
+		font-size: var(--text-xs);
+		color: var(--text-muted);
 		font-variant-numeric: tabular-nums;
 		display: flex;
 		align-items: center;
-		gap: 8px;
+		gap: var(--space-2);
 	}
 
 	.preview-badge {
-		font-size: 9px;
+		font-size: var(--text-2xs);
 		font-weight: 700;
 		letter-spacing: 0.08em;
-		color: #666;
-		border: 1px solid #333;
-		border-radius: 3px;
+		color: var(--text-muted);
+		border: 1px solid var(--border-default);
+		border-radius: var(--radius-xs);
 		padding: 1px 5px;
 	}
 
 	.zoom-badge {
-		font-size: 10px;
-		color: #666;
+		font-size: var(--text-2xs);
+		color: var(--text-muted);
 		font-variant-numeric: tabular-nums;
 		min-width: 3ch;
 	}
 
 	.footer-tip {
-		font-size: 11px;
-		color: #3a3a3a;
+		font-size: var(--text-xs);
+		color: var(--text-faint);
 	}
 </style>

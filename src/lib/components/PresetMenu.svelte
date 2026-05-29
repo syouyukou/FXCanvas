@@ -91,19 +91,23 @@
 		align-items: center;
 		gap: 6px;
 		background: none;
-		border: 1px solid #333;
-		border-radius: 6px;
-		padding: 6px 12px;
-		color: #bbb;
-		font-size: 13px;
+		border: 1px solid var(--border-default);
+		border-radius: var(--radius-sm);
+		padding: 6px var(--space-3);
+		color: var(--text-secondary);
+		font-size: var(--text-base);
 		cursor: pointer;
-		transition: all 0.15s;
+		transition:
+			background var(--transition-fast),
+			border-color var(--transition-fast),
+			color var(--transition-fast);
 	}
 
-	.btn-ghost:hover {
-		background: #252525;
-		border-color: #555;
-		color: #fff;
+	.btn-ghost:hover,
+	.btn-ghost:focus-visible {
+		background: var(--bg-hover);
+		border-color: var(--border-strong);
+		color: var(--text-primary);
 	}
 
 	.backdrop {
@@ -138,9 +142,10 @@
 		cursor: pointer;
 	}
 
-	.menu-item:hover {
-		background: #2a2a2a;
-		color: #fff;
+	.menu-item:hover,
+	.menu-item:focus-visible {
+		background: var(--border-subtle);
+		color: var(--text-primary);
 	}
 
 	.menu-item.accent {
@@ -221,7 +226,8 @@
 		font-size: 10px;
 	}
 
-	.delete-btn:hover {
-		color: #f66;
+	.delete-btn:hover,
+	.delete-btn:focus-visible {
+		color: var(--text-danger);
 	}
 </style>
