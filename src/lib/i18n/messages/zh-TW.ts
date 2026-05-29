@@ -99,7 +99,19 @@ export const zhTW: MessageTree = {
 		drag: '拖曳'
 	},
 	effectsPanel: {
-		tabs: { effects: '效果', animated: '動態', favorites: '收藏', presets: '預設' },
+		tabs: {
+			adjust: '微調',
+			effects: '效果',
+			animated: '動態',
+			favorites: '收藏',
+			presets: '預設'
+		},
+		adjustHint: '修正曝光、色調、銳利 — 單層精修。',
+		effectsHint: '堆疊風格效果 — 點擊隨機 · Shift+點擊預設值。',
+		searchAdjust: '搜尋微調…',
+		searchEffects: '搜尋效果…',
+		noAdjust: '找不到微調工具',
+		tooltipAdjust: '{name} — 點擊加入圖層 · Shift+點擊：預設值',
 		animatedSection: '動態效果',
 		animBadge: '動態',
 		expandPanel: '展開效果面板',
@@ -166,6 +178,7 @@ export const zhTW: MessageTree = {
 		hint: '拖曳移動 · 點色票變更顏色'
 	},
 	categories: {
+		adjust: '調整',
 		blur: '模糊',
 		color: '色彩',
 		film: '膠片',
@@ -234,10 +247,32 @@ export const zhTW: MessageTree = {
 		curves: {
 			name: '曲線',
 			params: {
-				shadows: { label: '暗部', hint: '提亮或壓暗暗部。' },
-				darks: { label: '深調', hint: '調整四分之一色調。' },
-				lights: { label: '淺調', hint: '調整四分之三色調。' },
-				highlights: { label: '亮部', hint: '壓縮或拉開高光。' }
+				curves: { label: '曲線' },
+				apply_mode: {
+					label: '套用模式',
+					hint: 'N = 一般，C = 色彩，L = 亮度。'
+				}
+			}
+		},
+		motion_blur: {
+			name: '動態模糊',
+			params: {
+				strength: { label: '強度', hint: '模糊距離（像素）。' },
+				angle: { label: '角度', hint: '方向（度）。' },
+				box: { label: '方塊', hint: '使用方塊模糊而非高斯權重。' },
+				both_directions: { label: '雙向', hint: '以像素為中心雙向模糊。' },
+				enable_mask: { label: '啟用遮罩', hint: '將模糊限制在徑向區域。' },
+				mask_center: { label: '遮罩中心' },
+				mask_radius: { label: '遮罩半徑' },
+				mask_falloff: { label: '遮罩衰減' }
+			}
+		},
+		gradient_map: {
+			name: '漸層對應',
+			params: {
+				gradient: { label: '漸層對應' },
+				grad_shift: { label: '漸層位移', hint: '沿色階滑動漸層對應。' },
+				grad_repeat: { label: '漸層重複', hint: '在明暗範圍內重複漸層。' }
 			}
 		},
 		exposure: {
@@ -306,6 +341,18 @@ export const zhTW: MessageTree = {
 			name: '柔和滲墨',
 			params: { amount: { label: '滲墨' }, radius: { label: '半徑' } }
 		},
+		ink_bleed: {
+			name: '墨水滲開',
+			params: {
+				spread: { label: 'Spread', hint: '暗部墨水向外擴散距離。' },
+				decay: { label: 'Decay', hint: '擴散衰減。' },
+				intensity: { label: 'Intensity' },
+				direction: { label: 'Direction', hint: '主要滲開角度（度）。' },
+				noise_size: { label: 'Noise size', hint: '方向微變化。' },
+				grain: { label: 'Grain', hint: '紙纖維不均勻度。' },
+				grain_size: { label: 'Grain size' }
+			}
+		},
 		paper_grain: {
 			name: '紙紋',
 			params: {
@@ -347,6 +394,49 @@ export const zhTW: MessageTree = {
 				noise: { label: '雜訊' },
 				distortion: { label: '扭曲' },
 				seed: { label: '種子' }
+			}
+		},
+		emboss: {
+			name: '浮雕',
+			params: {
+				scale: { label: 'Scale', hint: '浮雕高度。' },
+				color: { label: 'Color', hint: '保留原色（0 = 單色，100 = 全彩）。' },
+				shadow_intensity: { label: 'Shadow intensity', hint: '陰影強度。' },
+				light_dir: { label: 'Light direction' },
+				light_ani: { label: 'Light angle offset', hint: '光源向量偏移。' },
+				shadow_dir: { label: 'Shadow direction' },
+				lock_shadow: { label: 'Lock shadow', hint: '陰影與光源對稱鎖定。' }
+			}
+		},
+		threshold: {
+			name: '閾值',
+			params: {
+				threshold: { label: 'Threshold', hint: '亮度切點（0–255）。' },
+				edge_mode: { label: 'Edge mode', hint: '對邊緣做閾值而非平塗色調。' },
+				offset_amount: { label: 'Offset amount', hint: '偏移切點。' },
+				distance: { label: 'Distance', hint: '亮度與色彩距離混合。' },
+				outline: { label: 'Outline', hint: '二值邊緣描邊寬度。' },
+				outline_strength: { label: 'Outline strength' },
+				outline_type: { label: 'Outline type' },
+				blend_strength: { label: 'Blend strength' },
+				blend_mode: { label: 'Blend mode' },
+				color: { label: 'Color', hint: '暗部 / 低色調顏色。' }
+			}
+		},
+		modulation_dither: {
+			name: '調變網點',
+			params: {
+				mod_tc: { label: 'Modulation TC', hint: '波形頻率（時間常數）。' },
+				mod_am: { label: 'AM', hint: '振幅調變 — 波形扭曲強度。' },
+				wave_dir: { label: 'Wave direction' },
+				dither_strength: { label: 'Dither strength' },
+				pixel_step: { label: 'Pixel step', hint: '網點格大小（1 = 最細）。' },
+				invert: { label: 'Invert', hint: '負片式色調反轉。' },
+				gamma: { label: 'Gamma' },
+				shadow: { label: 'Shadow' },
+				highlight: { label: 'Highlight' },
+				grid: { label: 'CRT grid', hint: '磷光柵格 + 掃描線。' },
+				grain: { label: 'Grain' }
 			}
 		},
 		crt: {

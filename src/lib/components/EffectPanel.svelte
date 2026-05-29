@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { CATEGORIES } from '../effects/index';
 	import { BUILTIN_PRESETS, BUILTIN_PRESET_GROUPS } from '../presets/builtin';
 	import { isPresetVisibleInPanel } from '../presets/visiblePresets';
-	import { SHOW_FAVORITES_TAB, isAnimatedPanelEffect } from '../effects/visibleEffects';
+	import { SHOW_FAVORITES_TAB, isAdjustPanelEffect, isAnimatedPanelEffect, isCreativePanelEffect } from '../effects/visibleEffects';
 	import { loadBuiltinPreset } from '../stores/presets';
 	import {
 		addEffect,
@@ -22,6 +21,9 @@
 	} from '../stores/view';
 	import type { Effect } from '../engine/renderer';
 	import { i18n } from '$lib/i18n';
+	import AdjustEffectIcon from './AdjustEffectIcon.svelte';
+
+	const CREATIVE_CATEGORIES = ['Color', 'Film', 'Distort', 'Effects'] as const;
 
 	let gridColumns = $derived(effectPanelGridColumns($effectPanelWidth, $effectPanelCollapsed));
 	let compactMode = $derived(effectPanelIsCompact($effectPanelWidth, $effectPanelCollapsed));
@@ -64,6 +66,7 @@
 	}
 
 	const categoryIcons: Record<string, string> = {
+		Adjust: '◧',
 		Blur: '◎',
 		Color: '◑',
 		Film: '▤',
@@ -88,11 +91,19 @@
 	let displayedEffects = $derived(
 		$leftTab === 'favorites'
 			? $filteredEffects.filter((e) => $favorites.has(e.id))
-			: $leftTab === 'effects'
-				? $filteredEffects.filter((e) => !isAnimatedPanelEffect(e.id))
-				: $leftTab === 'animated'
-					? $filteredEffects.filter((e) => isAnimatedPanelEffect(e.id))
-					: []
+			: $leftTab === 'adjust'
+				? $filteredEffects.filter((e) => isAdjustPanelEffect(e.id))
+				: $leftTab === 'effects'
+					? $filteredEffects.filter((e) => isCreativePanelEffect(e.id))
+					: $leftTab === 'animated'
+						? $filteredEffects.filter((e) => isAnimatedPanelEffect(e.id))
+						: []
+	);
+
+	let adjustEffects = $derived(
+		$leftTab === 'adjust' || $leftTab === 'favorites'
+			? displayedEffects.filter((e) => isAdjustPanelEffect(e.id))
+			: []
 	);
 
 	let animatedEffects = $derived(
@@ -100,17 +111,23 @@
 	);
 
 	let staticEffects = $derived(
-		displayedEffects.filter((e) => !isAnimatedPanelEffect(e.id))
+		displayedEffects.filter(
+			(e) => !isAnimatedPanelEffect(e.id) && ($leftTab !== 'effects' || isCreativePanelEffect(e.id))
+		)
+	);
+
+	let showAdjustInList = $derived(
+		$leftTab === 'adjust' || ($leftTab === 'favorites' && adjustEffects.length > 0)
 	);
 
 	let showAnimatedInList = $derived($leftTab === 'animated' || $leftTab === 'favorites');
 
 	let showStaticInList = $derived(
-		$leftTab === 'effects' || $leftTab === 'favorites'
+		$leftTab === 'effects' || ($leftTab === 'favorites' && staticEffects.length > 0)
 	);
 
 	let grouped = $derived(
-		CATEGORIES.reduce(
+		CREATIVE_CATEGORIES.reduce(
 			(acc, cat) => {
 				const items = staticEffects.filter((e) => e.category === cat);
 				if (items.length) acc[cat] = items;
@@ -152,7 +169,14 @@
 	function searchPlaceholder() {
 		if ($leftTab === 'presets') return $i18n.t('effectsPanel.searchPresets');
 		if ($leftTab === 'animated') return $i18n.t('effectsPanel.searchAnimated');
-		return $i18n.t('effectsPanel.search');
+		if ($leftTab === 'adjust') return $i18n.t('effectsPanel.searchAdjust');
+		return $i18n.t('effectsPanel.searchEffects');
+	}
+
+	function adjustTooltip(effect: Effect) {
+		return $i18n.t('effectsPanel.tooltipAdjust', {
+			name: displayEffectName(effect)
+		});
 	}
 
 	let groupedPresets = $derived(
@@ -191,6 +215,9 @@
 	</button>
 
 	<div class="tabs">
+		<button class:active={$leftTab === 'adjust'} onclick={() => leftTab.set('adjust')}>
+			{$i18n.t('effectsPanel.tabs.adjust')}
+		</button>
 		<button class:active={$leftTab === 'effects'} onclick={() => leftTab.set('effects')}>
 			{$i18n.t('effectsPanel.tabs.effects')}
 		</button>
@@ -317,7 +344,54 @@
 			{:else}
 				<p class="empty">{$i18n.t('effectsPanel.noAnimated')}</p>
 			{/if}
+		{:else if $leftTab === 'adjust'}
+			<p class="zone-hint">{$i18n.t('effectsPanel.adjustHint')}</p>
+			{#if adjustEffects.length > 0}
+				<div class="category-group category-group--adjust">
+					<div class="grid grid--adjust">
+						{#each adjustEffects as effect (effect.id)}
+							<button
+								type="button"
+								class="adjust-tile"
+								{...railPointer(displayEffectName(effect))}
+								onclick={(e) => handleEffectClick(effect, e)}
+								title={adjustTooltip(effect)}
+							>
+								<span class="adjust-icon-wrap">
+									<AdjustEffectIcon effectId={effect.id} />
+								</span>
+								<span class="adjust-label">{displayEffectName(effect)}</span>
+							</button>
+						{/each}
+					</div>
+				</div>
+			{:else}
+				<p class="empty">{$i18n.t('effectsPanel.noAdjust')}</p>
+			{/if}
 		{:else}
+			{#if showAdjustInList && adjustEffects.length > 0}
+				<div class="category-group category-group--adjust">
+					<h3 class="category-label category-label--major">
+						{$i18n.t('effectsPanel.tabs.adjust')}
+					</h3>
+					<div class="grid grid--adjust">
+						{#each adjustEffects as effect (effect.id)}
+							<button
+								type="button"
+								class="adjust-tile"
+								{...railPointer(displayEffectName(effect))}
+								onclick={(e) => handleEffectClick(effect, e)}
+								title={adjustTooltip(effect)}
+							>
+								<span class="adjust-icon-wrap">
+									<AdjustEffectIcon effectId={effect.id} />
+								</span>
+								<span class="adjust-label">{displayEffectName(effect)}</span>
+							</button>
+						{/each}
+					</div>
+				</div>
+			{/if}
 			{#if showAnimatedInList && animatedEffects.length > 0}
 				<div class="category-group category-group--animated">
 					<h3 class="category-label category-label--major category-label--animated">
@@ -369,67 +443,74 @@
 				</div>
 			{/if}
 			{#if showStaticInList}
-			{#each Object.entries(grouped) as [cat, effects]}
-				<div class="category-group">
-					<h3 class="category-label category-label--major">
-						{$i18n.categoryName(cat).toUpperCase()}
-					</h3>
-					<div class="grid">
-						{#each effects as effect (effect.id)}
-							<div
-								class="effect-card"
-								{...railPointer(displayEffectName(effect))}
-								onclick={(e) => handleEffectClick(effect, e)}
-								role="button"
-								tabindex="0"
-								onkeydown={(e) =>
-									e.key === 'Enter' && handleEffectClick(effect, e as unknown as MouseEvent)}
-								title={effectTooltip(effect)}
-							>
-								<div class="thumb-wrap">
-									{#if $thumbnails.has(effect.id) && $sourceThumbnails.has(effect.id)}
-										<img
-											class="thumb-img thumb-after"
-											src={$thumbnails.get(effect.id)}
-											alt=""
-											aria-hidden="true"
-										/>
-										<img
-											class="thumb-img thumb-before"
-											src={$sourceThumbnails.get(effect.id)}
-											alt=""
-											aria-hidden="true"
-										/>
-									{:else if $thumbnails.has(effect.id)}
-										<img
-											class="thumb-img"
-											src={$thumbnails.get(effect.id)}
-											alt=""
-											aria-hidden="true"
-										/>
-									{:else}
-										<div class="thumb-placeholder"></div>
-									{/if}
-									<span class="card-name">{displayEffectName(effect)}</span>
-									<button
-										class="fav-star"
-										class:active={$favorites.has(effect.id)}
-										onclick={(e) => {
-											e.stopPropagation();
-											toggleFav(effect.id);
-										}}
-										title={$i18n.t('effectsPanel.favorite')}
-									>
-										{$favorites.has(effect.id) ? '★' : '☆'}
-									</button>
+				{#if $leftTab === 'effects'}
+					<p class="zone-hint">{$i18n.t('effectsPanel.effectsHint')}</p>
+				{/if}
+				{#if Object.keys(grouped).length > 0}
+				{#each Object.entries(grouped) as [cat, effects]}
+					<div class="category-group">
+						<h3 class="category-label category-label--major">
+							{$i18n.categoryName(cat).toUpperCase()}
+						</h3>
+						<div class="grid">
+							{#each effects as effect (effect.id)}
+								<div
+									class="effect-card"
+									{...railPointer(displayEffectName(effect))}
+									onclick={(e) => handleEffectClick(effect, e)}
+									role="button"
+									tabindex="0"
+									onkeydown={(e) =>
+										e.key === 'Enter' && handleEffectClick(effect, e as unknown as MouseEvent)}
+									title={effectTooltip(effect)}
+								>
+									<div class="thumb-wrap">
+										{#if $thumbnails.has(effect.id) && $sourceThumbnails.has(effect.id)}
+											<img
+												class="thumb-img thumb-after"
+												src={$thumbnails.get(effect.id)}
+												alt=""
+												aria-hidden="true"
+											/>
+											<img
+												class="thumb-img thumb-before"
+												src={$sourceThumbnails.get(effect.id)}
+												alt=""
+												aria-hidden="true"
+											/>
+										{:else if $thumbnails.has(effect.id)}
+											<img
+												class="thumb-img"
+												src={$thumbnails.get(effect.id)}
+												alt=""
+												aria-hidden="true"
+											/>
+										{:else}
+											<div class="thumb-placeholder"></div>
+										{/if}
+										<span class="card-name">{displayEffectName(effect)}</span>
+										<button
+											class="fav-star"
+											class:active={$favorites.has(effect.id)}
+											onclick={(e) => {
+												e.stopPropagation();
+												toggleFav(effect.id);
+											}}
+											title={$i18n.t('effectsPanel.favorite')}
+										>
+											{$favorites.has(effect.id) ? '★' : '☆'}
+										</button>
+									</div>
 								</div>
-							</div>
-						{/each}
+							{/each}
+						</div>
 					</div>
-				</div>
-			{/each}
+				{/each}
+				{:else if $leftTab === 'effects'}
+					<p class="empty">{$i18n.t('effectsPanel.noEffects')}</p>
+				{/if}
 			{/if}
-			{#if animatedEffects.length === 0 && Object.keys(grouped).length === 0}
+			{#if $leftTab === 'favorites' && adjustEffects.length === 0 && animatedEffects.length === 0 && Object.keys(grouped).length === 0}
 				<p class="empty">{$i18n.t('effectsPanel.noEffects')}</p>
 			{/if}
 		{/if}
@@ -743,6 +824,116 @@
 		grid-template-columns: repeat(var(--grid-cols, 2), 1fr);
 		gap: 6px;
 		transition: gap var(--transition-fast);
+	}
+
+	.grid--adjust {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: var(--space-1);
+	}
+
+	.compact .grid--adjust {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+
+	.collapsed .grid--adjust {
+		grid-template-columns: 1fr;
+		gap: 4px;
+	}
+
+	.category-group--adjust {
+		margin-bottom: 16px;
+		padding-bottom: 4px;
+		border-bottom: 1px solid var(--border-panel);
+	}
+
+	.zone-hint {
+		margin: 0 2px 10px;
+		font-size: var(--text-panel-label);
+		color: var(--text-faint);
+		line-height: 1.45;
+		letter-spacing: 0.02em;
+	}
+
+	.collapsed .zone-hint {
+		display: none;
+	}
+
+	.adjust-tile {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 4px;
+		padding: 6px 2px 8px;
+		background: none;
+		border: 1px solid transparent;
+		border-radius: var(--radius-sm);
+		cursor: pointer;
+		color: var(--text-muted);
+		font-family: inherit;
+		transition:
+			border-color var(--transition-fast),
+			background var(--transition-fast),
+			color var(--transition-fast);
+	}
+
+	.adjust-tile:hover,
+	.adjust-tile:focus-visible {
+		border-color: var(--border-default);
+		background: var(--bg-raised);
+		color: var(--text-secondary);
+	}
+
+	.adjust-icon-wrap {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 36px;
+		height: 36px;
+		border-radius: var(--radius-sm);
+		background: var(--bg-inset);
+		border: 1px solid var(--border-panel);
+		color: var(--text-secondary);
+		transition:
+			border-color var(--transition-fast),
+			color var(--transition-fast);
+	}
+
+	.adjust-tile:hover .adjust-icon-wrap,
+	.adjust-tile:focus-visible .adjust-icon-wrap {
+		border-color: var(--border-default);
+		color: var(--text-primary);
+	}
+
+	.adjust-label {
+		font-size: var(--text-panel-label);
+		font-weight: 500;
+		letter-spacing: 0.02em;
+		line-height: 1.2;
+		text-align: center;
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		word-break: break-word;
+	}
+
+	.collapsed .adjust-label {
+		display: none;
+	}
+
+	.collapsed .adjust-tile {
+		padding: 4px;
+	}
+
+	.collapsed .adjust-icon-wrap {
+		width: 32px;
+		height: 32px;
+	}
+
+	.compact .adjust-label {
+		font-size: var(--text-panel-label);
 	}
 
 	.effect-card {

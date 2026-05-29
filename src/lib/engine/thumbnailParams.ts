@@ -1,12 +1,11 @@
-import type { GradientStop } from './gradient';
+import type { ParamValue } from './renderer';
 
 /** Showcase values for sidebar GPU thumbnails (stronger than param defaults). */
-export const THUMBNAIL_PARAMS: Record<
-	string,
-	Record<string, number | boolean | string | GradientStop[]>
-> = {
+export const THUMBNAIL_PARAMS: Record<string, Record<string, ParamValue>> = {
 	gaussian_blur: { radius: 12 },
-	curves: { shadows: 0.15, darks: -0.1, lights: 0.08, highlights: -0.2 },
+	curves: { apply_mode: 0 },
+	gradient_map: { grad_shift: 0.12, grad_repeat: 1 },
+	motion_blur: { strength: 24, angle: 15, both_directions: true },
 	sharpen: { amount: 1.6, radius: 1.5, threshold: 0.01 },
 	exposure: { exposure: 0.45 },
 	levels: { shadows: 0.15, midtones: 0.35, highlights: 0.82 },
@@ -14,6 +13,16 @@ export const THUMBNAIL_PARAMS: Record<
 	hue_saturation: { hue: 28, saturation: 0.45 },
 	noise: { amount: 0.55, size: 1.2, chroma: 0.35, shadow: 1, midtone: 0.6, highlight: 0.5 },
 	crt: { scan_intensity: 0.72, curvature: 0.48, rgb_shift: 0.009 },
+	emboss: { scale: 5, color: 25, shadow_intensity: 0.65, shadow_dir: [2.5, -2.5] },
+	threshold: { threshold: 128, blend_strength: 1, blend_mode: 0 },
+	modulation_dither: {
+		mod_tc: 8,
+		mod_am: 0.22,
+		dither_strength: 1.25,
+		invert: 0.65,
+		grid: 0.35,
+		grain: 0.22
+	},
 	duotone: { shadow: '#1a0a3a', highlight: '#ffd166' },
 	vignette: { strength: 1.1, softness: 0.65 },
 	glitch_digital: {
@@ -56,14 +65,13 @@ export const THUMBNAIL_PARAMS: Record<
 		inkBleed: 0.4
 	},
 	soft_bleed: { amount: 0.68, radius: 2.75 },
+	ink_bleed: { spread: 8, intensity: 0.85, grain: 0.45 },
 	paper_grain: { amount: 0.55, scale: 1.2, contrast: 0.35 },
 	print_stamp: { margin: 0.12, fade: 0.14, roughness: 1.2, paperColor: '#f0e6d8' },
 	dither: { pattern: 13, palette: 7, colors: 13, strength: 1.35, gamma: 2.7, pixelstep: 1 },
 	bloom: { threshold: 0.45, softness: 0.15, radius: 14, intensity: 1.15 }
 };
 
-export function getThumbnailParams(
-	effectId: string
-): Record<string, number | boolean | string | GradientStop[]> | undefined {
+export function getThumbnailParams(effectId: string): Record<string, ParamValue> | undefined {
 	return THUMBNAIL_PARAMS[effectId];
 }

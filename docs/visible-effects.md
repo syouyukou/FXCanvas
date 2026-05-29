@@ -1,66 +1,34 @@
 # Visible effects (curated panel)
 
-> **Status:** Temporary — hide uncurated effects from the left **EFFECTS** tab while keeping full registry in code.  
-> **Set on:** 2026-05-29
+> **Product zones:** [product-zones.md](./product-zones.md)
 
-## Shown in panel
+## Panel tabs
 
-### Animated (dedicated section)
+| Tab | Contents | UI |
+|-----|----------|-----|
+| **ADJUST** | Fine-tuning tools | PS-style icon grid |
+| **EFFECTS** | Stackable creative looks | Thumbnail cards + hover compare |
+| **ANIMATED** | Motion on stills | Portrait cards |
+| **PRESETS** | Multi-layer curated stacks | Preset cards |
 
-| Effect ID | Name |
-|-----------|------|
-| `msx_ascii` | MSX ASCII |
+## ADJUST tab (8)
 
-Static-image motion (`u_time` / `animmode`). Shown in the dedicated **ANIMATED** tab (and a compact block at the top of **EFFECTS** when browsing all effects).
+`curves`, `gradient_map`, `exposure`, `levels`, `brightness_contrast`, `sharpen`, `gaussian_blur`, `motion_blur`
 
-### Panel tabs
+## EFFECTS tab (15)
 
-| Tab | Contents |
-|-----|----------|
-| **EFFECTS** | 12 static effects by category + optional animated preview strip |
-| **ANIMATED** | `msx_ascii` only (portrait 3:4 cards) |
-| **PRESETS** | Built-in presets (curated subset) |
-
-### Static (by category, 12)
-
-| Category | Effect ID | Name |
-|----------|-----------|------|
-| Blur | `gaussian_blur` | Gaussian Blur |
-| Color | `hue_saturation` | Hue / Saturation |
-| Color | `duotone` | Duotone |
-| Color | `monochrome` | Monochrome |
-| Film | `noise` | Noise |
-| Film | `rgb_halftone` | RGB Halftone |
-| Film | `paper_grain` | Paper Grain |
-| Distort | `glitch_digital` | Glitch Digital |
-| Distort | `glitch_vhs` | Glitch VHS |
-| Effects | `crt` | CRT Screen |
-| Effects | `star_glow` | Star Glow |
-| Effects | `dither` | Dither |
-
-## Hidden from panel (for now)
-
-| Category | Effect ID |
-|----------|-----------|
-| Blur | `sharpen` |
-| Color | `exposure`, `curves`, `levels`, `brightness_contrast` |
-| Film | `soft_bleed`, `print_stamp` |
-| Distort | `pixelate` |
-| Effects | `vignette`, `bloom` |
-
-Hidden effects can still appear on **existing layers** and in **presets**; they are only omitted from the add-effects grid and search results in the panel.
-
-The **FAVORITES** tab is hidden (`SHOW_FAVORITES_TAB = false` in this file).
-
-## Restore all effects
-
-Edit `VISIBLE_EFFECT_IDS` in `src/lib/effects/visibleEffects.ts`, or replace the filter in `filteredEffects` (`src/lib/stores/editor.ts`) to return all `EFFECTS`.
+| Category | Effect IDs |
+|----------|------------|
+| Color | `hue_saturation`, `duotone`, `monochrome` |
+| Film | `noise`, `rgb_halftone`, `ink_bleed`, `paper_grain` |
+| Distort | `glitch_digital`, `glitch_vhs` |
+| Effects | `crt`, `emboss`, `threshold`, `modulation_dither`, `star_glow`, `dither` |
 
 ## Source of truth
 
 ```ts
 // src/lib/effects/visibleEffects.ts
-export const STATIC_VISIBLE_EFFECT_IDS = [ ... ];
-export const ANIMATED_VISIBLE_EFFECT_IDS = [ 'msx_ascii' ];
-export const VISIBLE_EFFECT_IDS = [ ...STATIC, ...ANIMATED ];
+ADJUST_VISIBLE_EFFECT_IDS
+CREATIVE_VISIBLE_EFFECT_IDS
+ANIMATED_VISIBLE_EFFECT_IDS
 ```

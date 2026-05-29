@@ -98,6 +98,7 @@
 
 	function onPointerDown(e: PointerEvent) {
 		if (!$sourceImage || e.button !== 0) return;
+		if ((e.target as HTMLElement).closest('.media-controls')) return;
 		isPanning = true;
 		panStartX = e.clientX;
 		panStartY = e.clientY;
@@ -193,7 +194,6 @@
 		void $appliedEffects;
 		void $showOriginal;
 		void $needsAnimationUi;
-		void $animation;
 		void $exportSessionActive;
 
 		if ($exportSessionActive) {
@@ -299,8 +299,12 @@
 				<canvas bind:this={canvas}></canvas>
 				{#if $sourceImage && $needsAnimationUi}
 					{@const vid = $sourceImage instanceof HTMLVideoElement ? $sourceImage : null}
-					<div class="media-controls">
+					<div
+						class="media-controls"
+						onpointerdown={(e) => e.stopPropagation()}
+					>
 						<button
+							type="button"
 							class="vc-btn"
 							onclick={() => {
 								if (vid) {
@@ -328,6 +332,7 @@
 							{/if}
 						</button>
 						<button
+							type="button"
 							class="vc-btn"
 							onclick={() => {
 								if (vid) vid.currentTime = 0;

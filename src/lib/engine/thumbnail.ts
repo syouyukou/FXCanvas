@@ -1,6 +1,7 @@
-import type { Effect, EffectParam } from './renderer';
+import type { Effect, EffectParam, ParamValue } from './renderer';
 import { getEffectPasses, hexToRgb } from './renderer';
-import { gradientToUniforms, type GradientStop } from './gradient';
+import { gradientToUniforms, buildGradientLutTextureData, type GradientStop } from './gradient';
+import { buildCurvesTextureData, defaultCurvesData, type CurvesData } from './curve';
 import { getThumbnailParams } from './thumbnailParams';
 
 export const THUMB_SIZE = 256;
@@ -47,21 +48,53 @@ function link(gl: WebGL2RenderingContext, vert: string, frag: string): WebGLProg
 function setEffectParams(
 	gl: WebGL2RenderingContext,
 	prog: WebGLProgram,
+	effectId: string,
 	params: EffectParam[],
-	overrides?: Record<string, number | boolean | string | GradientStop[]>
+	overrides?: Record<string, ParamValue>
 ): void {
 	for (const p of params) {
 		const val = overrides?.[p.name] ?? p.default;
 		if (p.type === 'gradient') {
-			const { colors, positions } = gradientToUniforms(val as GradientStop[]);
-			const names = ['u_grad_0', 'u_grad_1', 'u_grad_2'] as const;
-			const posNames = ['u_grad_p0', 'u_grad_p1', 'u_grad_p2'] as const;
-			for (let i = 0; i < 3; i++) {
-				const loc = gl.getUniformLocation(prog, names[i]);
-				if (loc) gl.uniform3f(loc, colors[i][0], colors[i][1], colors[i][2]);
-				const pLoc = gl.getUniformLocation(prog, posNames[i]);
-				if (pLoc) gl.uniform1f(pLoc, positions[i]);
+			if (effectId === 'gradient_map') {
+				const pixels = buildGradientLutTextureData(val as GradientStop[]);
+				const tex = gl.createTexture()!;
+				gl.activeTexture(gl.TEXTURE1);
+				gl.bindTexture(gl.TEXTURE_2D, tex);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+				const loc = gl.getUniformLocation(prog, 'u_grad_lut');
+				if (loc) gl.uniform1i(loc, 1);
+				gl.deleteTexture(tex);
+			} else {
+				const { colors, positions } = gradientToUniforms(val as GradientStop[]);
+				const names = ['u_grad_0', 'u_grad_1', 'u_grad_2'] as const;
+				const posNames = ['u_grad_p0', 'u_grad_p1', 'u_grad_p2'] as const;
+				for (let i = 0; i < 3; i++) {
+					const loc = gl.getUniformLocation(prog, names[i]);
+					if (loc) gl.uniform3f(loc, colors[i][0], colors[i][1], colors[i][2]);
+					const pLoc = gl.getUniformLocation(prog, posNames[i]);
+					if (pLoc) gl.uniform1f(pLoc, positions[i]);
+				}
 			}
+			continue;
+		}
+		if (p.type === 'curve') {
+			const curveData = (val as CurvesData) ?? defaultCurvesData();
+			const pixels = buildCurvesTextureData(curveData);
+			const tex = gl.createTexture()!;
+			gl.activeTexture(gl.TEXTURE1);
+			gl.bindTexture(gl.TEXTURE_2D, tex);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 4, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+			const loc = gl.getUniformLocation(prog, 'u_curve_lut');
+			if (loc) gl.uniform1i(loc, 1);
+			gl.deleteTexture(tex);
 			continue;
 		}
 		const loc = gl.getUniformLocation(prog, 'u_' + p.name);
@@ -70,6 +103,9 @@ function setEffectParams(
 		else if (p.type === 'color') {
 			const [r, g, b] = hexToRgb(val as string);
 			gl.uniform3f(loc, r, g, b);
+		} else if (p.type === 'vec2') {
+			const v = val as [number, number];
+			gl.uniform2f(loc, v[0], v[1]);
 		} else gl.uniform1f(loc, val as number);
 	}
 }
@@ -177,9 +213,7 @@ export class ThumbnailRenderer {
 		return this.canvas.toDataURL('image/jpeg', 0.82);
 	}
 
-	private resolveThumbnailParams(
-		effect: Effect
-	): Record<string, number | boolean | string | GradientStop[]> | undefined {
+	private resolveThumbnailParams(effect: Effect): Record<string, ParamValue> | undefined {
 		return effect.thumbnailParams ?? getThumbnailParams(effect.id);
 	}
 
@@ -219,7 +253,7 @@ export class ThumbnailRenderer {
 			}
 			const resLoc = gl.getUniformLocation(prog, 'u_resolution');
 			if (resLoc) gl.uniform2f(resLoc, THUMB, THUMB);
-			setEffectParams(gl, prog, effect.params, this.resolveThumbnailParams(effect));
+			setEffectParams(gl, prog, effect.id, effect.params, this.resolveThumbnailParams(effect));
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
 			if (!isLast) {

@@ -1,6 +1,8 @@
 import type { Effect } from '../engine/renderer';
 import { DEFAULT_STAR_GLOW_GRADIENT } from '../engine/gradient';
 import { CURVES_EFFECT } from './curves';
+import { GRADIENT_MAP_EFFECT } from './gradient_map';
+import { MOTION_BLUR_EFFECT } from './motion_blur';
 import { DITHER_EFFECT } from './dither';
 import { EXPOSURE_EFFECT } from './exposure';
 import { SHARPEN_EFFECT } from './sharpen';
@@ -10,6 +12,10 @@ import { PAPER_GRAIN_EFFECT } from './paper_grain';
 import { PRINT_STAMP_EFFECT } from './print_stamp';
 import { RGB_HALFTONE_EFFECT } from './rgb_halftone';
 import { SOFT_BLEED_EFFECT } from './soft_bleed';
+import { EMBOSS_EFFECT } from './emboss';
+import { THRESHOLD_EFFECT } from './threshold';
+import { INK_BLEED_EFFECT } from './ink_bleed';
+import { MODULATION_DITHER_EFFECT } from './modulation_dither';
 import { MSX_ASCII } from './msx_ascii';
 
 const HEADER = `#version 300 es
@@ -51,12 +57,17 @@ void main() {
 }`;
 
 export const EFFECTS: Effect[] = [
-	// ─── BLUR ───────────────────────────────────────────────
+	// ─── ADJUST (effect.app basic toolkit) ──────────────────
+	CURVES_EFFECT,
+	GRADIENT_MAP_EFFECT,
+	MOTION_BLUR_EFFECT,
+	EXPOSURE_EFFECT,
+	LEVELS_EFFECT,
 	SHARPEN_EFFECT,
 	{
 		id: 'gaussian_blur',
 		name: 'Gaussian Blur',
-		category: 'Blur',
+		category: 'Adjust',
 		enabled: true,
 		params: [
 			{
@@ -76,15 +87,11 @@ export const EFFECTS: Effect[] = [
 		]
 	},
 
-	// ─── COLOR ──────────────────────────────────────────────
-	EXPOSURE_EFFECT,
-	CURVES_EFFECT,
-	LEVELS_EFFECT,
-
+	// ─── COLOR (non-adjust) ─────────────────────────────────
 	{
 		id: 'brightness_contrast',
 		name: 'Brightness / Contrast',
-		category: 'Color',
+		category: 'Adjust',
 		enabled: true,
 		params: [
 			{
@@ -443,6 +450,10 @@ void main() {
 }`
 	},
 
+	EMBOSS_EFFECT,
+	THRESHOLD_EFFECT,
+	MODULATION_DITHER_EFFECT,
+
 	// ─── STAR GLOW (effect.app parity) ───────────────────────
 	{
 		id: 'star_glow',
@@ -592,6 +603,7 @@ void main() {
 
 	// ─── PRINT / FILM (effect.app Vintage print family) ─────
 	RGB_HALFTONE_EFFECT,
+	INK_BLEED_EFFECT,
 	SOFT_BLEED_EFFECT,
 	PAPER_GRAIN_EFFECT,
 	PRINT_STAMP_EFFECT,
@@ -654,7 +666,7 @@ void main() {
 ];
 
 /** Category display order (effect.app-style section headers). */
-export const CATEGORY_ORDER = ['Blur', 'Color', 'Film', 'Distort', 'Effects'] as const;
+export const CATEGORY_ORDER = ['Adjust', 'Blur', 'Color', 'Film', 'Distort', 'Effects'] as const;
 
 export const CATEGORIES = CATEGORY_ORDER.filter((cat) =>
 	EFFECTS.some((e) => e.category === cat)

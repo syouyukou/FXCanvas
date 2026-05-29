@@ -60,7 +60,7 @@ void main() {
 export const SHARPEN_EFFECT: Effect = {
 	id: 'sharpen',
 	name: 'Sharpen',
-	category: 'Blur',
+	category: 'Adjust',
 	enabled: true,
 	params: [
 		{

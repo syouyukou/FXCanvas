@@ -1,19 +1,29 @@
-import type { GradientStop } from './gradient';
-import { gradientToUniforms } from './gradient';
+import {
+	gradientToUniforms,
+	buildGradientLutTextureData,
+	type GradientStop
+} from './gradient';
+import {
+	buildCurvesTextureData,
+	defaultCurvesData,
+	type CurvesData
+} from './curve';
 
-export type { GradientStop };
+export type { GradientStop, CurvesData };
+
+export type ParamValue = number | boolean | string | GradientStop[] | CurvesData | [number, number];
 
 export interface EffectParam {
 	name: string;
 	label: string;
 	/** Plain-language tooltip (shown in UI). */
 	hint?: string;
-	type: 'float' | 'int' | 'bool' | 'color' | 'enum' | 'gradient';
+	type: 'float' | 'int' | 'bool' | 'color' | 'enum' | 'gradient' | 'curve' | 'vec2' | 'segment';
 	min?: number;
 	max?: number;
 	step?: number;
-	default: number | boolean | string | GradientStop[];
-	value?: number | boolean | string | GradientStop[];
+	default: ParamValue;
+	value?: ParamValue;
 	options?: { value: number; label: string }[];
 }
 
@@ -34,13 +44,13 @@ export interface Effect {
 	passes?: EffectPass[];
 	params: EffectParam[];
 	/** Optional per-effect thumbnail param overrides (see thumbnailParams.ts). */
-	thumbnailParams?: Record<string, number | boolean | string | GradientStop[]>;
+	thumbnailParams?: Record<string, ParamValue>;
 	enabled: boolean;
 }
 
 export interface AppliedEffect {
 	effect: Effect;
-	params: Record<string, number | boolean | string | GradientStop[]>;
+	params: Record<string, ParamValue>;
 	/** Stable id for keyframes and layer identity. */
 	layerId?: string;
 	/** Layer blend strength 0–1 (default 1). */
@@ -147,6 +157,8 @@ export class Renderer {
 	private gl: WebGL2RenderingContext;
 	private programs = new Map<string, WebGLProgram>();
 	private uniformCache = new Map<string, WebGLUniformLocation | null>();
+	private curveTextures = new Map<string, WebGLTexture>();
+	private gradLutTextures = new Map<string, WebGLTexture>();
 	private sourceTexture: WebGLTexture | null = null;
 	private fbos: [WebGLFramebuffer, WebGLTexture][] = [];
 	private vao: WebGLVertexArrayObject;
@@ -368,11 +380,49 @@ void main() {
 		}
 	}
 
+	private bindGradientLut(cacheKey: string, prog: WebGLProgram, stops: GradientStop[]): void {
+		const gl = this.gl;
+		let tex = this.gradLutTextures.get(cacheKey);
+		if (!tex) {
+			tex = gl.createTexture()!;
+			this.gradLutTextures.set(cacheKey, tex);
+		}
+		const pixels = buildGradientLutTextureData(stops);
+		gl.activeTexture(gl.TEXTURE1);
+		gl.bindTexture(gl.TEXTURE_2D, tex);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+		const loc = this.getUniform(cacheKey, prog, 'u_grad_lut');
+		if (loc) gl.uniform1i(loc, 1);
+	}
+
+	private bindCurveLut(cacheKey: string, prog: WebGLProgram, data: CurvesData): void {
+		const gl = this.gl;
+		let tex = this.curveTextures.get(cacheKey);
+		if (!tex) {
+			tex = gl.createTexture()!;
+			this.curveTextures.set(cacheKey, tex);
+		}
+		const pixels = buildCurvesTextureData(data);
+		gl.activeTexture(gl.TEXTURE1);
+		gl.bindTexture(gl.TEXTURE_2D, tex);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 4, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+		const loc = this.getUniform(cacheKey, prog, 'u_curve_lut');
+		if (loc) gl.uniform1i(loc, 1);
+	}
+
 	private setEffectParams(
 		cacheKey: string,
 		prog: WebGLProgram,
 		effect: Effect,
-		params: Record<string, number | boolean | string | GradientStop[]>
+		params: Record<string, ParamValue>
 	): void {
 		const gl = this.gl;
 		for (const param of effect.params) {
@@ -381,7 +431,15 @@ void main() {
 			if (param.type === 'gradient') {
 				if (effect.id === 'star_glow') {
 					this.setGradientUniforms(cacheKey, prog, val as GradientStop[]);
+				} else if (effect.id === 'gradient_map') {
+					this.bindGradientLut(`${cacheKey}:grad`, prog, val as GradientStop[]);
 				}
+				continue;
+			}
+
+			if (param.type === 'curve') {
+				const curveData = (val as CurvesData) ?? defaultCurvesData();
+				this.bindCurveLut(`${cacheKey}:curve`, prog, curveData);
 				continue;
 			}
 
@@ -397,8 +455,14 @@ void main() {
 					gl.uniform3f(loc, r, g, b);
 					break;
 				}
+				case 'vec2': {
+					const v = val as [number, number];
+					gl.uniform2f(loc, v[0], v[1]);
+					break;
+				}
 				case 'int':
 				case 'enum':
+				case 'segment':
 				case 'float':
 				default:
 					gl.uniform1f(loc, val as number);
@@ -627,6 +691,8 @@ void main() {
 		const gl = this.gl;
 		this.programs.forEach((p) => gl.deleteProgram(p));
 		if (this.sourceTexture) gl.deleteTexture(this.sourceTexture);
+		this.curveTextures.forEach((t) => gl.deleteTexture(t));
+		this.gradLutTextures.forEach((t) => gl.deleteTexture(t));
 		for (const [fbo, tex] of this.fbos) {
 			gl.deleteFramebuffer(fbo);
 			gl.deleteTexture(tex);

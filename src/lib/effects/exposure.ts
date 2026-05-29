@@ -26,7 +26,7 @@ void main() {
 export const EXPOSURE_EFFECT: Effect = {
 	id: 'exposure',
 	name: 'Exposure',
-	category: 'Color',
+	category: 'Adjust',
 	enabled: true,
 	params: [
 		{

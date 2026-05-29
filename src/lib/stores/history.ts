@@ -1,7 +1,7 @@
 import { get, writable } from 'svelte/store';
 import { EFFECTS } from '../effects/index';
-import type { AppliedEffect, BlendMode } from '../engine/renderer';
-import { cloneGradient, type GradientStop } from '../engine/gradient';
+import type { AppliedEffect, BlendMode, ParamValue } from '../engine/renderer';
+import { cloneParamsRecord } from '../engine/paramValue';
 import { activeLayerIndex, appliedEffects, layerGroups, type LayerGroup } from './editor';
 
 const MAX = 50;
@@ -22,20 +22,14 @@ export interface StackSnapshot {
 		opacity?: number;
 		blendMode?: BlendMode;
 		groupId?: string;
-		params: Record<string, number | boolean | string | GradientStop[]>;
+		params: Record<string, ParamValue>;
 	}[];
 	groups?: LayerGroupSnapshot[];
 	activeIndex: number;
 }
 
-function cloneParams(
-	params: Record<string, number | boolean | string | GradientStop[]>
-): Record<string, number | boolean | string | GradientStop[]> {
-	const out: Record<string, number | boolean | string | GradientStop[]> = {};
-	for (const [k, v] of Object.entries(params)) {
-		out[k] = Array.isArray(v) ? cloneGradient(v as GradientStop[]) : v;
-	}
-	return out;
+function cloneParams(params: Record<string, ParamValue>): Record<string, ParamValue> {
+	return cloneParamsRecord(params);
 }
 
 export function toSnapshot(

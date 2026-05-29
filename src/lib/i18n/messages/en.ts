@@ -102,7 +102,19 @@ export const en: MessageTree = {
 		drag: 'drag'
 	},
 	effectsPanel: {
-		tabs: { effects: 'EFFECTS', animated: 'ANIMATED', favorites: 'FAVORITES', presets: 'PRESETS' },
+		tabs: {
+			adjust: 'ADJUST',
+			effects: 'EFFECTS',
+			animated: 'ANIMATED',
+			favorites: 'FAVORITES',
+			presets: 'PRESETS'
+		},
+		adjustHint: 'Fine-tune exposure, tone, and sharpness — one layer at a time.',
+		effectsHint: 'Stack creative looks — click to randomize, Shift+click for defaults.',
+		searchAdjust: 'Search adjust…',
+		searchEffects: 'Search effects…',
+		noAdjust: 'No adjust tools found',
+		tooltipAdjust: '{name} — Click: add layer · Shift+Click: defaults',
 		animatedSection: 'ANIMATED',
 		animBadge: 'ANIM',
 		expandPanel: 'Expand effects panel',
@@ -169,6 +181,7 @@ export const en: MessageTree = {
 		hint: 'Drag to move · click swatch to change color'
 	},
 	categories: {
+		adjust: 'Adjust',
 		blur: 'Blur',
 		color: 'Color',
 		film: 'Film',
@@ -237,10 +250,32 @@ export const en: MessageTree = {
 		curves: {
 			name: 'Curves',
 			params: {
-				shadows: { label: 'Shadows', hint: 'Lift or crush deep shadows.' },
-				darks: { label: 'Darks', hint: 'Adjust quarter-tone response.' },
-				lights: { label: 'Lights', hint: 'Adjust three-quarter tones.' },
-				highlights: { label: 'Highlights', hint: 'Compress or open highlight roll-off.' }
+				curves: { label: 'Curves' },
+				apply_mode: {
+					label: 'Apply mode',
+					hint: 'N = normal, C = color, L = luminance.'
+				}
+			}
+		},
+		motion_blur: {
+			name: 'Motion Blur',
+			params: {
+				strength: { label: 'Strength', hint: 'Blur distance in pixels.' },
+				angle: { label: 'Angle', hint: 'Direction in degrees.' },
+				box: { label: 'Box', hint: 'Use box blur instead of Gaussian weighting.' },
+				both_directions: { label: 'Both Directions', hint: 'Blur symmetrically around each pixel.' },
+				enable_mask: { label: 'Enable Mask', hint: 'Limit blur to a radial region.' },
+				mask_center: { label: 'Mask Center' },
+				mask_radius: { label: 'Mask Radius' },
+				mask_falloff: { label: 'Mask Falloff' }
+			}
+		},
+		gradient_map: {
+			name: 'Gradient Map',
+			params: {
+				gradient: { label: 'Gradient map' },
+				grad_shift: { label: 'Gradient shift', hint: 'Slide the tonal mapping along the gradient.' },
+				grad_repeat: { label: 'Gradient repeat', hint: 'Repeat the gradient across the tonal range.' }
 			}
 		},
 		exposure: {
@@ -309,6 +344,18 @@ export const en: MessageTree = {
 			name: 'Soft Bleed',
 			params: { amount: { label: 'Bleed' }, radius: { label: 'Radius' } }
 		},
+		ink_bleed: {
+			name: 'Ink Bleed',
+			params: {
+				spread: { label: 'Spread', hint: 'How far ink spreads from dark areas.' },
+				decay: { label: 'Decay', hint: 'Falloff of the spread.' },
+				intensity: { label: 'Intensity' },
+				direction: { label: 'Direction', hint: 'Primary bleed angle (degrees).' },
+				noise_size: { label: 'Noise size', hint: 'Micro variation in spread direction.' },
+				grain: { label: 'Grain', hint: 'Paper fiber unevenness.' },
+				grain_size: { label: 'Grain size' }
+			}
+		},
 		paper_grain: {
 			name: 'Paper Grain',
 			params: {
@@ -350,6 +397,49 @@ export const en: MessageTree = {
 				noise: { label: 'Noise' },
 				distortion: { label: 'Distortion' },
 				seed: { label: 'Seed' }
+			}
+		},
+		emboss: {
+			name: 'Emboss',
+			params: {
+				scale: { label: 'Scale', hint: 'Relief height — how deep the emboss reads.' },
+				color: { label: 'Color', hint: 'Blend original color (0 = mono, 100 = full).' },
+				shadow_intensity: { label: 'Shadow intensity', hint: 'Strength of the shadow side.' },
+				light_dir: { label: 'Light direction' },
+				light_ani: { label: 'Light angle offset', hint: 'Extra light vector offset.' },
+				shadow_dir: { label: 'Shadow direction' },
+				lock_shadow: { label: 'Lock shadow', hint: 'Mirror shadow opposite to light.' }
+			}
+		},
+		threshold: {
+			name: 'Threshold',
+			params: {
+				threshold: { label: 'Threshold', hint: 'Brightness cutoff (0–255).' },
+				edge_mode: { label: 'Edge mode', hint: 'Threshold Sobel edges instead of flat tones.' },
+				offset_amount: { label: 'Offset amount', hint: 'Shift the threshold level.' },
+				distance: { label: 'Distance', hint: 'Mix luminance vs color-distance metric.' },
+				outline: { label: 'Outline', hint: 'Outline width at binary edges.' },
+				outline_strength: { label: 'Outline strength' },
+				outline_type: { label: 'Outline type' },
+				blend_strength: { label: 'Blend strength' },
+				blend_mode: { label: 'Blend mode' },
+				color: { label: 'Color', hint: 'Shadow / low tone color.' }
+			}
+		},
+		modulation_dither: {
+			name: 'Modulation Dither',
+			params: {
+				mod_tc: { label: 'Modulation TC', hint: 'Wave frequency (time constant).' },
+				mod_am: { label: 'AM', hint: 'Amplitude modulation — wave distortion strength.' },
+				wave_dir: { label: 'Wave direction' },
+				dither_strength: { label: 'Dither strength' },
+				pixel_step: { label: 'Pixel step', hint: 'Dither cell size (1 = finest).' },
+				invert: { label: 'Invert', hint: 'Negative-like tonal inversion.' },
+				gamma: { label: 'Gamma' },
+				shadow: { label: 'Shadow' },
+				highlight: { label: 'Highlight' },
+				grid: { label: 'CRT grid', hint: 'Phosphor aperture grille + scanlines.' },
+				grain: { label: 'Grain' }
 			}
 		},
 		crt: {

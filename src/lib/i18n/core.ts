@@ -26,6 +26,7 @@ function bilingual(en: string, zh: string): string {
 }
 
 function categorySlug(category: string): string {
+	if (category === 'Adjust') return 'adjust';
 	if (category === 'Blur') return 'blur';
 	if (category === 'Color') return 'color';
 	if (category === 'Film') return 'film';

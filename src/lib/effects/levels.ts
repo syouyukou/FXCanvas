@@ -34,7 +34,7 @@ void main() {
 export const LEVELS_EFFECT: Effect = {
 	id: 'levels',
 	name: 'Levels',
-	category: 'Color',
+	category: 'Adjust',
 	enabled: true,
 	params: [
 		{

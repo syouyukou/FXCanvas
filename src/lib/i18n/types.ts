@@ -5,6 +5,7 @@ export type MessageTree = {
 };
 
 export const CATEGORY_SLUG: Record<string, string> = {
+	Adjust: 'adjust',
 	Blur: 'blur',
 	Color: 'color',
 	Film: 'film',

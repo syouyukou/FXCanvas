@@ -29,6 +29,9 @@
 		GLITCH_VHS_PRESETS
 	} from '../effects/glitch';
 	import GradientMapParam from './GradientMapParam.svelte';
+	import CurveEditor from './CurveEditor.svelte';
+	import XYPad from './XYPad.svelte';
+	import type { CurvesData } from '../engine/curve';
 	import { i18n } from '$lib/i18n';
 	import { animation } from '../stores/animation';
 	import { hasKeyframeAt, toggleActiveParamKeyframe, OPACITY_PARAM } from '../stores/keyframes';
@@ -560,10 +563,15 @@
 		</div>
 		<div class="params-list">
 			{#each active.effect.params as param}
+				{#if active.effect.id === 'curves' && param.name === 'apply_mode'}
+					<!-- rendered inside CurveEditor -->
+				{:else}
 				<div
 					class="param-row"
+					class:param-row--curve={param.type === 'curve'}
 					title={$i18n.paramHint(active.effect.id, param.name) ?? param.hint ?? ''}
 				>
+					{#if param.type !== 'curve'}
 					<div class="param-meta">
 						<span class="param-label"
 							>{$i18n.paramLabel(active.effect.id, param.name, param.label).toUpperCase()}</span
@@ -578,17 +586,61 @@
 									onclick={() => toggleParamKeyframe(param.name)}
 								>◆</button>
 							{/if}
-							{#if param.type !== 'gradient'}
+							{#if param.type !== 'gradient' && param.type !== 'vec2'}
 								<span class="param-value">
 									{formatParamValue(param, active.params[param.name], active.effect.id)}
 								</span>
 							{/if}
 						</div>
 					</div>
-					{#if param.type === 'gradient'}
+					{/if}
+					{#if param.type === 'curve'}
+						<CurveEditor
+							value={(active.params[param.name] ?? param.default) as CurvesData}
+							applyMode={Number(active.params.apply_mode ?? 0)}
+							onchange={(data) => {
+								beginParamEdit();
+								updateParam($activeLayerIndex, param.name, data);
+							}}
+							onApplyModeChange={(mode) => {
+								beginParamEdit();
+								updateParam($activeLayerIndex, 'apply_mode', mode);
+							}}
+						/>
+					{:else if param.type === 'gradient'}
 						<GradientMapParam
 							stops={(active.params[param.name] ?? param.default) as GradientStop[]}
 							onchange={(stops) => updateParam($activeLayerIndex, param.name, stops)}
+						/>
+					{:else if param.type === 'segment' && param.options}
+						<div class="segment-row">
+							{#each param.options as opt}
+								<button
+									type="button"
+									class="segment-btn"
+									class:active={(active.params[param.name] ?? param.default) === opt.value}
+									onclick={() => {
+										beginParamEdit();
+										updateParam($activeLayerIndex, param.name, opt.value);
+									}}
+								>
+									{opt.label}
+								</button>
+							{/each}
+						</div>
+					{:else if param.type === 'vec2'}
+						{@const vec = (active.params[param.name] ?? param.default) as [number, number]}
+						<XYPad
+							x={vec[0]}
+							y={vec[1]}
+							minX={param.min ?? 0}
+							maxX={param.max ?? 1}
+							minY={param.min ?? 0}
+							maxY={param.max ?? 1}
+							onchange={(x, y) => {
+								beginParamEdit();
+								updateParam($activeLayerIndex, param.name, [x, y]);
+							}}
 						/>
 					{:else if param.type === 'bool'}
 						<button
@@ -649,6 +701,7 @@
 						/>
 					{/if}
 				</div>
+				{/if}
 			{/each}
 		</div>
 		</div>
@@ -1006,6 +1059,39 @@
 	}
 
 	.param-row { display: flex; flex-direction: column; gap: var(--panel-gap-tight); }
+	.param-row--curve { gap: 0; }
+
+	.segment-row {
+		display: flex;
+		gap: 0;
+		background: var(--bg-inset);
+		border-radius: var(--radius-sm);
+		padding: 2px;
+		width: fit-content;
+	}
+
+	.segment-btn {
+		min-width: 32px;
+		padding: 4px 10px;
+		border: none;
+		background: transparent;
+		color: var(--text-faint);
+		font-family: inherit;
+		font-size: var(--text-panel-body);
+		font-weight: 600;
+		cursor: pointer;
+		border-radius: 4px;
+		transition: background 0.15s, color 0.15s;
+	}
+
+	.segment-btn.active {
+		background: var(--text-primary);
+		color: var(--bg-surface);
+	}
+
+	.segment-btn:hover:not(.active) {
+		color: var(--text-secondary);
+	}
 
 	.param-meta {
 		display: flex;

@@ -141,7 +141,7 @@ const LOFI_VHS_LAYERS: BuiltinLayerDef[] = [
 ];
 
 const FILM_NOIR_LAYERS: BuiltinLayerDef[] = [
-	{ effectId: 'curves', params: { shadows: 0.12, darks: -0.08, lights: 0.05, highlights: -0.18 } },
+	{ effectId: 'curves', params: {} },
 	{ effectId: 'monochrome', params: { mix: 1, tint: '#d8d4cc' } },
 	{
 		effectId: 'noise',
