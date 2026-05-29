@@ -53,4 +53,6 @@ Invert、Posterize、Color Balance、Vibrance、B&W Channel Mixer — 見 produc
 
 ## 待擴充（Effects / Presets）
 
-更多策展 preset（Vintage print、VHS tape…）、Explore 頁與 dock 對齊 effect.app。
+- **Presets（v0.12.0）：** 5 組內建已恢復 — 見 `docs/visible-presets.md`
+- 更多策展 preset（Glitch cyber…）、Explore 頁與 dock 對齊 effect.app
+- **WIP 效果：** thermal、motion_trails、blob_tracker、layer_mix（Effect.app porting）

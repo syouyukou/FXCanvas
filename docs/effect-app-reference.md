@@ -601,7 +601,7 @@ flowchart LR
 
 ## 與本專案（FXCanvas）對照
 
-> 最後更新：2026-05-30（v0.11.1）
+> 最後更新：2026-05-30（**v0.12.0**）
 
 | 功能 | Effect.app | FXCanvas |
 |------|------------|----------|
@@ -609,10 +609,11 @@ flowchart LR
 | 媒體類型 | 圖片 + 影片 | 圖片 + 影片 |
 | 特效堆疊 Layers | ✅ | ✅ |
 | 圖層複製 / 顯示隱藏 | ✅ | ✅ duplicate + eye toggle |
-| 左側特效面板 | EXPLORE / EFFECTS / PRESETS 分頁 + 大分類 | **EFFECTS / ANIMATED / PRESETS** + 分類 |
+| 左側特效面板 | ADJUST / EFFECTS / PRESETS + Explore | **ADJUST / EFFECTS / ANIMATED / PRESETS** 四 tab |
+| ADJUST 微調區 | Curves、Levels、Blur… | ✅ 9 個（含 Curves 編輯器、Gradient Map、DOF） |
 | Explore 瀏覽頁 | ✅ | ✅ `/explore` + `?tab=animated` |
-| 內建 Preset | Vintage print 等策展 stack | ⚠️ 面板空（重寫中；`builtin.ts` 仍可用） |
-| 縮圖 hover 前後對比 | ✅ | ✅ |
+| 內建 Preset | Vintage print 等策展 stack | ✅ **5 組** + GPU 縮圖（v0.12.0 恢復） |
+| 縮圖 hover 前後對比 | ✅ | ✅（EFFECTS + PRESETS） |
 | Canvas 原圖對比 | Media preview On/Off | ✅ 按住 Space 顯示原圖 |
 | Canvas 縮放 / 平移 | ✅ | ✅ 滾輪縮放 + 拖曳平移 + 雙擊重置 |
 | Undo / Redo | ✅（Version history 雲端） | ✅ 本機 stack 歷史（⌘Z / ⌘⇧Z，最多 50 步） |
@@ -621,10 +622,12 @@ flowchart LR
 | 匯出 MP4 / WebM | ✅ | ✅ WebM（Safari 優先）；MP4 視瀏覽器 |
 | 動畫 / Keyframes | ✅ Animate 方案 | ✅ 基礎：Timeline + ◆ keyframe + 插值 |
 | 程序動畫 shader | ✅ 多效果 | ⚠️ 僅 **MSX ASCII**（`u_time` / `animmode`） |
-| Exposure / Levels / Dither | ✅ | ✅（部分隱藏於面板，仍可在圖層使用） |
-| 真・誤差擴散 Dither | ✅ Pro | ❌（ordered + serpentine 近似） |
-| Bloom / CRT / Glitch 等 | ✅ | ✅ 18+ 種特效（面板精選 12 靜態 + 1 動態） |
-| Session 自動存檔 | — | ✅ 圖片 stack + **keyframes**（IndexedDB）；影片不存 |
+| Curves / Gradient Map | ✅ | ✅ v0.12.0 ADJUST tab |
+| Dither Pro | ✅ | ✅ Dither Pro shader（ordered + serpentine；非真 FS） |
+| 真・誤差擴散 Dither | ✅ Pro | ❌ |
+| Emboss / Threshold / Ink Bleed | ✅ | ✅ v0.12.0 EFFECTS tab |
+| Bloom / CRT / Glitch 等 | ✅ | ✅ 面板 **9 ADJUST + 15 EFFECTS + 1 ANIMATED** |
+| Session 自動存檔 | — | ✅ 圖片 stack + keyframes + sourceCredit；影片不存 |
 | Favorites 持久化 | ✅ 帳號 | ⚠️ localStorage（分Tab 暫隱） |
 | 帳號 / 訂閱 / 浮水印 | ✅ | ❌ |
 | Figma / Chrome 整合 | ✅ | ❌ |
@@ -637,10 +640,10 @@ flowchart LR
 | P0 | Vercel Git 自動部署 | push 後需手動 `vercel deploy --prod` |
 | P1 | Keyframe 時間軸拖曳編輯 | 僅 playhead ◆ 切換 |
 | P1 | 更多 ANIMATED 效果 | Glitch VHS / CRT 加 `u_time` |
-| P1 | CI smoke 覆蓋 v0.11 功能 | 已補 ANIMATED / Explore / Timeline |
+| P1 | Effect.app porting 第二波 | WIP：thermal、motion_trails、blob_tracker、layer_mix |
+| P1 | CI smoke / scenario | ✅ 四 tab + PRESETS（v0.12.0） |
 | P2 | 影片 session 存檔 | 目前 skip |
 | P2 | PNG 序列動畫匯出 | 僅 WebM/MP4 |
-| P2 | PRESETS 面板策展 | `VISIBLE_PRESET_IDS = []` |
 | P3 | 真・Floyd-Steinberg dither | CPU / compute pass |
 | P3 | Canva / Figma 外掛 | 未開始 |
 
