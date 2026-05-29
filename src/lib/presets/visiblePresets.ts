@@ -1,9 +1,14 @@
 /**
- * Curated subset shown in the PRESETS tab (2026-05-29).
- * Empty while presets are being rewritten — definitions stay in builtin.ts.
- * @see docs/visible-presets.md
+ * Curated subset shown in the PRESETS tab.
+ * @see docs/visible-presets.md · docs/mvp-baseline.md
  */
-export const VISIBLE_PRESET_IDS = [] as const;
+export const VISIBLE_PRESET_IDS = [
+	'vintage_print',
+	'cyanotype',
+	'soft_editorial',
+	'lofi_vhs',
+	'film_noir'
+] as const;
 
 export type VisiblePresetId = (typeof VISIBLE_PRESET_IDS)[number];
 

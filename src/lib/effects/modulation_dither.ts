@@ -17,6 +17,8 @@ uniform vec3 u_shadow;
 uniform vec3 u_highlight;
 uniform float u_grid;
 uniform float u_grain;
+uniform float u_time;
+uniform float u_animate;
 
 float bayer8(vec2 p) {
   p = mod(p, 8.0);
@@ -39,6 +41,8 @@ float hash(vec2 p) {
 vec3 modulatedSample(vec2 uv) {
   float freq = u_mod_tc * 6.28318;
   float amp = u_mod_am * 0.04;
+  float drift = sin(u_time * 1.6) * clamp(u_animate, 0.0, 1.0) * 0.35;
+  freq *= 1.0 + drift;
 
   if (u_wave_dir < 0.5) {
     float wR = sin(uv.y * freq) * amp;
@@ -211,6 +215,17 @@ export const MODULATION_DITHER_EFFECT: Effect = {
 			step: 0.01,
 			default: 0.18,
 			value: 0.18
+		},
+		{
+			name: 'animate',
+			label: 'Animate',
+			hint: 'Drift wave frequency over time.',
+			type: 'float',
+			min: 0,
+			max: 1,
+			step: 0.01,
+			default: 1,
+			value: 1
 		}
 	],
 	fragmentShader: FRAGMENT

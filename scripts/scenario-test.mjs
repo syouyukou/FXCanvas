@@ -92,6 +92,31 @@ function stopServer() {
 	}
 }
 
+const MIN_EFFECT_CARDS = 8;
+const MIN_THUMBS = 8;
+
+async function clickCreativeEffectsTab(page) {
+	await page.locator('.effect-panel .tabs button').nth(1).click();
+}
+
+async function clickPresetsTab(page) {
+	await page.locator('.effect-panel .tabs button').nth(3).click();
+}
+
+async function waitForEffectsPanel(page) {
+	await clickCreativeEffectsTab(page);
+	await page.waitForFunction(
+		(min) => document.querySelectorAll('.effect-panel .effect-card:not(.effect-card--animated)').length >= min,
+		MIN_EFFECT_CARDS,
+		{ timeout: 15000 }
+	);
+	await page.waitForFunction(
+		(min) => document.querySelectorAll('.effect-card .thumb-after').length >= min,
+		MIN_THUMBS,
+		{ timeout: 45000 }
+	);
+}
+
 async function newPage(browser, locale) {
 	const page = await browser.newPage();
 	const errors = [];
@@ -100,16 +125,7 @@ async function newPage(browser, locale) {
 		localStorage.setItem('fxcanvas-locale', lang);
 	}, locale);
 	await page.goto(baseUrl, { waitUntil: 'networkidle', timeout: 25000 });
-	await page.waitForFunction(
-		() => document.querySelectorAll('.effect-panel .effect-card').length >= 10,
-		null,
-		{ timeout: 15000 }
-	);
-	await page.waitForFunction(
-		() => document.querySelectorAll('.effect-card .thumb-after').length >= 8,
-		null,
-		{ timeout: 30000 }
-	);
+	await waitForEffectsPanel(page);
 	return { page, errors };
 }
 
@@ -136,15 +152,11 @@ async function setLocale(page, locale) {
 		location.reload();
 	}, locale);
 	await page.waitForFunction(
-		() => document.querySelectorAll('.effect-panel .effect-card').length >= 10,
+		() => document.querySelector('.effect-panel .tabs button') !== null,
 		null,
 		{ timeout: 15000 }
 	);
-	await page.waitForFunction(
-		() => document.querySelectorAll('.effect-card .thumb-after').length >= 8,
-		null,
-		{ timeout: 30000 }
-	);
+	await waitForEffectsPanel(page);
 }
 
 // ─── Static checks ───────────────────────────────────────────
@@ -350,10 +362,10 @@ async function runScenarios() {
 			fail('PRESETS tab visible');
 		} else {
 			pass('PRESETS tab visible');
-			await clickPanelTab(page, 'PRESETS');
-			const empty = await page.locator('.effect-list .empty').count();
-			if (empty > 0) pass('Builtin presets hidden', 'empty state');
-			else fail('Builtin presets hidden', 'expected empty state');
+			await clickPresetsTab(page);
+			const presetCards = await page.locator('.effect-list .preset-card').count();
+			if (presetCards >= 3) pass('Builtin presets visible', `${presetCards} presets`);
+			else fail('Builtin presets visible', `only ${presetCards}`);
 		}
 
 		if (errors.length === 0) pass('No JS errors (preset group)');
@@ -369,7 +381,11 @@ async function runScenarios() {
 		if (await loadBtn.count()) pass('Header: 載入媒體');
 		else fail('Header: 載入媒體');
 
-		const effectsTab = page.locator('.effect-panel .tabs button').nth(0);
+		const adjustTab = page.locator('.effect-panel .tabs button').nth(0);
+		if ((await adjustTab.textContent())?.includes('微調')) pass('Tab: 微調');
+		else fail('Tab: 微調', await adjustTab.textContent());
+
+		const effectsTab = page.locator('.effect-panel .tabs button').nth(1);
 		if ((await effectsTab.textContent())?.includes('效果')) pass('Tab: 效果');
 		else fail('Tab: 效果', await effectsTab.textContent());
 
@@ -394,11 +410,16 @@ async function runScenarios() {
 		await page.locator('.lang-btn').click();
 		await page.getByRole('option', { name: '繁體中文' }).click();
 		await page.waitForFunction(
-			() => document.querySelector('.effect-panel .tabs button')?.textContent?.includes('效果'),
+			() => {
+				const tabs = [...document.querySelectorAll('.effect-panel .tabs button')].map((b) =>
+					b.textContent?.trim()
+				);
+				return tabs.some((t) => t?.includes('微調')) && tabs.some((t) => t?.includes('效果'));
+			},
 			null,
 			{ timeout: 5000 }
 		);
-		const tabText = await page.locator('.effect-panel .tabs button').nth(0).textContent();
+		const tabText = await page.locator('.effect-panel .tabs button').nth(1).textContent();
 		if (tabText?.includes('效果')) pass('Live switch to 繁體中文', tabText.trim());
 		else fail('Live switch to 繁體中文', tabText ?? '');
 

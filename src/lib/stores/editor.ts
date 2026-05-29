@@ -139,6 +139,10 @@ export const imageSize = writable<{ width: number; height: number }>({ width: 0,
 export const thumbnails = writable<Map<string, string>>(new Map());
 /** Per-effect curated "before" image for sidebar hover preview. */
 export const sourceThumbnails = writable<Map<string, string>>(new Map());
+/** Full-stack preset preview (after) for PRESETS tab. */
+export const presetThumbnails = writable<Map<string, string>>(new Map());
+/** Source image before preset stack (hover compare). */
+export const presetSourceThumbnails = writable<Map<string, string>>(new Map());
 export const searchQuery = writable('');
 export const leftTab = writable<'adjust' | 'effects' | 'animated' | 'favorites' | 'presets'>('effects');
 export const favorites = writable<Set<string>>(loadFavorites());

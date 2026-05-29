@@ -1,7 +1,7 @@
 # Effect.app 參考網站
 
 > 來源：[https://effect.app/](https://effect.app/)  
-> 最後整理：2026-05-29（含 production bundle 技術棧反推）
+> 最後整理：2026-05-30（含 production bundle 技術棧反推；含 WebCodecs 匯出路徑）
 
 ## 目錄
 
@@ -11,6 +11,10 @@
 4. [後端 API / 方案上限 / Bundle](#後端-api-端點bundle-反推)
 5. [產品功能與定價](#產品定位)
 6. [與 FXCanvas 對照](#與本專案fxcanvas對照)
+
+> **FXCanvas 必做基礎清單（P0/P1）：** [mvp-baseline.md](./mvp-baseline.md)  
+> **完整特效 ID + 解密 GLSL：** [effect-app-effects-list.md](./effect-app-effects-list.md) · [`effect-app-shaders/`](./effect-app-shaders/)  
+> **slug → shader → FXCanvas 移植優先級：** [effect-app-porting-priority.md](./effect-app-porting-priority.md)
 
 ---
 
@@ -27,7 +31,7 @@
 | 渲染 | **自研 WebGL2 引擎**（Shadertoy 風格） | `ShaderNode`、`ShaderNodeGroup`、`ImageEffectRenderer` |
 | 特效定義 | **GLSL fragment + uniform 註解** | `mainImage()`、`// uniform float foo // label=...` |
 | 影片 | **HTMLVideoElement / VideoFrame** | texture upload 分支 |
-| 匯出 | **即時錄製**（非 ffmpeg.wasm） | FAQ：依機器實際 FPS 錄製 |
+| 匯出 | **WebCodecs `VideoEncoder` 優先**，失敗則 **MediaRecorder** | bundle：`webcodecsMuxer-*.js`（~519KB）、`captureStream`、analytics `webcodecs_video` / `mediarecorder_*` |
 | 後端 | **REST API**（推測 FastAPI） | `/api/auth/*`、`REGISTER_*` 錯誤碼風格 |
 | 訂閱 | **Lemon Squeezy** | HTML 連結 `app.lemonsqueezy.com`、checkout / billing-portal |
 | 整合 | Figma Plugin、Chrome Extension | `frame-ancestors figma.com`、postMessage OAuth |
@@ -164,7 +168,7 @@ flowchart LR
 
 **Phase 1（對齊 Effect 免費版核心）**：圖層堆疊、即時預覽、preset、undo、靜態匯出 — **FXCanvas 已覆蓋約 70%**。
 
-**Phase 2（Pro 賣點）**：`HTMLVideoElement` → texture、動畫長度、FPS 選擇、`canvas.captureStream()` + `MediaRecorder`。
+**Phase 2（Pro 賣點）**：`HTMLVideoElement` → texture、動畫長度、FPS 選擇；匯出時 **`VideoEncoder`（WebCodecs）+ 獨立 muxer chunk**，不支援則 fallback `canvas.captureStream()` + `MediaRecorder`。
 
 **Phase 3（Animate）**：每個 uniform 的 keyframe track、時間軸 UI、匯出時插值。
 
@@ -270,23 +274,62 @@ flowchart LR
 
 ---
 
-## 前端 Bundle 清單（2026-05-28 build）
+## 影片匯出管線（2026-05-30 bundle 確認）
 
-| Chunk | 職責 |
-|-------|------|
-| `index-*.js` | 主應用（obfuscated） |
-| `ShaderNodeGroup-*.js` | WebGL2 引擎、`ShaderNode`、`ImageEffectRenderer` |
-| `Auth-*.js` | 登入、Modal、API client、Figma postMessage |
-| `Dock-*.js` | Explore dock、lazy 縮圖、hover 放大 |
-| `planLimits-*.js` | `free/pro/animate/ultra` 權限比較 |
-| `pro-*.js` | Pro 相關 UI |
-| `prices-*.js` | 定價 |
-| `getEffectId-*.js` | 特效 ID 對照 |
-| `tooltip-*.js` | Tooltip |
-| `SurveyPanel-*.js` | 問卷 |
-| `nullCheck-*.js` | DOM 工具 |
+```
+逐幀渲染 (WebGL2 + iTime)
+        │
+        ▼
+┌─────────────────────────────┐
+│ typeof VideoEncoder !==     │
+│ 'undefined' 且格式 MP4/WebM │
+└─────────────┬───────────────┘
+              │ yes
+              ▼
+┌─────────────────────────────┐
+│ dynamic import              │
+│ webcodecsMuxer-*.js (~519KB)│
+│ VideoEncoder 編碼 + mux     │
+└─────────────┬───────────────┘
+              │ fail / 不支援
+              ▼
+┌─────────────────────────────┐
+│ canvas.captureStream()      │
+│ MediaRecorder（實際 FPS）   │
+└─────────────────────────────┘
+```
 
-**CSP 重點**：`frame-ancestors` 允許 `https://www.figma.com`（Figma plugin 嵌入）。
+- 啟動前會檢查 `WEBGL2_NOT_AVAILABLE`（與 HTML 內 WebGL2 gate 一致）。
+- Sentry 會區分 `webcodecs_video` vs `mediarecorder` 事件，便於監控匯出失敗率。
+
+---
+
+## 前端 Bundle 清單（2026-05-29 production build）
+
+| Chunk（當前 hash） | 職責 |
+|-------------------|------|
+| `index-U6-EUb5Y.js` (~431KB) | 主應用、匯出、Sentry、WebCodecs lazy load |
+| `ShaderNodeGroup-ClbxQos4.js` (~92KB) | WebGL2 引擎、`ShaderNode`、`ImageEffectRenderer` |
+| `webcodecsMuxer-vzfiK-BB.js` (~519KB) | WebCodecs 影片編碼 / mux（動態 import） |
+| `Auth-Swr-_3UP.js` | 登入、Modal、`fetch('/api/...')`、Figma postMessage |
+| `Dock-9mhlp63-.js` | Explore dock、lazy 縮圖 |
+| `features-Drrf7zVA.js` | `/features` 落地頁（首訪 `/` 會 `replace` 到此） |
+| `planLimits-DIl0aaUJ.js` | `free/pro/animate/ultra` 權限比較 |
+| `pro-Cb3A2uY9.js` | Pro 相關 UI |
+| `prices-DocspJXq.js` | 定價 |
+| `getEffectId-BYq6i50o.js` | 特效 ID 對照 |
+| `masonry-Bh38fb22.js` | Explore 瀑布流布局 |
+| `tooltip-D789i6ZX.js` | Tooltip |
+| `SurveyPanel-abEgfW5f.js` | 問卷 |
+| `nullCheck-DkLdxic9.js` | DOM 工具 |
+
+**CSP 重點**：`frame-ancestors` 允許 `https://www.figma.com`；`script-src` 含 `'wasm-unsafe-eval'`（可能給 codec/wasm 路徑）。
+
+**HTML 行為（非 bundle）**
+
+- 首訪 `/` 且無 UTM 參數 → `location.replace('/features')`（`explore_redirected` localStorage）。
+- 面板寬高：`selector_panel_state`、`anim_panel_state` 寫入 CSS 變數 `--selector-panel-width`、`--anim-panel-height`。
+- 字體：`CommitMono.woff2`；第三方：`GTM-52KNGTRX`、`cdn.effect.app`、`lemonsqueezy`。
 
 ---
 
@@ -294,10 +337,10 @@ flowchart LR
 
 | 項目 | 內容 |
 |------|------|
-| 分析日期 | 2026-05-29 |
-| 來源 | `curl -sI https://effect.app/`、`curl` HTML + `/assets/*.js` |
-| 限制 | JS 經 obfuscation；class 名保留、變數名混淆 |
-| 未含 | 後端語言/資料庫、shader 原始碼 repo、完整 preset API |
+| 分析日期 | 2026-05-30 |
+| 來源 | `curl -sI https://effect.app/`、`curl` HTML + `/assets/*.js`、`strings` 抽離保留字串 |
+| 限制 | JS 經 obfuscation（字串陣列 + 移位解密）；**class 名與 GLSL 模板字串仍明文** |
+| 未含 | 後端語言/資料庫、shader 原始庫原始碼、完整 preset/community API schema |
 
 ---
 

@@ -17,7 +17,8 @@ export const ADJUST_VISIBLE_EFFECT_IDS = [
 	'brightness_contrast',
 	'sharpen',
 	'gaussian_blur',
-	'motion_blur'
+	'motion_blur',
+	'depth_of_field'
 ] as const;
 
 /** Creative / stackable effects (thumbnail grid, EFFECTS tab). */

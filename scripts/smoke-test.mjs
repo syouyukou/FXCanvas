@@ -185,6 +185,28 @@ async function validateDevServerHttp() {
 	}
 }
 
+async function clickPanelTab(page, label) {
+	await page.locator('.effect-panel .tabs button', { hasText: label }).click();
+}
+
+/** Creative EFFECTS tab cards (excludes ADJUST icon tiles). */
+const MIN_EFFECT_CARDS = 8;
+const MIN_THUMBS = 8;
+
+async function waitForEffectsPanel(page) {
+	await clickPanelTab(page, 'EFFECTS');
+	await page.waitForFunction(
+		(min) => document.querySelectorAll('.effect-panel .effect-card:not(.effect-card--animated)').length >= min,
+		MIN_EFFECT_CARDS,
+		{ timeout: 15000 }
+	);
+	await page.waitForFunction(
+		(min) => document.querySelectorAll('.effect-card .thumb-after').length >= min,
+		MIN_THUMBS,
+		{ timeout: 45000 }
+	);
+}
+
 async function thumbDataUrl(page, effectName) {
 	return page
 		.locator('.effect-card', { hasText: effectName })
@@ -225,18 +247,9 @@ async function runPlaywrightSmoke() {
 		if (title.includes('FXCanvas')) pass('Browser title', title);
 		else fail('Browser title', title);
 
-		await page.waitForFunction(
-			() => document.querySelectorAll('.effect-panel .effect-card').length >= 10,
-			null,
-			{ timeout: 15000 }
-		);
-		await page.waitForFunction(
-			() => document.querySelectorAll('.effect-card .thumb-after').length >= 8,
-			null,
-			{ timeout: 30000 }
-		);
+		await waitForEffectsPanel(page);
 		const thumbCount = await page.locator('.effect-card .thumb-after').count();
-		if (thumbCount >= 10) pass('Default effect thumbnails', `${thumbCount} visible`);
+		if (thumbCount >= MIN_THUMBS) pass('Default effect thumbnails', `${thumbCount} visible`);
 		else fail('Default effect thumbnails', `only ${thumbCount}`);
 
 		const ditherCard = page.locator('.effect-card', { hasText: 'Dither' }).first();
@@ -382,7 +395,8 @@ async function runPlaywrightSmoke() {
 		await page.waitForTimeout(300);
 		pass('Glitch VHS preset');
 
-		await page.getByText('Gaussian Blur', { exact: true }).first().click({ modifiers: ['Shift'] });
+		await clickPanelTab(page, 'ADJUST');
+		await page.locator('.adjust-tile', { hasText: 'Gaussian Blur' }).first().click({ modifiers: ['Shift'] });
 		await page.locator('.layer-name', { hasText: 'GAUSSIAN BLUR' }).waitFor({ timeout: 3000 });
 		pass('Gaussian Blur multi-pass');
 

@@ -55,6 +55,8 @@ export const zhTW: MessageTree = {
 	},
 	timeline: {
 		aria: '動畫時間軸',
+		animation: '動畫',
+		off: '關',
 		play: '播放',
 		pause: '暫停',
 		duration: '長度',
@@ -149,6 +151,7 @@ export const zhTW: MessageTree = {
 		webp: 'WebP',
 		webm: 'WebM（動畫）',
 		mp4: 'MP4（影片）',
+		frames: '影格（PNG 序列）',
 		animation: '長度',
 		animationSource: '完整影片（{duration}）',
 		animation5s: '5 秒',
@@ -158,6 +161,7 @@ export const zhTW: MessageTree = {
 		frameRate: '影格率',
 		downloadWebm: '下載 WebM',
 		downloadMp4: '下載 MP4',
+		downloadFrames: '下載影格序列',
 		exporting: '匯出中…',
 		downloadLayers: '下載圖層 PNG 序列',
 		sizeLabel: '{label} — {w} × {h}',
@@ -189,37 +193,50 @@ export const zhTW: MessageTree = {
 	dither: {
 		distance: { rgb: 'RGB', natural: '自然' },
 		patterns: [
-			'Bayer 小格',
-			'Bayer 中格',
-			'Bayer 大格',
-			'網點',
-			'斜線',
-			'藍噪點',
-			'Floyd 風',
-			'Atkinson 風',
-			'交叉線',
-			'雜點',
-			'Sierra 風',
-			'Stucki 風',
-			'半調網點',
-			'細緻印刷'
+			'隨機',
+			'Bayer 16×16',
+			'XOR',
+			'ADD',
+			'Bayer 2×2',
+			'Bayer 4×4',
+			'Bayer 8×8',
+			'橫線網',
+			'直線網',
+			'右斜網',
+			'左斜網',
+			'橫交叉線',
+			'直交叉線',
+			'鋸齒橫 4×4',
+			'鋸齒直 4×4',
+			'鋸齒橫 8×8',
+			'鋸齒直 8×8',
+			'棋盤',
+			'魚網',
+			'圓點 4×4',
+			'圓點 8×8',
+			'半調',
+			'方塊 4×4'
 		],
 		palettes: [
-			'黑白',
-			'灰階',
-			'RGB 量化',
-			'Game Boy',
-			'CGA 四色',
-			'EGA 16 色',
-			'復古印刷',
-			'墨水黑白'
+			'Elevate',
+			'Primaries',
+			'Imperial',
+			'Galaxy',
+			'Ocean',
+			'Sepia',
+			'Neon',
+			'Monochrome',
+			'Wildberry',
+			'Crystals',
+			'Faded',
+			'Sunny'
 		],
 		presets: {
-			'effect-app': '高對比黑白',
-			gameboy: 'Game Boy',
-			'bw-print': '黑白印刷',
-			riso: '復古印刷',
-			ega: 'EGA 復古'
+			'effect-app': 'Imperial（Effect.app）',
+			'mono-print': '高對比黑白',
+			gameboy: '復古四色',
+			halftone: '半調網點',
+			neon: '霓虹'
 		}
 	},
 	glitch: {
@@ -265,6 +282,25 @@ export const zhTW: MessageTree = {
 				mask_center: { label: '遮罩中心' },
 				mask_radius: { label: '遮罩半徑' },
 				mask_falloff: { label: '遮罩衰減' }
+			}
+		},
+		depth_of_field: {
+			name: '景深',
+			params: {
+				center: { label: '對焦中心' },
+				radius: { label: '半徑' },
+				aspect: { label: '長寬拉伸' },
+				mask_rotation: { label: '遮罩旋轉' },
+				falloff: { label: '衰減' },
+				max_radius: { label: '模糊強度' },
+				samples: { label: '取樣數', hint: '越高越細緻、越慢。' },
+				blades: { label: '光圈葉片' },
+				roundness: { label: '葉片圓度' },
+				aperture_rot: { label: '光圈旋轉' },
+				feather: { label: '光圈羽化' },
+				anamorphic: { label: '變形寬銀幕' },
+				catadioptric: { label: '反射鏡頭' },
+				invert_mask: { label: '反轉遮罩', hint: '對焦區外模糊（柔焦邊緣）。' }
 			}
 		},
 		gradient_map: {
@@ -505,36 +541,38 @@ export const zhTW: MessageTree = {
 		vintage_print: {
 			name: '復古印刷',
 			group: '古典繪畫',
-			description: 'RGB 半調套印、柔和滲墨、Riso 紙紋、印刷邊框 — 對齊 effect.app 質感。',
-			layerLabels: [
-				'曲線',
-				'色階',
-				'紙紋掃描',
-				'RGB 網點',
-				'柔和滲墨',
-				'RISO 網點',
-				'紙紋掃描',
-				'印刷邊框',
-				'暗角'
-			]
+			description: 'RGB 套印错位、墨水滲開、印刷留白 — Risograph 質感，不是一般復古濾鏡。',
+			layerLabels: ['色階', '紙紋', 'RGB 網點', '滲墨', '印刷邊框', '暗角']
+		},
+		cyanotype: {
+			name: '藍曬',
+			group: '古典繪畫',
+			description: '普魯士藍曬印、硬剪影 — 冷色化學感，無暖色紙紋。',
+			layerLabels: ['色階', '雙色調', '單色', '門檻', '網點', '暗角']
+		},
+		soft_editorial: {
+			name: '柔光編輯',
+			group: '編輯',
+			description: '霧面漸層 + 邊緣柔焦 — 中心清晰，適合人像。',
+			layerLabels: ['曝光', '色階', '漸層對應', '邊緣模糊', '暗角']
+		},
+		lofi_vhs: {
+			name: 'Lo-fi VHS',
+			group: '復古',
+			description: '家用錄影帶：跳軌、CRT、洋紅暗部 — 動畫設 5 秒。',
+			layerLabels: ['VHS 故障', 'CRT', '雙色調', '顆粒', '暗角']
+		},
+		film_noir: {
+			name: '黑色電影',
+			group: '底片',
+			description: '硬 S 曲線銀調、暗部顆粒、重暗角。',
+			layerLabels: ['曲線', '色階', '單色', '銳利', '顆粒', '暗角']
 		},
 		glitch_cyber: {
 			name: '賽博故障',
 			group: '數位',
 			description: '數位壞檔、霓虹光暈、壓暗暗角。',
 			layerLabels: ['數位故障', '色相/飽和', '光暈', '暗角']
-		},
-		lofi_vhs: {
-			name: 'Lo-fi VHS',
-			group: '復古',
-			description: '舊磁帶、CRT 掃描線、暖色雙色調、顆粒。',
-			layerLabels: ['VHS 故障', 'CRT', '噪點', '雙色調', '暗角']
-		},
-		film_noir: {
-			name: '黑色電影',
-			group: '底片',
-			description: '壓縮曲線、銀色單色、疊加顆粒、重暗角。',
-			layerLabels: ['曲線', '單色', '噪點', '暗角']
 		}
 	}
 };

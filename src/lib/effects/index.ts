@@ -3,6 +3,7 @@ import { DEFAULT_STAR_GLOW_GRADIENT } from '../engine/gradient';
 import { CURVES_EFFECT } from './curves';
 import { GRADIENT_MAP_EFFECT } from './gradient_map';
 import { MOTION_BLUR_EFFECT } from './motion_blur';
+import { DEPTH_OF_FIELD_EFFECT } from './depth_of_field';
 import { DITHER_EFFECT } from './dither';
 import { EXPOSURE_EFFECT } from './exposure';
 import { SHARPEN_EFFECT } from './sharpen';
@@ -61,6 +62,7 @@ export const EFFECTS: Effect[] = [
 	CURVES_EFFECT,
 	GRADIENT_MAP_EFFECT,
 	MOTION_BLUR_EFFECT,
+	DEPTH_OF_FIELD_EFFECT,
 	EXPOSURE_EFFECT,
 	LEVELS_EFFECT,
 	SHARPEN_EFFECT,
@@ -275,6 +277,17 @@ void main() {
 				step: 0.001,
 				default: 0.003,
 				value: 0.003
+			},
+			{
+				name: 'animate',
+				label: 'Animate',
+				hint: 'Drifting RGB shift + scrolling scanlines.',
+				type: 'float',
+				min: 0,
+				max: 1,
+				step: 0.01,
+				default: 1,
+				value: 1
 			}
 		],
 		fragmentShader:
@@ -283,6 +296,8 @@ void main() {
 uniform float u_scan_intensity;
 uniform float u_curvature;
 uniform float u_rgb_shift;
+uniform float u_time;
+uniform float u_animate;
 
 vec2 curveUV(vec2 uv, float curve) {
   uv = uv * 2.0 - 1.0;
@@ -296,10 +311,10 @@ void main() {
     outColor = vec4(0.0, 0.0, 0.0, 1.0);
     return;
   }
-  float r = texture(u_texture, uv + vec2(u_rgb_shift, 0.0)).r;
+  float r = texture(u_texture, uv + vec2(u_rgb_shift + sin(u_time * 2.2) * u_animate * 0.004, 0.0)).r;
   float g = texture(u_texture, uv).g;
-  float b = texture(u_texture, uv - vec2(u_rgb_shift, 0.0)).b;
-  float scan = sin(uv.y * u_resolution.y * 3.14159) * 0.5 + 0.5;
+  float b = texture(u_texture, uv - vec2(u_rgb_shift + sin(u_time * 1.7) * u_animate * 0.004, 0.0)).b;
+  float scan = sin((uv.y + u_time * 0.06 * u_animate) * u_resolution.y * 3.14159) * 0.5 + 0.5;
   scan = mix(1.0, scan, u_scan_intensity);
   outColor = vec4(vec3(r, g, b) * scan, 1.0);
 }`

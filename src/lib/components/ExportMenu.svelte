@@ -4,8 +4,10 @@
 		animation,
 		setAnimationDuration,
 		setAnimationFps,
+		setAnimationMode,
 		type AnimationDuration,
-		type AnimationFps
+		type AnimationFps,
+		type AnimationMode
 	} from '$lib/stores/animation';
 	import {
 		downloadDataUrl,
@@ -19,6 +21,7 @@
 	} from '$lib/engine/export';
 	import {
 		downloadBlob,
+		exportAnimationFrames,
 		exportAnimationVideo,
 		formatDurationLabel,
 		getAnimationExportFilename,
@@ -39,7 +42,7 @@
 	import { i18n, locale } from '$lib/i18n';
 	import { exportSessionActive } from '$lib/stores/exportSession';
 
-	type ExportKind = ExportFormat | VideoExportFormat;
+	type ExportKind = ExportFormat | VideoExportFormat | 'frames';
 
 	let { renderer = null }: { renderer: Renderer | null } = $props();
 
@@ -62,6 +65,8 @@
 		sizeOptions.find((o) => o.id === sizePreset) ?? sizeOptions[0] ?? null
 	);
 	let isVideoExport = $derived(format === 'webm' || format === 'mp4');
+	let isFramesExport = $derived(format === 'frames');
+	let isAnimatedExport = $derived(isVideoExport || isFramesExport);
 
 	let sourceVideo = $derived(
 		$isVideoSource && $sourceImage instanceof HTMLVideoElement ? $sourceImage : null
@@ -101,7 +106,7 @@
 	});
 
 	$effect(() => {
-		if (!isVideoExport) return;
+		if (!isAnimatedExport) return;
 		if (format === 'mp4' && !mp4Supported && webmSupported) format = 'webm';
 		if (format === 'webm' && !webmSupported && mp4Supported) format = 'mp4';
 	});
@@ -128,6 +133,7 @@
 		const sec = Number(value) as AnimationDuration;
 		videoDurationMode = sec;
 		setAnimationDuration(sec);
+		setAnimationMode(sec as AnimationMode);
 	}
 
 	function onFpsChange(value: string) {
@@ -175,6 +181,39 @@
 				sourceVideo
 			);
 			await downloadBlob(blob, getAnimationExportFilename(videoFormat));
+			closeMenu();
+		} catch (err) {
+			exportProgress = err instanceof Error ? err.message : 'Export failed';
+		} finally {
+			exporting = false;
+			exportSessionActive.set(false);
+		}
+	}
+
+	async function downloadFrames() {
+		if (!renderer?.hasImage() || !currentSize || exporting) return;
+		exporting = true;
+		exportSessionActive.set(true);
+		exportProgress = '';
+		try {
+			const frames = await exportAnimationFrames(
+				renderer,
+				$appliedEffects,
+				{
+					duration: exportDurationSec,
+					fps: $animation.fps,
+					width: currentSize.width,
+					height: currentSize.height,
+					loopPeriod: sourceVideo ? undefined : $animation.duration,
+					onProgress: (frame, total) => {
+						exportProgress = `${frame}/${total}`;
+					},
+					resolveAtTime: (time) =>
+						resolveEffectsAtTime($appliedEffects, get(keyframeTracks), time)
+				},
+				sourceVideo
+			);
+			await downloadLayerSequence(frames);
 			closeMenu();
 		} catch (err) {
 			exportProgress = err instanceof Error ? err.message : 'Export failed';
@@ -239,10 +278,11 @@
 					{#if webmSupported}
 						<option value="webm">{$i18n.t('export.webm')}</option>
 					{/if}
+					<option value="frames">{$i18n.t('export.frames')}</option>
 				</select>
 			</div>
 
-			{#if isVideoExport}
+			{#if isAnimatedExport}
 				<div class="export-field">
 					<label class="export-label" for="export-duration">{$i18n.t('export.animation')}</label>
 					<select
@@ -325,6 +365,14 @@
 						: format === 'mp4'
 							? $i18n.t('export.downloadMp4')
 							: $i18n.t('export.downloadWebm')}
+				</button>
+			{:else if isFramesExport}
+				<button
+					class="btn-download"
+					onclick={downloadFrames}
+					disabled={!currentSize || currentSize.tooLarge || exporting}
+				>
+					{exporting ? $i18n.t('export.exporting') : $i18n.t('export.downloadFrames')}
 				</button>
 			{:else}
 				<button class="btn-download" onclick={download} disabled={!currentSize || currentSize.tooLarge}>

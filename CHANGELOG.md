@@ -9,6 +9,17 @@ FXCanvas 版本更新紀錄（對應 [GitHub Releases](https://github.com/syouyu
 3. 建立並 push tag：`git tag vX.Y.Z && git push origin vX.Y.Z`
 4. GitHub Actions 會自動從對應區塊建立 Release
 
+## v0.12.0 — 2026-05-30
+
+- **四區分頁**：EffectPanel 拆分 **ADJUST**（微調）／**EFFECTS**（效果）／**ANIMATED**／**PRESETS**；對齊 Effect.app 產品分區（`docs/product-zones.md`）
+- **ADJUST 微調區**：Curves（曲線編輯器）、Gradient Map、Motion Blur、Depth of Field、Exposure、Levels、Brightness/Contrast、Sharpen、Gaussian Blur
+- **EFFECTS 創意區**：Emboss、Threshold、Ink Bleed、Modulation Dither、Dither Pro 著色器重寫；Glitch VHS / CRT 等維持縮圖卡片
+- **PRESETS 恢復**：內建 5 組一鍵預設（Vintage Print、Cyanotype、Soft Editorial、Lo-fi VHS、Film Noir）與 preset 縮圖
+- 新增 `CurveEditor`、`XYPad`、`AdjustEffectIcon`；curve / vec2 參數型別
+- Timeline / ExportMenu / 動畫匯出流程強化；session 與 editor store 對齊新分區
+- Effect.app 對照與 porting 研究文件（`docs/effect-app-effects-list.md`、shader 解密腳本）
+- Smoke / scenario 測試對齊四 tab 布局與恢復的 PRESETS
+
 ## v0.11.2 — 2026-05-30
 
 - **範例圖 IG 署名列**：固定顯示在作品正下方（隨 canvas 平移）；Illustration 改為 `@dzhannatik` & `@mitya_lyalin` 可點連結

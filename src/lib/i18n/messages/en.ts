@@ -58,6 +58,8 @@ export const en: MessageTree = {
 	},
 	timeline: {
 		aria: 'Animation timeline',
+		animation: 'Animation',
+		off: 'Off',
 		play: 'Play',
 		pause: 'Pause',
 		duration: 'Duration',
@@ -152,6 +154,7 @@ export const en: MessageTree = {
 		webp: 'WebP',
 		webm: 'WebM (animation)',
 		mp4: 'MP4 (video)',
+		frames: 'Frames (PNG sequence)',
 		animation: 'Duration',
 		animationSource: 'Full clip ({duration})',
 		animation5s: '5 seconds',
@@ -161,6 +164,7 @@ export const en: MessageTree = {
 		frameRate: 'Frame rate',
 		downloadWebm: 'Download WebM',
 		downloadMp4: 'Download MP4',
+		downloadFrames: 'Download frames',
 		exporting: 'Exporting…',
 		downloadLayers: 'Download layer PNGs',
 		sizeLabel: '{label} — {w} × {h}',
@@ -192,37 +196,50 @@ export const en: MessageTree = {
 	dither: {
 		distance: { rgb: 'RGB', natural: 'Natural' },
 		patterns: [
+			'Random',
+			'Bayer 16×16',
+			'XOR',
+			'ADD',
 			'Bayer 2×2',
 			'Bayer 4×4',
 			'Bayer 8×8',
+			'Hatch H',
+			'Hatch V',
+			'Hatch R',
+			'Hatch L',
+			'Cross hatch H',
+			'Cross hatch V',
+			'Zigzag H 4×4',
+			'Zigzag V 4×4',
+			'Zigzag H 8×8',
+			'Zigzag V 8×8',
+			'Checkerboard',
+			'Fishnet',
+			'Dot 4×4',
+			'Dot 8×8',
 			'Halftone',
-			'Diagonal',
-			'Blue noise',
-			'Floyd-style',
-			'Atkinson-style',
-			'Cross hatch',
-			'Grain',
-			'Sierra-style',
-			'Stucki-style',
-			'Halftone dots',
-			'Fine print'
+			'Square 4×4'
 		],
 		palettes: [
-			'B&W',
-			'Grayscale',
-			'RGB quantize',
-			'Game Boy',
-			'CGA 4-color',
-			'EGA 16-color',
-			'Risograph',
-			'Ink B&W'
+			'Elevate',
+			'Primaries',
+			'Imperial',
+			'Galaxy',
+			'Ocean',
+			'Sepia',
+			'Neon',
+			'Monochrome',
+			'Wildberry',
+			'Crystals',
+			'Faded',
+			'Sunny'
 		],
 		presets: {
-			'effect-app': 'High-contrast B&W',
-			gameboy: 'Game Boy',
-			'bw-print': 'B&W print',
-			riso: 'Risograph',
-			ega: 'EGA retro'
+			'effect-app': 'Imperial (Effect.app)',
+			'mono-print': 'High-contrast B&W',
+			gameboy: 'Retro 4-color',
+			halftone: 'Halftone',
+			neon: 'Neon'
 		}
 	},
 	glitch: {
@@ -268,6 +285,25 @@ export const en: MessageTree = {
 				mask_center: { label: 'Mask Center' },
 				mask_radius: { label: 'Mask Radius' },
 				mask_falloff: { label: 'Mask Falloff' }
+			}
+		},
+		depth_of_field: {
+			name: 'Depth of Field',
+			params: {
+				center: { label: 'Focus center' },
+				radius: { label: 'Radius' },
+				aspect: { label: 'Aspect stretch' },
+				mask_rotation: { label: 'Mask rotation' },
+				falloff: { label: 'Falloff' },
+				max_radius: { label: 'Blur strength' },
+				samples: { label: 'Samples', hint: 'Higher = smoother bokeh, slower.' },
+				blades: { label: 'Aperture blades' },
+				roundness: { label: 'Blade roundness' },
+				aperture_rot: { label: 'Aperture rotation' },
+				feather: { label: 'Aperture feather' },
+				anamorphic: { label: 'Anamorphic stretch' },
+				catadioptric: { label: 'Catadioptric' },
+				invert_mask: { label: 'Invert mask', hint: 'Blur outside the focus region.' }
 			}
 		},
 		gradient_map: {
@@ -509,36 +545,38 @@ export const en: MessageTree = {
 			name: 'Vintage print',
 			group: 'OLD PAINTING',
 			description:
-				'RGB halftone overprint, soft bleed, Risograph grain, print stamp margin — tuned for effect.app.',
-			layerLabels: [
-				'CURVES',
-				'LEVELS',
-				'PAPER SCAN',
-				'RGB HATCH',
-				'SOFT BLEED',
-				'RISO DITHER',
-				'PAPER SCAN',
-				'PRINT STAMP',
-				'VIGNETTE'
-			]
+				'Misregistered RGB halftone, ink bleed, and print margin — Risograph, not a generic vintage filter.',
+			layerLabels: ['LEVELS', 'PAPER', 'RGB HATCH', 'INK BLEED', 'PRINT STAMP', 'VIGNETTE']
+		},
+		cyanotype: {
+			name: 'Cyanotype',
+			group: 'OLD PAINTING',
+			description: 'Prussian-blue sun print with a hard silhouette — cool chemistry, no warm paper.',
+			layerLabels: ['LEVELS', 'DUOTONE', 'MONO', 'THRESHOLD', 'DITHER', 'VIGNETTE']
+		},
+		soft_editorial: {
+			name: 'Soft editorial',
+			group: 'EDITORIAL',
+			description: 'Matte gradient + edge blur — center stays sharp for portraits.',
+			layerLabels: ['EXPOSURE', 'LEVELS', 'GRAD MAP', 'EDGE BLUR', 'VIGNETTE']
+		},
+		lofi_vhs: {
+			name: 'Lo-fi VHS',
+			group: 'RETRO',
+			description: 'Home camcorder tape: tracking, CRT, magenta shadows — use 5s Animation.',
+			layerLabels: ['GLITCH VHS', 'CRT', 'DUOTONE', 'GRAIN', 'VIGNETTE']
+		},
+		film_noir: {
+			name: 'Film noir',
+			group: 'FILM',
+			description: 'Hard S-curve silver, grain in shadows, heavy vignette.',
+			layerLabels: ['CURVES', 'LEVELS', 'MONO', 'SHARPEN', 'GRAIN', 'VIGNETTE']
 		},
 		glitch_cyber: {
 			name: 'Glitch cyber',
 			group: 'DIGITAL',
 			description: 'Digital corruption, neon bloom, and crushed vignette.',
 			layerLabels: ['GLITCH DIGITAL', 'HUE/SAT', 'BLOOM', 'VIGNETTE']
-		},
-		lofi_vhs: {
-			name: 'Lo-fi VHS',
-			group: 'RETRO',
-			description: 'Worn tape, CRT scanlines, warm duotone, and grain.',
-			layerLabels: ['GLITCH VHS', 'CRT', 'NOISE', 'DUOTONE', 'VIGNETTE']
-		},
-		film_noir: {
-			name: 'Film noir',
-			group: 'FILM',
-			description: 'Crushed curves, silver monochrome, overlay grain, heavy vignette.',
-			layerLabels: ['CURVES', 'MONOCHROME', 'NOISE', 'VIGNETTE']
 		}
 	}
 };

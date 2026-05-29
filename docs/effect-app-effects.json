@@ -1,0 +1,590 @@
+[
+  {
+    "id": "depth-of-field",
+    "name": "Depth of field",
+    "category": "Blur",
+    "filename": "depth-of-field",
+    "archived": false,
+    "alias": null,
+    "preview": "depth-of-field.jpg"
+  },
+  {
+    "id": "circular-blur-1",
+    "name": "Circular blur",
+    "category": "Blur",
+    "filename": [
+      "circular-blur-1",
+      "circular-blur-2",
+      "circular-blur-3",
+      "circular-blur-4"
+    ],
+    "archived": false,
+    "alias": null,
+    "preview": "circular-blur.jpg"
+  },
+  {
+    "id": "gaussian-blur-1",
+    "name": "Gaussian blur",
+    "category": "Blur",
+    "filename": [
+      "gaussian-blur-1",
+      "gaussian-blur-2",
+      "gaussian-blur-3"
+    ],
+    "archived": false,
+    "alias": null,
+    "preview": "gaussian-blur.jpg"
+  },
+  {
+    "id": "motion-blur",
+    "name": "Motion blur",
+    "category": "Blur",
+    "filename": "motion-blur",
+    "archived": false,
+    "alias": null,
+    "preview": "motion-blur.jpg"
+  },
+  {
+    "id": "radial-blur",
+    "name": "Radial blur",
+    "category": "Blur",
+    "filename": "radial-blur",
+    "archived": false,
+    "alias": null,
+    "preview": "radial-blur.jpg"
+  },
+  {
+    "id": "blur-sharpen",
+    "name": "Blur/sharp",
+    "category": "Blur",
+    "filename": "blur-sharpen",
+    "archived": false,
+    "alias": null,
+    "preview": "blur-sharpen.jpg"
+  },
+  {
+    "id": "zoom-blur",
+    "name": "Zoom blur",
+    "category": "Blur",
+    "filename": "zoom-blur",
+    "archived": false,
+    "alias": null,
+    "preview": "zoom-blur.jpg"
+  },
+  {
+    "id": "thermal-1",
+    "name": "Thermal",
+    "category": "Color",
+    "filename": [
+      "thermal-1",
+      "thermal-2",
+      "thermal-3"
+    ],
+    "archived": false,
+    "alias": null,
+    "preview": "thermal.jpg"
+  },
+  {
+    "id": "curves",
+    "name": "Curves",
+    "category": "Color",
+    "filename": "curves",
+    "archived": false,
+    "alias": null,
+    "preview": "curves.jpg"
+  },
+  {
+    "id": "color-balance",
+    "name": "Color balance",
+    "category": "Color",
+    "filename": "color-balance",
+    "archived": false,
+    "alias": null,
+    "preview": "color-balance.jpg"
+  },
+  {
+    "id": "gradient-map",
+    "name": "Gradient map",
+    "category": "Color",
+    "filename": "gradient-map",
+    "archived": false,
+    "alias": null,
+    "preview": "gradient-map.jpg"
+  },
+  {
+    "id": "color-temperature",
+    "name": "Color temperature",
+    "category": "Color",
+    "filename": "color-temperature",
+    "archived": false,
+    "alias": null,
+    "preview": "color-temperature.jpg"
+  },
+  {
+    "id": "dither",
+    "name": "Dither",
+    "category": "Color",
+    "filename": "dither-pro",
+    "archived": false,
+    "alias": "dither",
+    "preview": "dither.jpg"
+  },
+  {
+    "id": "dither",
+    "name": "Dither (archived)",
+    "category": "Color",
+    "filename": "dither",
+    "archived": true,
+    "alias": null,
+    "preview": "dither.jpg"
+  },
+  {
+    "id": "duotone",
+    "name": "Duotone",
+    "category": "Color",
+    "filename": "duotone",
+    "archived": false,
+    "alias": null,
+    "preview": "duotone.jpg"
+  },
+  {
+    "id": "hue-saturation",
+    "name": "Hue/saturation",
+    "category": "Color",
+    "filename": "hue-saturation",
+    "archived": false,
+    "alias": null,
+    "preview": "hue-saturation.jpg"
+  },
+  {
+    "id": "levels",
+    "name": "Levels",
+    "category": "Color",
+    "filename": "levels",
+    "archived": false,
+    "alias": null,
+    "preview": "levels.jpg"
+  },
+  {
+    "id": "exposure",
+    "name": "Exposure",
+    "category": "Color",
+    "filename": "exposure",
+    "archived": false,
+    "alias": null,
+    "preview": "exposure.jpg"
+  },
+  {
+    "id": "monochrome",
+    "name": "Monochrome",
+    "category": "Color",
+    "filename": "monochrome",
+    "archived": false,
+    "alias": null,
+    "preview": "monochrome.jpg"
+  },
+  {
+    "id": "color-matrix",
+    "name": "Color matrix",
+    "category": "Color",
+    "filename": "color-matrix",
+    "archived": false,
+    "alias": null,
+    "preview": "color-matrix.jpg"
+  },
+  {
+    "id": "rgb-gain-gamma",
+    "name": "RGB Gain",
+    "category": "Color",
+    "filename": "rgb-gain-gamma",
+    "archived": false,
+    "alias": null,
+    "preview": "rgb-gain-gamma.jpg"
+  },
+  {
+    "id": "contrast",
+    "name": "Contrast",
+    "category": "Color",
+    "filename": "contrast",
+    "archived": false,
+    "alias": null,
+    "preview": "contrast.jpg"
+  },
+  {
+    "id": "elastic-grid",
+    "name": "Elastic grid",
+    "category": "Distort",
+    "filename": "elastic-grid",
+    "archived": false,
+    "alias": null,
+    "preview": "elastic-grid.jpg"
+  },
+  {
+    "id": "reeded-glass",
+    "name": "Reeded glass",
+    "category": "Distort",
+    "filename": "reeded-glass",
+    "archived": false,
+    "alias": null,
+    "preview": "reeded-glass.jpg"
+  },
+  {
+    "id": "cubify",
+    "name": "Cubify",
+    "category": "Distort",
+    "filename": "cubify",
+    "archived": false,
+    "alias": null,
+    "preview": "cubify.jpg"
+  },
+  {
+    "id": "glitch",
+    "name": "Glitch",
+    "category": "Distort",
+    "filename": "glitch",
+    "archived": false,
+    "alias": null,
+    "preview": "glitch.jpg"
+  },
+  {
+    "id": "perspective",
+    "name": "Perspective",
+    "category": "Distort",
+    "filename": "perspective",
+    "archived": false,
+    "alias": null,
+    "preview": "perspective.jpg"
+  },
+  {
+    "id": "pinch",
+    "name": "Pinch",
+    "category": "Distort",
+    "filename": "pinch",
+    "archived": false,
+    "alias": null,
+    "preview": "pinch.jpg"
+  },
+  {
+    "id": "polar-to-rectangular",
+    "name": "Polar to rectangular",
+    "category": "Distort",
+    "filename": "polar-to-rectangular",
+    "archived": false,
+    "alias": null,
+    "preview": "polar-to-rectangular.jpg"
+  },
+  {
+    "id": "rectangular-to-polar",
+    "name": "Rectangular to polar",
+    "category": "Distort",
+    "filename": "rectangular-to-polar",
+    "archived": false,
+    "alias": null,
+    "preview": "rectangular-to-polar.jpg"
+  },
+  {
+    "id": "ripple",
+    "name": "Ripple",
+    "category": "Distort",
+    "filename": "ripple",
+    "archived": false,
+    "alias": null,
+    "preview": "ripple.jpg"
+  },
+  {
+    "id": "transform",
+    "name": "Transform",
+    "category": "Distort",
+    "filename": "transform",
+    "archived": false,
+    "alias": null,
+    "preview": "transform.jpg"
+  },
+  {
+    "id": "swirl",
+    "name": "Swirl",
+    "category": "Distort",
+    "filename": "swirl",
+    "archived": false,
+    "alias": null,
+    "preview": "swirl.jpg"
+  },
+  {
+    "id": "vhs",
+    "name": "VHS",
+    "category": "Effects",
+    "filename": "vhs",
+    "archived": false,
+    "alias": null,
+    "preview": "vhs.jpg"
+  },
+  {
+    "id": "ascii",
+    "name": "ASCII",
+    "category": "Effects",
+    "filename": "ascii",
+    "archived": false,
+    "alias": null,
+    "preview": "ascii.jpg"
+  },
+  {
+    "id": "halftone-screen",
+    "name": "Halftone screen (archived)",
+    "category": "Effects",
+    "filename": "halftone-screen",
+    "archived": true,
+    "alias": null,
+    "preview": "halftone-screen.jpg"
+  },
+  {
+    "id": "halftone-screen",
+    "name": "Halftone screen",
+    "category": "Effects",
+    "filename": "halftone-screen-v2",
+    "archived": false,
+    "alias": "halftone-screen",
+    "preview": "halftone-screen.jpg"
+  },
+  {
+    "id": "emboss",
+    "name": "Emboss",
+    "category": "Effects",
+    "filename": "emboss",
+    "archived": false,
+    "alias": null,
+    "preview": "emboss.jpg"
+  },
+  {
+    "id": "bloom-1",
+    "name": "Bloom",
+    "category": "Effects",
+    "filename": [
+      "bloom-1",
+      "bloom-2",
+      "bloom-3"
+    ],
+    "archived": false,
+    "alias": null,
+    "preview": "bloom.jpg"
+  },
+  {
+    "id": "star-glow",
+    "name": "Star glow",
+    "category": "Effects",
+    "filename": "star-glow",
+    "archived": false,
+    "alias": null,
+    "preview": "star-glow.jpg"
+  },
+  {
+    "id": "motion-trails-1",
+    "name": "Motion trails",
+    "category": "Effects",
+    "filename": [
+      "motion-trails-1",
+      "motion-trails-2"
+    ],
+    "archived": false,
+    "alias": null,
+    "preview": "motion-trails.jpg"
+  },
+  {
+    "id": "led-screen",
+    "name": "LED screen",
+    "category": "Effects",
+    "filename": "led-screen",
+    "archived": false,
+    "alias": null,
+    "preview": "led-screen.jpg"
+  },
+  {
+    "id": "ntsc-1",
+    "name": "NTSC",
+    "category": "Effects",
+    "filename": [
+      "ntsc-1",
+      "ntsc-2",
+      "ntsc-3"
+    ],
+    "archived": false,
+    "alias": null,
+    "preview": "ntsc.jpg"
+  },
+  {
+    "id": "rgb-shift",
+    "name": "RGB Shift",
+    "category": "Effects",
+    "filename": "rgb-shift",
+    "archived": false,
+    "alias": null,
+    "preview": "rgb-shift.jpg"
+  },
+  {
+    "id": "crt-screen",
+    "name": "CRT screen",
+    "category": "Effects",
+    "filename": "crt-screen",
+    "archived": false,
+    "alias": null,
+    "preview": "crt-screen.jpg"
+  },
+  {
+    "id": "modulation-1",
+    "name": "Modulation",
+    "category": "Effects",
+    "filename": [
+      "modulation-1",
+      "modulation-2"
+    ],
+    "archived": false,
+    "alias": null,
+    "preview": "modulation.jpg"
+  },
+  {
+    "id": "threshold-1",
+    "name": "Threshold",
+    "category": "Effects",
+    "filename": [
+      "threshold-1",
+      "threshold-2",
+      "threshold-3"
+    ],
+    "archived": false,
+    "alias": null,
+    "preview": "threshold.jpg"
+  },
+  {
+    "id": "vignette",
+    "name": "Vignette (archived)",
+    "category": "Effects",
+    "filename": "vignette",
+    "archived": true,
+    "alias": null,
+    "preview": "vignette.jpg"
+  },
+  {
+    "id": "vignette",
+    "name": "Vignette",
+    "category": "Effects",
+    "filename": "vignette-v2",
+    "archived": false,
+    "alias": "vignette",
+    "preview": "vignette.jpg"
+  },
+  {
+    "id": "stripe",
+    "name": "Stripe",
+    "category": "Effects",
+    "filename": "stripe",
+    "archived": false,
+    "alias": null,
+    "preview": "stripe.jpg"
+  },
+  {
+    "id": "noise",
+    "name": "Noise",
+    "category": "Generate",
+    "filename": "noise",
+    "archived": false,
+    "alias": null,
+    "preview": "noise.jpg"
+  },
+  {
+    "id": "ink-bleed",
+    "name": "Ink bleed",
+    "category": "Generate",
+    "filename": "ink-bleed",
+    "archived": false,
+    "alias": null,
+    "preview": "ink-bleed.jpg"
+  },
+  {
+    "id": "paper-scan",
+    "name": "Paper scan",
+    "category": "Generate",
+    "filename": "paper-scan",
+    "archived": false,
+    "alias": null,
+    "preview": "paper-scan.jpg"
+  },
+  {
+    "id": "blob-tracker-1",
+    "name": "Blob Tracker",
+    "category": "Generate",
+    "filename": [
+      "blob-tracker-1",
+      "blob-tracker-2"
+    ],
+    "archived": false,
+    "alias": null,
+    "preview": "blob-tracker.jpg"
+  },
+  {
+    "id": "layer-mix",
+    "name": "Layer Mix (archived)",
+    "category": "Custom",
+    "filename": "layer-mix",
+    "archived": true,
+    "alias": null,
+    "preview": "layer-mix.jpg"
+  },
+  {
+    "id": "layer-mix",
+    "name": "Layer Mix",
+    "category": "Custom",
+    "filename": "layer-mix-curve",
+    "archived": false,
+    "alias": "layer-mix",
+    "preview": "layer-mix.jpg"
+  },
+  {
+    "id": "texture-blur",
+    "name": "Texture Blur",
+    "category": "Custom",
+    "filename": "texture-blur",
+    "archived": false,
+    "alias": null,
+    "preview": "texture-blur.jpg"
+  },
+  {
+    "id": "texture-displacement-1",
+    "name": "Displacement",
+    "category": "Custom",
+    "filename": [
+      "texture-displacement-1",
+      "texture-displacement-2",
+      "texture-displacement-3",
+      "texture-displacement-4"
+    ],
+    "archived": false,
+    "alias": null,
+    "preview": "texture-displacement.jpg"
+  },
+  {
+    "id": "film-vintage",
+    "name": "Vintage Film",
+    "category": "Film",
+    "filename": "film-vintage",
+    "archived": false,
+    "alias": null,
+    "preview": "film-vintage.jpg"
+  },
+  {
+    "id": "film-bw",
+    "name": "Black & White",
+    "category": "Film",
+    "filename": "film-bw",
+    "archived": false,
+    "alias": null,
+    "preview": "film-bw.jpg"
+  },
+  {
+    "id": "film-grain",
+    "name": "Film Grain",
+    "category": "Film",
+    "filename": "film-grain",
+    "archived": false,
+    "alias": null,
+    "preview": "film-grain.jpg"
+  }
+]

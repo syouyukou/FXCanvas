@@ -1,0 +1,402 @@
+[
+  {
+    "shader_path": "Blur/blur-sharpen",
+    "file": "Blur__blur-sharpen.glsl",
+    "bytes": 1732
+  },
+  {
+    "shader_path": "Blur/circular-blur-1",
+    "file": "Blur__circular-blur-1.glsl",
+    "bytes": 998
+  },
+  {
+    "shader_path": "Blur/circular-blur-2",
+    "file": "Blur__circular-blur-2.glsl",
+    "bytes": 1038
+  },
+  {
+    "shader_path": "Blur/circular-blur-3",
+    "file": "Blur__circular-blur-3.glsl",
+    "bytes": 1046
+  },
+  {
+    "shader_path": "Blur/circular-blur-4",
+    "file": "Blur__circular-blur-4.glsl",
+    "bytes": 1054
+  },
+  {
+    "shader_path": "Blur/depth-of-field",
+    "file": "Blur__depth-of-field.glsl",
+    "bytes": 6319
+  },
+  {
+    "shader_path": "Blur/gaussian-blur-1",
+    "file": "Blur__gaussian-blur-1.glsl",
+    "bytes": 1010
+  },
+  {
+    "shader_path": "Blur/gaussian-blur-2",
+    "file": "Blur__gaussian-blur-2.glsl",
+    "bytes": 1011
+  },
+  {
+    "shader_path": "Blur/gaussian-blur-3",
+    "file": "Blur__gaussian-blur-3.glsl",
+    "bytes": 2077
+  },
+  {
+    "shader_path": "Blur/motion-blur",
+    "file": "Blur__motion-blur.glsl",
+    "bytes": 4741
+  },
+  {
+    "shader_path": "Blur/radial-blur",
+    "file": "Blur__radial-blur.glsl",
+    "bytes": 1600
+  },
+  {
+    "shader_path": "Blur/zoom-blur",
+    "file": "Blur__zoom-blur.glsl",
+    "bytes": 1551
+  },
+  {
+    "shader_path": "Color/color-balance",
+    "file": "Color__color-balance.glsl",
+    "bytes": 900
+  },
+  {
+    "shader_path": "Color/color-matrix",
+    "file": "Color__color-matrix.glsl",
+    "bytes": 900
+  },
+  {
+    "shader_path": "Color/color-temperature",
+    "file": "Color__color-temperature.glsl",
+    "bytes": 2180
+  },
+  {
+    "shader_path": "Color/contrast",
+    "file": "Color__contrast.glsl",
+    "bytes": 1359
+  },
+  {
+    "shader_path": "Color/curves",
+    "file": "Color__curves.glsl",
+    "bytes": 2479
+  },
+  {
+    "shader_path": "Color/dither",
+    "file": "Color__dither.glsl",
+    "bytes": 2721
+  },
+  {
+    "shader_path": "Color/dither-pro",
+    "file": "Color__dither-pro.glsl",
+    "bytes": 26948
+  },
+  {
+    "shader_path": "Color/duotone",
+    "file": "Color__duotone.glsl",
+    "bytes": 618
+  },
+  {
+    "shader_path": "Color/exposure",
+    "file": "Color__exposure.glsl",
+    "bytes": 1400
+  },
+  {
+    "shader_path": "Color/gradient-map",
+    "file": "Color__gradient-map.glsl",
+    "bytes": 785
+  },
+  {
+    "shader_path": "Color/hue-saturation",
+    "file": "Color__hue-saturation.glsl",
+    "bytes": 992
+  },
+  {
+    "shader_path": "Color/levels",
+    "file": "Color__levels.glsl",
+    "bytes": 1160
+  },
+  {
+    "shader_path": "Color/monochrome",
+    "file": "Color__monochrome.glsl",
+    "bytes": 741
+  },
+  {
+    "shader_path": "Color/rgb-gain-gamma",
+    "file": "Color__rgb-gain-gamma.glsl",
+    "bytes": 747
+  },
+  {
+    "shader_path": "Color/thermal-1",
+    "file": "Color__thermal-1.glsl",
+    "bytes": 1668
+  },
+  {
+    "shader_path": "Color/thermal-2",
+    "file": "Color__thermal-2.glsl",
+    "bytes": 5332
+  },
+  {
+    "shader_path": "Color/thermal-3",
+    "file": "Color__thermal-3.glsl",
+    "bytes": 1774
+  },
+  {
+    "shader_path": "Custom/layer-mix",
+    "file": "Custom__layer-mix.glsl",
+    "bytes": 8232
+  },
+  {
+    "shader_path": "Custom/layer-mix-curve",
+    "file": "Custom__layer-mix-curve.glsl",
+    "bytes": 7874
+  },
+  {
+    "shader_path": "Custom/texture-blur",
+    "file": "Custom__texture-blur.glsl",
+    "bytes": 4575
+  },
+  {
+    "shader_path": "Custom/texture-displacement-1",
+    "file": "Custom__texture-displacement-1.glsl",
+    "bytes": 2377
+  },
+  {
+    "shader_path": "Custom/texture-displacement-2",
+    "file": "Custom__texture-displacement-2.glsl",
+    "bytes": 908
+  },
+  {
+    "shader_path": "Custom/texture-displacement-3",
+    "file": "Custom__texture-displacement-3.glsl",
+    "bytes": 908
+  },
+  {
+    "shader_path": "Custom/texture-displacement-4",
+    "file": "Custom__texture-displacement-4.glsl",
+    "bytes": 3336
+  },
+  {
+    "shader_path": "Distort/cubify",
+    "file": "Distort__cubify.glsl",
+    "bytes": 2752
+  },
+  {
+    "shader_path": "Distort/elastic-grid",
+    "file": "Distort__elastic-grid.glsl",
+    "bytes": 4530
+  },
+  {
+    "shader_path": "Distort/glitch",
+    "file": "Distort__glitch.glsl",
+    "bytes": 2920
+  },
+  {
+    "shader_path": "Distort/perspective",
+    "file": "Distort__perspective.glsl",
+    "bytes": 3275
+  },
+  {
+    "shader_path": "Distort/pinch",
+    "file": "Distort__pinch.glsl",
+    "bytes": 1304
+  },
+  {
+    "shader_path": "Distort/polar-to-rectangular",
+    "file": "Distort__polar-to-rectangular.glsl",
+    "bytes": 1376
+  },
+  {
+    "shader_path": "Distort/rectangular-to-polar",
+    "file": "Distort__rectangular-to-polar.glsl",
+    "bytes": 1836
+  },
+  {
+    "shader_path": "Distort/reeded-glass",
+    "file": "Distort__reeded-glass.glsl",
+    "bytes": 7967
+  },
+  {
+    "shader_path": "Distort/ripple",
+    "file": "Distort__ripple.glsl",
+    "bytes": 2071
+  },
+  {
+    "shader_path": "Distort/swirl",
+    "file": "Distort__swirl.glsl",
+    "bytes": 1352
+  },
+  {
+    "shader_path": "Distort/transform",
+    "file": "Distort__transform.glsl",
+    "bytes": 2416
+  },
+  {
+    "shader_path": "Effects/ascii",
+    "file": "Effects__ascii.glsl",
+    "bytes": 7223
+  },
+  {
+    "shader_path": "Effects/bloom-1",
+    "file": "Effects__bloom-1.glsl",
+    "bytes": 4393
+  },
+  {
+    "shader_path": "Effects/bloom-2",
+    "file": "Effects__bloom-2.glsl",
+    "bytes": 5104
+  },
+  {
+    "shader_path": "Effects/bloom-3",
+    "file": "Effects__bloom-3.glsl",
+    "bytes": 7235
+  },
+  {
+    "shader_path": "Effects/crt-screen",
+    "file": "Effects__crt-screen.glsl",
+    "bytes": 3222
+  },
+  {
+    "shader_path": "Effects/emboss",
+    "file": "Effects__emboss.glsl",
+    "bytes": 14938
+  },
+  {
+    "shader_path": "Effects/halftone-screen",
+    "file": "Effects__halftone-screen.glsl",
+    "bytes": 2489
+  },
+  {
+    "shader_path": "Effects/halftone-screen-v2",
+    "file": "Effects__halftone-screen-v2.glsl",
+    "bytes": 11772
+  },
+  {
+    "shader_path": "Effects/led-screen",
+    "file": "Effects__led-screen.glsl",
+    "bytes": 2149
+  },
+  {
+    "shader_path": "Effects/modulation-1",
+    "file": "Effects__modulation-1.glsl",
+    "bytes": 2497
+  },
+  {
+    "shader_path": "Effects/modulation-2",
+    "file": "Effects__modulation-2.glsl",
+    "bytes": 1874
+  },
+  {
+    "shader_path": "Effects/motion-trails-1",
+    "file": "Effects__motion-trails-1.glsl",
+    "bytes": 2635
+  },
+  {
+    "shader_path": "Effects/motion-trails-2",
+    "file": "Effects__motion-trails-2.glsl",
+    "bytes": 3765
+  },
+  {
+    "shader_path": "Effects/ntsc-1",
+    "file": "Effects__ntsc-1.glsl",
+    "bytes": 7942
+  },
+  {
+    "shader_path": "Effects/ntsc-2",
+    "file": "Effects__ntsc-2.glsl",
+    "bytes": 1914
+  },
+  {
+    "shader_path": "Effects/ntsc-3",
+    "file": "Effects__ntsc-3.glsl",
+    "bytes": 4228
+  },
+  {
+    "shader_path": "Effects/rgb-shift",
+    "file": "Effects__rgb-shift.glsl",
+    "bytes": 1534
+  },
+  {
+    "shader_path": "Effects/star-glow",
+    "file": "Effects__star-glow.glsl",
+    "bytes": 4469
+  },
+  {
+    "shader_path": "Effects/stripe",
+    "file": "Effects__stripe.glsl",
+    "bytes": 3960
+  },
+  {
+    "shader_path": "Effects/threshold-1",
+    "file": "Effects__threshold-1.glsl",
+    "bytes": 4326
+  },
+  {
+    "shader_path": "Effects/threshold-2",
+    "file": "Effects__threshold-2.glsl",
+    "bytes": 3069
+  },
+  {
+    "shader_path": "Effects/threshold-3",
+    "file": "Effects__threshold-3.glsl",
+    "bytes": 4214
+  },
+  {
+    "shader_path": "Effects/vhs",
+    "file": "Effects__vhs.glsl",
+    "bytes": 9815
+  },
+  {
+    "shader_path": "Effects/vignette",
+    "file": "Effects__vignette.glsl",
+    "bytes": 1296
+  },
+  {
+    "shader_path": "Effects/vignette-v2",
+    "file": "Effects__vignette-v2.glsl",
+    "bytes": 6885
+  },
+  {
+    "shader_path": "Film/film-bw",
+    "file": "Film__film-bw.glsl",
+    "bytes": 3350
+  },
+  {
+    "shader_path": "Film/film-grain",
+    "file": "Film__film-grain.glsl",
+    "bytes": 5320
+  },
+  {
+    "shader_path": "Film/film-vintage",
+    "file": "Film__film-vintage.glsl",
+    "bytes": 3646
+  },
+  {
+    "shader_path": "Generate/blob-tracker-1",
+    "file": "Generate__blob-tracker-1.glsl",
+    "bytes": 2772
+  },
+  {
+    "shader_path": "Generate/blob-tracker-2",
+    "file": "Generate__blob-tracker-2.glsl",
+    "bytes": 22738
+  },
+  {
+    "shader_path": "Generate/ink-bleed",
+    "file": "Generate__ink-bleed.glsl",
+    "bytes": 6395
+  },
+  {
+    "shader_path": "Generate/noise",
+    "file": "Generate__noise.glsl",
+    "bytes": 4125
+  },
+  {
+    "shader_path": "Generate/paper-scan",
+    "file": "Generate__paper-scan.glsl",
+    "bytes": 3745
+  }
+]

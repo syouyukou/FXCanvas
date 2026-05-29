@@ -15,6 +15,7 @@ uniform float u_enable_mask;
 uniform vec2 u_mask_center;
 uniform float u_mask_radius;
 uniform float u_mask_falloff;
+uniform float u_mask_invert;
 
 void main() {
   vec2 texel = 1.0 / u_resolution;
@@ -47,6 +48,7 @@ void main() {
     vec2 centered = (v_texCoord - center) * vec2(u_resolution.x / u_resolution.y, 1.0);
     float dist = length(centered);
     mask = 1.0 - smoothstep(u_mask_radius, u_mask_radius + u_mask_falloff * 0.25, dist);
+    if (u_mask_invert > 0.5) mask = 1.0 - mask;
   }
 
   outColor = mix(original, blurred, mask);
@@ -131,6 +133,14 @@ export const MOTION_BLUR_EFFECT: Effect = {
 			step: 0.1,
 			default: 2,
 			value: 2
+		},
+		{
+			name: 'mask_invert',
+			label: 'Blur edges',
+			hint: 'Blur outside the mask (keep center sharp) — editorial soft focus.',
+			type: 'bool',
+			default: false,
+			value: false
 		}
 	],
 	passes: [{ id: 'main', fragmentShader: HEADER, useOriginal: true }]

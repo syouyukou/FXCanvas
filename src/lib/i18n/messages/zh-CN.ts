@@ -175,37 +175,50 @@ export const zhCN: MessageTree = {
 	dither: {
 		distance: { rgb: 'RGB', natural: '自然' },
 		patterns: [
-			'Bayer 小格',
-			'Bayer 中格',
-			'Bayer 大格',
-			'网点',
-			'斜线',
-			'蓝噪点',
-			'Floyd 风',
-			'Atkinson 风',
-			'交叉线',
-			'杂点',
-			'Sierra 风',
-			'Stucki 风',
-			'半调网点',
-			'细致印刷'
+			'随机',
+			'Bayer 16×16',
+			'XOR',
+			'ADD',
+			'Bayer 2×2',
+			'Bayer 4×4',
+			'Bayer 8×8',
+			'横线网',
+			'直线网',
+			'右斜网',
+			'左斜网',
+			'横交叉线',
+			'直交叉线',
+			'锯齿横 4×4',
+			'锯齿直 4×4',
+			'锯齿横 8×8',
+			'锯齿直 8×8',
+			'棋盘',
+			'鱼网',
+			'圆点 4×4',
+			'圆点 8×8',
+			'半调',
+			'方块 4×4'
 		],
 		palettes: [
-			'黑白',
-			'灰阶',
-			'RGB 量化',
-			'Game Boy',
-			'CGA 四色',
-			'EGA 16 色',
-			'复古印刷',
-			'墨水黑白'
+			'Elevate',
+			'Primaries',
+			'Imperial',
+			'Galaxy',
+			'Ocean',
+			'Sepia',
+			'Neon',
+			'Monochrome',
+			'Wildberry',
+			'Crystals',
+			'Faded',
+			'Sunny'
 		],
 		presets: {
-			'effect-app': '高对比黑白',
-			gameboy: 'Game Boy',
-			'bw-print': '黑白印刷',
-			riso: '复古印刷',
-			ega: 'EGA 复古'
+			'effect-app': 'Imperial（Effect.app）',
+			'mono-print': '高对比黑白',
+			gameboy: '复古四色',
+			halftone: '半调网点',
+			neon: '霓虹'
 		}
 	},
 	glitch: {
@@ -406,36 +419,38 @@ export const zhCN: MessageTree = {
 		vintage_print: {
 			name: '复古印刷',
 			group: '古典绘画',
-			description: 'RGB 半调套印、柔和渗墨、Riso 纸纹、印刷边框 — 对齐 effect.app 质感。',
-			layerLabels: [
-				'曲线',
-				'色阶',
-				'纸纹扫描',
-				'RGB 网点',
-				'柔和渗墨',
-				'RISO 网点',
-				'纸纹扫描',
-				'印刷边框',
-				'暗角'
-			]
+			description: 'RGB 套印错位、墨水渗开、印刷留白 — Risograph 质感，不是普通复古滤镜。',
+			layerLabels: ['色阶', '纸纹', 'RGB 网点', '渗墨', '印刷边框', '暗角']
+		},
+		cyanotype: {
+			name: '蓝晒',
+			group: '古典绘画',
+			description: '普鲁士蓝晒印、硬剪影 — 冷色化学感，无暖色纸纹。',
+			layerLabels: ['色阶', '双色调', '单色', '阈值', '网点', '暗角']
+		},
+		soft_editorial: {
+			name: '柔光编辑',
+			group: '编辑',
+			description: '雾面渐变 + 边缘柔焦 — 中心清晰，适合人像。',
+			layerLabels: ['曝光', '色阶', '渐变映射', '边缘模糊', '暗角']
+		},
+		lofi_vhs: {
+			name: 'Lo-fi VHS',
+			group: '复古',
+			description: '家用录像带：跳轨、CRT、洋红暗部 — 动画设 5 秒。',
+			layerLabels: ['VHS 故障', 'CRT', '双色调', '颗粒', '暗角']
+		},
+		film_noir: {
+			name: '黑色电影',
+			group: '胶片',
+			description: '硬 S 曲线银调、暗部颗粒、重暗角。',
+			layerLabels: ['曲线', '色阶', '单色', '锐化', '颗粒', '暗角']
 		},
 		glitch_cyber: {
 			name: '赛博故障',
 			group: '数字',
 			description: '数字坏档、霓虹光晕、压暗暗角。',
 			layerLabels: ['数字故障', '色相/饱和', '光晕', '暗角']
-		},
-		lofi_vhs: {
-			name: 'Lo-fi VHS',
-			group: '复古',
-			description: '旧磁带、CRT 扫描线、暖色双色调、颗粒。',
-			layerLabels: ['VHS 故障', 'CRT', '噪点', '双色调', '暗角']
-		},
-		film_noir: {
-			name: '黑色电影',
-			group: '胶片',
-			description: '压缩曲线、银色单色、叠加颗粒、重暗角。',
-			layerLabels: ['曲线', '单色', '噪点', '暗角']
 		}
 	}
 };

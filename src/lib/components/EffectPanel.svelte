@@ -10,7 +10,9 @@
 		favorites,
 		leftTab,
 		thumbnails,
-		sourceThumbnails
+		sourceThumbnails,
+		presetThumbnails,
+		presetSourceThumbnails
 	} from '../stores/editor';
 	import {
 		effectPanelCollapsed,
@@ -166,6 +168,13 @@
 			: $i18n.t('effectsPanel.tooltipNoThumb', { name });
 	}
 
+	function presetTooltip(presetId: string, name: string, description: string, layerLabels: string[]) {
+		const base = `${description}\n\n${$i18n.t('effectsPanel.layersPrefix')} ${layerLabels.join(' → ')}`;
+		return $presetThumbnails.has(presetId) && $presetSourceThumbnails.has(presetId)
+			? `${$i18n.t('effectsPanel.tooltipWithThumb', { name })}\n\n${base}`
+			: base;
+	}
+
 	function searchPlaceholder() {
 		if ($leftTab === 'presets') return $i18n.t('effectsPanel.searchPresets');
 		if ($leftTab === 'animated') return $i18n.t('effectsPanel.searchAnimated');
@@ -277,12 +286,37 @@
 								role="button"
 								tabindex="0"
 								onkeydown={(e) => e.key === 'Enter' && loadBuiltinPreset(preset.id)}
-								title="{$i18n.builtinPresetDescription(preset.id, preset.description)}\n\n{$i18n.t('effectsPanel.layersPrefix')} {preset.layerLabels.join(' → ')}"
+								title={presetTooltip(
+									preset.id,
+									$i18n.builtinPresetName(preset.id, preset.name),
+									$i18n.builtinPresetDescription(preset.id, preset.description),
+									preset.layerLabels
+								)}
 							>
 								<div class="thumb-wrap preset-thumb">
-									<div class="preset-thumb-inner">
-										<span class="preset-abbr">{$i18n.t('effectsPanel.presetAbbr')}</span>
-									</div>
+									{#if $presetThumbnails.has(preset.id) && $presetSourceThumbnails.has(preset.id)}
+										<img
+											class="thumb-img thumb-after"
+											src={$presetThumbnails.get(preset.id)}
+											alt=""
+											aria-hidden="true"
+										/>
+										<img
+											class="thumb-img thumb-before"
+											src={$presetSourceThumbnails.get(preset.id)}
+											alt=""
+											aria-hidden="true"
+										/>
+									{:else if $presetThumbnails.has(preset.id)}
+										<img
+											class="thumb-img"
+											src={$presetThumbnails.get(preset.id)}
+											alt=""
+											aria-hidden="true"
+										/>
+									{:else}
+										<div class="thumb-placeholder preset-thumb-loading" aria-hidden="true"></div>
+									{/if}
 								</div>
 								<div class="card-name">{$i18n.builtinPresetName(preset.id, preset.name)}</div>
 								<div class="preset-meta">
@@ -1005,23 +1039,15 @@
 	}
 
 	.preset-thumb {
-		background: linear-gradient(145deg, #2a2218 0%, #1a1410 50%, #0f0f0f 100%);
+		background: var(--bg-thumb);
 	}
 
-	.preset-thumb-inner {
-		width: 100%;
-		height: 100%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
+	.preset-thumb .thumb-img {
+		object-fit: cover;
 	}
 
-	.preset-abbr {
-		font-size: 14px;
-		font-weight: 800;
-		letter-spacing: 0.1em;
-		color: #c4a882;
-		opacity: 0.7;
+	.preset-thumb-loading {
+		background: var(--bg-thumb);
 	}
 
 	.preset-card:hover .thumb-wrap,

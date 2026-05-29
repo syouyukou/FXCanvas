@@ -68,7 +68,14 @@ export const THUMBNAIL_PARAMS: Record<string, Record<string, ParamValue>> = {
 	ink_bleed: { spread: 8, intensity: 0.85, grain: 0.45 },
 	paper_grain: { amount: 0.55, scale: 1.2, contrast: 0.35 },
 	print_stamp: { margin: 0.12, fade: 0.14, roughness: 1.2, paperColor: '#f0e6d8' },
-	dither: { pattern: 13, palette: 7, colors: 13, strength: 1.35, gamma: 2.7, pixelstep: 1 },
+	dither: { pattern: 1, palette: 7, colors: 18, strength: 2, gamma: 1.6, pixelstep: 1 },
+	depth_of_field: {
+		center: [0.5, 0.5],
+		radius: 0.35,
+		max_radius: 0.018,
+		samples: 80,
+		invert_mask: true
+	},
 	bloom: { threshold: 0.45, softness: 0.15, radius: 14, intensity: 1.15 }
 };
 

@@ -270,3 +270,72 @@ export { downloadBlob } from './downloadFile';
 export function getAnimationExportFilename(format: VideoExportFormat): string {
 	return `effect-export.${format}`;
 }
+
+export function getAnimationFramesExportPattern(): string {
+	return 'frame-{frame}.png';
+}
+
+/** Render PNG sequence for animation export (effect.app Frames). */
+export async function exportAnimationFrames(
+	renderer: Renderer,
+	effects: AppliedEffect[],
+	options: AnimationExportOptions,
+	video: HTMLVideoElement | null = null
+): Promise<{ filename: string; url: string }[]> {
+	const totalFrames = Math.max(1, Math.round(options.duration * options.fps));
+	const frames: { filename: string; url: string }[] = [];
+	const wasPlaying = video ? !video.paused : false;
+	const resumeTime = video?.currentTime ?? 0;
+
+	if (video) {
+		video.pause();
+		await seekVideoTo(video, 0);
+		await ensureVideoFrameReady(video);
+	}
+
+	try {
+		for (let frame = 0; frame < totalFrames; frame++) {
+			const linearTime = Math.min(frame / options.fps, options.duration - 1e-6);
+			const clock = shaderClockAtFrame(
+				linearTime,
+				frame,
+				options.duration,
+				options.loopPeriod
+			);
+			if (video) {
+				await seekVideoTo(video, linearTime);
+				await ensureVideoFrameReady(video);
+				renderer.updateVideoFrame(video);
+			}
+			const stack = options.resolveAtTime?.(linearTime) ?? effects;
+			renderer.render(stack, {
+				width: options.width,
+				height: options.height,
+				time: clock.time,
+				frame: clock.frame,
+				duration: clock.duration
+			});
+			renderer.flush();
+			const url = renderer.exportImage(stack, {
+				format: 'png',
+				width: options.width,
+				height: options.height
+			});
+			const pad = String(frame + 1).padStart(4, '0');
+			frames.push({ filename: `frame-${pad}.png`, url });
+			options.onProgress?.(frame + 1, totalFrames);
+		}
+	} finally {
+		if (video) {
+			try {
+				await seekVideoTo(video, resumeTime);
+				renderer.updateVideoFrame(video);
+			} catch {
+				/* restore best-effort */
+			}
+			if (wasPlaying) void video.play();
+		}
+	}
+
+	return frames;
+}

@@ -49,13 +49,16 @@ function startThumbnailGeneration(): void {
 	void generateEffectThumbnailsAsync(token);
 }
 
-/** Pre-render per-effect curated thumbnails on app start. */
+import { initPresetThumbnails } from './presetThumbnails';
+
+/** Pre-render per-effect and preset thumbnails on app start. */
 export function initDefaultThumbnails(): Promise<void> {
 	if (initPromise) return initPromise;
 
 	initPromise = (async () => {
 		if (typeof window === 'undefined') return;
 		startThumbnailGeneration();
+		await initPresetThumbnails();
 	})();
 
 	return initPromise;

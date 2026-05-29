@@ -27,6 +27,8 @@ uniform float u_color_split;
 uniform float u_line_tear;
 uniform float u_pixelate;
 uniform float u_seed;
+uniform float u_time;
+uniform float u_animate;
 
 void main() {
   vec2 uv = v_texCoord;
@@ -40,7 +42,8 @@ void main() {
   float row = floor(uv.y * u_resolution.y);
   float rowHash = hash2(vec2(row, u_seed + 13.0));
 
-  float shift = 0.0;
+  float wave = sin(u_time * 2.4 + u_seed * 0.31) * clamp(u_animate, 0.0, 1.0);
+  float shift = wave * 0.028;
   if (rowHash > 1.0 - u_line_tear * 0.45) {
     shift += (hash1(row + u_seed + 3.0) - 0.5) * u_line_tear * 0.18;
   }
@@ -52,7 +55,7 @@ void main() {
   sampleUv.x = fract(sampleUv.x);
   sampleUv = clamp(sampleUv, 0.001, 0.999);
 
-  float split = u_color_split * 0.035;
+  float split = u_color_split * 0.035 + wave * 0.022;
   vec3 glitched = vec3(
     texture(u_texture, sampleUv + vec2(split, 0.0)).r,
     texture(u_texture, sampleUv).g,
@@ -76,29 +79,34 @@ uniform float u_scanlines;
 uniform float u_noise;
 uniform float u_distortion;
 uniform float u_seed;
+uniform float u_time;
+uniform float u_animate;
 
 void main() {
   vec2 uv = v_texCoord;
+  float wave = sin(u_time * 1.85 + u_seed) * clamp(u_animate, 0.0, 1.0);
 
   float bar = floor(uv.x * mix(28.0, 8.0, clamp(u_distortion, 0.0, 1.0)));
   uv.y += (hash1(bar + u_seed) - 0.5) * u_distortion * 0.035;
+  uv.y += wave * 0.006;
   uv.y = clamp(uv.y, 0.001, 0.999);
 
   float sliceH = mix(3.0, 28.0, 0.55);
   float row = floor(uv.y * u_resolution.y / sliceH);
   if (hash2(vec2(row, u_seed + 5.0)) > 1.0 - u_glitch_blocks * 0.28) {
     uv.x += (hash1(row + u_seed + 9.0) - 0.5) * u_glitch_blocks * 0.1;
+    uv.x += wave * 0.012;
     uv.x = fract(uv.x);
   }
 
-  float split = u_rgb_shift * 0.028;
+  float split = u_rgb_shift * 0.028 + wave * 0.008;
   vec3 col = vec3(
     texture(u_texture, uv + vec2(split, 0.0)).r,
     texture(u_texture, uv).g,
     texture(u_texture, uv - vec2(split, 0.0)).b
   );
 
-  float scan = sin(uv.y * u_resolution.y * 3.14159) * 0.5 + 0.5;
+  float scan = sin((uv.y + u_time * 0.08 * clamp(u_animate, 0.0, 1.0)) * u_resolution.y * 3.14159) * 0.5 + 0.5;
   col *= mix(1.0, 0.82 + 0.18 * scan, clamp(u_scanlines, 0.0, 1.0));
 
   float n = hash2(uv * u_resolution + u_seed * 0.31);
@@ -212,6 +220,17 @@ export const GLITCH_DIGITAL_EFFECT: Effect = {
 			step: 1,
 			default: 42,
 			value: 42
+		},
+		{
+			name: 'animate',
+			label: 'Animate',
+			hint: 'Wave-driven RGB shift when animation preview is on.',
+			type: 'float',
+			min: 0,
+			max: 1,
+			step: 0.01,
+			default: 1,
+			value: 1
 		}
 	],
 	fragmentShader: GLITCH_DIGITAL_FRAGMENT
@@ -299,6 +318,17 @@ export const GLITCH_VHS_EFFECT: Effect = {
 			step: 1,
 			default: 17,
 			value: 17
+		},
+		{
+			name: 'animate',
+			label: 'Animate',
+			hint: 'Tracking wobble + scanline drift over time.',
+			type: 'float',
+			min: 0,
+			max: 1,
+			step: 0.01,
+			default: 1,
+			value: 1
 		}
 	],
 	fragmentShader: GLITCH_VHS_FRAGMENT

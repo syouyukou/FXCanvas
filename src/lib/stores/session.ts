@@ -9,6 +9,7 @@ import {
 } from './editor';
 import { fromSnapshot, resetHistory, toSnapshot, type StackSnapshot } from './history';
 import { clearAllKeyframeTracks, keyframeTracks } from './keyframes';
+import { animation, setAnimationMode, type AnimationMode } from './animation';
 import type { ParamTrack } from '../engine/keyframeEngine';
 import type { SampleAuthor } from '../samples/catalog';
 
@@ -23,6 +24,7 @@ interface SessionMeta {
 	imageKey: string;
 	keyframeTracks?: ParamTrack[];
 	sourceCredit?: SampleAuthor[] | null;
+	animationMode?: AnimationMode;
 }
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -134,7 +136,8 @@ export async function saveSession(): Promise<void> {
 			savedAt: Date.now(),
 			imageKey,
 			keyframeTracks: get(keyframeTracks),
-			sourceCredit: get(sourceCredit)
+			sourceCredit: get(sourceCredit),
+			animationMode: get(animation).mode
 		};
 		localStorage.setItem(META_KEY, JSON.stringify(meta));
 	} catch {
@@ -158,6 +161,7 @@ export async function restoreSession(): Promise<boolean> {
 		replaceStack(list, activeIndex, { skipHistory: true, groups });
 		if (meta.keyframeTracks?.length) keyframeTracks.set(meta.keyframeTracks);
 		else clearAllKeyframeTracks();
+		if (meta.animationMode) setAnimationMode(meta.animationMode);
 		sourceCredit.set(meta.sourceCredit ?? null);
 		resetHistory();
 		return true;
@@ -183,6 +187,7 @@ export function initSessionAutosave() {
 	sourceImage.subscribe(scheduleSave);
 	keyframeTracks.subscribe(scheduleSave);
 	sourceCredit.subscribe(scheduleSave);
+	animation.subscribe(scheduleSave);
 }
 
 export function clearSession() {

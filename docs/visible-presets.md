@@ -1,33 +1,42 @@
 # Visible presets (curated panel)
 
-> **Status:** Temporary — all builtin presets hidden from the left **PRESETS** tab while they are rewritten.  
-> **Set on:** 2026-05-29
+> **Status:** Five gallery presets (v2 signature tuning) in the **PRESETS** tab (2026-05-30).  
+> Signatures: [preset-signatures.md](./preset-signatures.md)
 
 ## Shown in panel
 
-_None — `VISIBLE_PRESET_IDS` is empty. The **PRESETS** tab stays visible and shows an empty state._
+| Group | Preset ID | Name | Layers |
+|-------|-----------|------|--------|
+| OLD PAINTING | `vintage_print` | Vintage print | 6 |
+| OLD PAINTING | `cyanotype` | Cyanotype | 6 |
+| EDITORIAL | `soft_editorial` | Soft editorial | 5 |
+| RETRO | `lofi_vhs` | Lo-fi VHS | 5 |
+| FILM | `film_noir` | Film noir | 6 |
+
+Definitions: `src/lib/presets/builtin.ts`  
+Visibility: `src/lib/presets/visiblePresets.ts`
 
 ## Hidden from panel (for now)
 
 | Group | Preset ID | Name |
 |-------|-----------|------|
-| OLD PAINTING | `vintage_print` | Vintage print |
 | DIGITAL | `glitch_cyber` | Glitch cyber |
-| RETRO | `lofi_vhs` | Lo-fi VHS |
-| FILM | `film_noir` | Film noir |
 
-Definitions remain in `src/lib/presets/builtin.ts`. User-saved presets (header **Presets** menu) are unchanged.
+## Sidebar thumbnails
+
+On app load, `initPresetThumbnails()` GPU-renders each visible preset’s **full layer stack** (same engine as the canvas). Cards show **after** by default; hover for **before/after** (like EFFECTS tab).
+
+Hero sources: `src/lib/engine/presetPreviewSources.ts` → `static/previews/sources/hero-*.webp`.
+
+## Usage
+
+1. **Load an image first**, then open **PRESETS**.
+2. Click a card → **replaces** the current stack with that preset group (one clear look).
+3. Hover the card thumbnail to compare before/after.
+4. **Lo-fi VHS:** set Export / Animation to **5s** to preview tape motion (`animate` on VHS layer).
 
 ## Restore / add presets
 
-Add IDs to `VISIBLE_PRESET_IDS` in `src/lib/presets/visiblePresets.ts`:
+Add IDs to `VISIBLE_PRESET_IDS` in `src/lib/presets/visiblePresets.ts`.
 
-```ts
-export const VISIBLE_PRESET_IDS = ['vintage_print', 'glitch_cyber'] as const;
-```
-
-When the array is non-empty, matching presets appear inside the **PRESETS** tab.
-
-## Favorites tab
-
-The **FAVORITES** tab is hidden via `SHOW_FAVORITES_TAB = false` in `src/lib/effects/visibleEffects.ts`. Star buttons on effect cards still work in code; set the flag to `true` to restore the tab.
+User-saved presets (header **Presets** menu) are unchanged.

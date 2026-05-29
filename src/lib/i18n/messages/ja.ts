@@ -177,37 +177,50 @@ export const ja: MessageTree = {
 	dither: {
 		distance: { rgb: 'RGB', natural: '自然' },
 		patterns: [
+			'ランダム',
+			'Bayer 16×16',
+			'XOR',
+			'ADD',
 			'Bayer 2×2',
 			'Bayer 4×4',
 			'Bayer 8×8',
+			'横ハッチ',
+			'縦ハッチ',
+			'右斜ハッチ',
+			'左斜ハッチ',
+			'横クロス',
+			'縦クロス',
+			'ジグザグ横 4×4',
+			'ジグザグ縦 4×4',
+			'ジグザグ横 8×8',
+			'ジグザグ縦 8×8',
+			'チェッカー',
+			'フィッシュネット',
+			'ドット 4×4',
+			'ドット 8×8',
 			'ハーフトーン',
-			'斜線',
-			'ブルーノイズ',
-			'Floyd風',
-			'Atkinson風',
-			'クロスハッチ',
-			'グレイン',
-			'Sierra風',
-			'Stucki風',
-			'ドット',
-			'細印刷'
+			'スクエア 4×4'
 		],
 		palettes: [
-			'白黒',
-			'グレー',
-			'RGB量子化',
-			'ゲームボーイ',
-			'CGA 4色',
-			'EGA 16色',
-			'リソグラフ',
-			'インク白黒'
+			'Elevate',
+			'Primaries',
+			'Imperial',
+			'Galaxy',
+			'Ocean',
+			'Sepia',
+			'Neon',
+			'Monochrome',
+			'Wildberry',
+			'Crystals',
+			'Faded',
+			'Sunny'
 		],
 		presets: {
-			'effect-app': '高コントラスト白黒',
-			gameboy: 'ゲームボーイ',
-			'bw-print': '白黒印刷',
-			riso: 'リソグラフ',
-			ega: 'EGAレトロ'
+			'effect-app': 'Imperial（Effect.app）',
+			'mono-print': '高コントラスト白黒',
+			gameboy: 'レトロ4色',
+			halftone: 'ハーフトーン',
+			neon: 'ネオン'
 		}
 	},
 	glitch: {
@@ -405,36 +418,38 @@ export const ja: MessageTree = {
 		vintage_print: {
 			name: 'ヴィンテージ印刷',
 			group: '古典絵画',
-			description: 'RGBハーフトーン、ソフトブリード、紙目、プリント枠 — effect.app風。',
-			layerLabels: [
-				'カーブ',
-				'レベル',
-				'紙スキャン',
-				'RGBハッチ',
-				'ソフトブリード',
-				'RISOディザ',
-				'紙スキャン',
-				'プリント枠',
-				'ビネット'
-			]
+			description: 'RGBズレハーフトーン、インク滲み、プリント余白 — リソ風、汎用フィルターではない。',
+			layerLabels: ['レベル', '紙目', 'RGBハッチ', 'インク滲み', 'プリント枠', 'ビネット']
+		},
+		cyanotype: {
+			name: '青写真',
+			group: '古典絵画',
+			description: 'プルシアンブルーの晒し — 硬いシルエット、暖色紙なし。',
+			layerLabels: ['レベル', 'デュオトーン', 'モノクロ', 'しきい値', 'ディザ', 'ビネット']
+		},
+		soft_editorial: {
+			name: 'ソフトエディトリアル',
+			group: 'エディトリアル',
+			description: 'マットグラデ＋縁ぼかし — 中心はシャープなポートレート向け。',
+			layerLabels: ['露出', 'レベル', 'グラデマップ', '縁ブラー', 'ビネット']
+		},
+		lofi_vhs: {
+			name: 'Lo-fi VHS',
+			group: 'レトロ',
+			description: '家庭用ビデオ：トラッキング、CRT、マゼンタ影 — 5秒アニメ推奨。',
+			layerLabels: ['VHSグリッチ', 'CRT', 'デュオトーン', 'グレイン', 'ビネット']
+		},
+		film_noir: {
+			name: 'フィルムノワール',
+			group: 'フィルム',
+			description: '硬いSカーブ、影にグレイン、強いビネット。',
+			layerLabels: ['カーブ', 'レベル', 'モノクロ', 'シャープ', 'グレイン', 'ビネット']
 		},
 		glitch_cyber: {
 			name: 'グリッチサイバー',
 			group: 'デジタル',
 			description: 'デジタル破損、ネオングロー、強いビネット。',
 			layerLabels: ['デジタルグリッチ', '色相/彩度', 'ブルーム', 'ビネット']
-		},
-		lofi_vhs: {
-			name: 'Lo-fi VHS',
-			group: 'レトロ',
-			description: '古いテープ、CRT走査線、暖色デュオトーン、グレイン。',
-			layerLabels: ['VHSグリッチ', 'CRT', 'ノイズ', 'デュオトーン', 'ビネット']
-		},
-		film_noir: {
-			name: 'フィルムノワール',
-			group: 'フィルム',
-			description: '潰したカーブ、シルバーモノクロ、オーバーレイグレイン。',
-			layerLabels: ['カーブ', 'モノクロ', 'ノイズ', 'ビネット']
 		}
 	}
 };
