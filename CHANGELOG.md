@@ -2,6 +2,13 @@
 
 FXCanvas 版本更新紀錄（對應 [GitHub Releases](https://github.com/syouyukou/FXCanvas/releases)）。
 
+## 發版流程
+
+1. 在此檔新增 `## vX.Y.Z — YYYY-MM-DD` 區塊與更新項目
+2. 提交並 push 到 `main`
+3. 建立並 push tag：`git tag vX.Y.Z && git push origin vX.Y.Z`
+4. GitHub Actions 會自動從對應區塊建立 Release
+
 ## v0.8.0 — 2026-05-29
 
 - 左側效果面板可拖曳縮放、收合成 icon rail（類 Effect.app）
