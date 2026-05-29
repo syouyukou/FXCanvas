@@ -426,7 +426,7 @@ export type DitherParams = {
 export const DITHER_PRESETS: { id: string; label: string; params: DitherParams }[] = [
 	{
 		id: 'effect-app',
-		label: 'Effect.app 黑白',
+		label: '高對比黑白',
 		params: {
 			pattern: 13,
 			palette: 7,
