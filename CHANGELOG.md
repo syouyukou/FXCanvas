@@ -9,6 +9,12 @@ FXCanvas 版本更新紀錄（對應 [GitHub Releases](https://github.com/syouyu
 3. 建立並 push tag：`git tag vX.Y.Z && git push origin vX.Y.Z`
 4. GitHub Actions 會自動從對應區塊建立 Release
 
+## v0.10.2 — 2026-05-29
+
+- PRESETS 分頁保留，內建 preset 全部隱藏（重寫中，顯示空狀態）
+- 隱藏 FAVORITES 喜好分頁
+- 新增 `visiblePresets.ts` 與 `docs/visible-presets.md`
+
 ## v0.10.1 — 2026-05-29
 
 - 左側 EFFECTS 面板改為精選 12 個效果（其餘仍可在圖層／Preset 使用）

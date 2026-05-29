@@ -32,6 +32,8 @@
 
 Hidden effects can still appear on **existing layers** and in **presets**; they are only omitted from the add-effects grid and search results in the panel.
 
+The **FAVORITES** tab is hidden (`SHOW_FAVORITES_TAB = false` in this file).
+
 ## Restore all effects
 
 Edit `VISIBLE_EFFECT_IDS` in `src/lib/effects/visibleEffects.ts`, or replace the filter in `filteredEffects` (`src/lib/stores/editor.ts`) to return all `EFFECTS`.

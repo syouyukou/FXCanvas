@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { CATEGORIES } from '../effects/index';
 	import { BUILTIN_PRESETS, BUILTIN_PRESET_GROUPS } from '../presets/builtin';
+	import { isPresetVisibleInPanel } from '../presets/visiblePresets';
+	import { SHOW_FAVORITES_TAB } from '../effects/visibleEffects';
 	import { loadBuiltinPreset } from '../stores/presets';
 	import {
 		addEffect,
@@ -102,15 +104,23 @@
 		)
 	);
 
+	let panelPresets = $derived(BUILTIN_PRESETS.filter((p) => isPresetVisibleInPanel(p.id)));
+
 	let filteredBuiltin = $derived(
 		$leftTab === 'presets'
-			? BUILTIN_PRESETS.filter((p) => {
+			? panelPresets.filter((p) => {
 					if (!$searchQuery.trim()) return true;
 					const q = $searchQuery.toLowerCase();
 					return $i18n.presetSearchText(p.id, p.name, p.group, p.description).includes(q);
 				})
 			: []
 	);
+
+	$effect(() => {
+		if (!SHOW_FAVORITES_TAB && $leftTab === 'favorites') {
+			leftTab.set('effects');
+		}
+	});
 
 	function displayEffectName(effect: Effect) {
 		return $i18n.effectName(effect.id, effect.name);
@@ -162,9 +172,11 @@
 		<button class:active={$leftTab === 'effects'} onclick={() => leftTab.set('effects')}>
 			{$i18n.t('effectsPanel.tabs.effects')}
 		</button>
-		<button class:active={$leftTab === 'favorites'} onclick={() => leftTab.set('favorites')}>
-			{$i18n.t('effectsPanel.tabs.favorites')}
-		</button>
+		{#if SHOW_FAVORITES_TAB}
+			<button class:active={$leftTab === 'favorites'} onclick={() => leftTab.set('favorites')}>
+				{$i18n.t('effectsPanel.tabs.favorites')}
+			</button>
+		{/if}
 		<button class:active={$leftTab === 'presets'} onclick={() => leftTab.set('presets')}>
 			{$i18n.t('effectsPanel.tabs.presets')}
 		</button>

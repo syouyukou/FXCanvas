@@ -25,3 +25,6 @@ const visibleSet = new Set<string>(VISIBLE_EFFECT_IDS);
 export function isEffectVisibleInPanel(effectId: string): boolean {
 	return visibleSet.has(effectId);
 }
+
+/** Hide FAVORITES tab while the feature is deprioritized. */
+export const SHOW_FAVORITES_TAB = false;

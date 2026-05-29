@@ -284,15 +284,22 @@ async function runScenarios() {
 	section('English — favorites & panel');
 	{
 		const { page, errors } = await newPage(browser, 'en');
-		await tab(page, 1);
-		if ((await page.locator('.effect-card').count()) === 0) pass('Favorites empty initially');
-		else fail('Favorites empty initially');
+		const favTabCount = await page
+			.locator('.effect-panel .tabs button', { hasText: 'FAVORITES' })
+			.count();
+		if (favTabCount === 0) {
+			pass('Favorites tab hidden');
+		} else {
+			await tab(page, 1);
+			if ((await page.locator('.effect-card').count()) === 0) pass('Favorites empty initially');
+			else fail('Favorites empty initially');
 
-		await tab(page, 0);
-		await page.locator('.effect-card', { hasText: 'Bloom' }).first().locator('.fav-star').click();
-		await tab(page, 1);
-		await page.locator('.effect-card', { hasText: 'Bloom' }).waitFor({ timeout: 3000 });
-		pass('Favorite star');
+			await tab(page, 0);
+			await page.locator('.effect-card', { hasText: 'Dither' }).first().locator('.fav-star').click();
+			await tab(page, 1);
+			await page.locator('.effect-card', { hasText: 'Dither' }).waitFor({ timeout: 3000 });
+			pass('Favorite star');
+		}
 
 		const panel = page.locator('.effect-panel');
 		if (!(await panel.evaluate((el) => el.classList.contains('collapsed')))) {
@@ -322,21 +329,18 @@ async function runScenarios() {
 	{
 		const { page, errors } = await newPage(browser, 'en');
 		await loadFixture(page);
-		await tab(page, 2);
-		await page.getByText('Vintage print', { exact: true }).click();
-		await page.waitForTimeout(400);
-		const groupVisible = await page.locator('.group-header').count();
-		if (groupVisible > 0) pass('Builtin preset → layer group', 'group header visible');
-		else fail('Builtin preset → layer group', 'no .group-header');
-
-		const nested = await page.locator('.layer-row.nested').count();
-		if (nested >= 3) pass('Preset group nested layers', `${nested} layers`);
-		else fail('Preset group nested layers', `${nested}`);
-
-		await tab(page, 0);
-		await page.getByText('Bloom', { exact: true }).first().click();
-		await page.locator('.layer-row', { hasText: 'BLOOM' }).waitFor({ timeout: 5000 });
-		pass('Add effect above preset group');
+		const presetTabCount = await page
+			.locator('.effect-panel .tabs button', { hasText: 'PRESETS' })
+			.count();
+		if (presetTabCount === 0) {
+			fail('PRESETS tab visible');
+		} else {
+			pass('PRESETS tab visible');
+			await tab(page, 1);
+			const empty = await page.locator('.effect-list .empty').count();
+			if (empty > 0) pass('Builtin presets hidden', 'empty state');
+			else fail('Builtin presets hidden', 'expected empty state');
+		}
 
 		if (errors.length === 0) pass('No JS errors (preset group)');
 		else fail('No JS errors (preset group)', errors.slice(0, 3).join(' | '));
