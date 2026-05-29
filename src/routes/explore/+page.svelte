@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import ExploreEffectCard from '$lib/components/ExploreEffectCard.svelte';
 	import LanguageMenu from '$lib/components/LanguageMenu.svelte';
 	import {
@@ -8,7 +10,13 @@
 	} from '$lib/explore/catalog';
 	import { i18n } from '$lib/i18n';
 
+	type ExploreTab = 'effects' | 'animated';
+
 	let search = $state('');
+
+	let activeTab = $derived(
+		page.url.searchParams.get('tab') === 'animated' ? 'animated' : 'effects'
+	);
 
 	let visibleEffects = $derived(getVisibleExploreEffects());
 
@@ -20,12 +28,21 @@
 
 	let { animated, grouped } = $derived(groupExploreEffects(filtered));
 
-	let hasResults = $derived(animated.length > 0 || Object.keys(grouped).length > 0);
+	function setTab(tab: ExploreTab) {
+		search = '';
+		const href = tab === 'animated' ? '/explore?tab=animated' : '/explore';
+		void goto(href, { replaceState: true, keepFocus: true, noScroll: true });
+	}
 </script>
 
 <svelte:head>
 	<title>{$i18n.t('explore.pageTitle')} · FXCanvas</title>
-	<meta name="description" content={$i18n.t('explore.subtitle')} />
+	<meta
+		name="description"
+		content={activeTab === 'animated'
+			? $i18n.t('explore.subtitleAnimated')
+			: $i18n.t('explore.subtitle')}
+	/>
 </svelte:head>
 
 <div class="explore">
@@ -49,7 +66,31 @@
 	<main class="main">
 		<div class="hero">
 			<h1>{$i18n.t('explore.title')}</h1>
-			<p class="subtitle">{$i18n.t('explore.subtitle')}</p>
+			<p class="subtitle">
+				{activeTab === 'animated'
+					? $i18n.t('explore.subtitleAnimated')
+					: $i18n.t('explore.subtitle')}
+			</p>
+		</div>
+
+		<div class="tabs" role="tablist" aria-label={$i18n.t('explore.navLabel')}>
+			<button
+				role="tab"
+				class:active={activeTab === 'effects'}
+				aria-selected={activeTab === 'effects'}
+				onclick={() => setTab('effects')}
+			>
+				{$i18n.t('explore.tabs.effects')}
+			</button>
+			<button
+				role="tab"
+				class:active={activeTab === 'animated'}
+				class:tab-animated={activeTab === 'animated'}
+				aria-selected={activeTab === 'animated'}
+				onclick={() => setTab('animated')}
+			>
+				{$i18n.t('explore.tabs.animated')}
+			</button>
 		</div>
 
 		<div class="search-wrap">
@@ -68,7 +109,9 @@
 			<input
 				type="search"
 				class="search"
-				placeholder={$i18n.t('explore.search')}
+				placeholder={activeTab === 'animated'
+					? $i18n.t('explore.searchAnimated')
+					: $i18n.t('explore.search')}
 				bind:value={search}
 				autocomplete="off"
 				spellcheck="false"
@@ -80,13 +123,26 @@
 			{/if}
 		</div>
 
-		<div class="catalog">
-			{#if animated.length > 0}
+		<div class="catalog" class:catalog--animated={activeTab === 'animated'}>
+			{#if activeTab === 'effects'}
+				{#each Object.entries(grouped) as [category, effects] (category)}
+					<section class="category-group">
+						<h2 class="category-label">{$i18n.categoryName(category).toUpperCase()}</h2>
+						<div class="grid">
+							{#each effects as effect (effect.id)}
+								<ExploreEffectCard
+									{effect}
+									name={$i18n.effectName(effect.id, effect.name)}
+									href="/?effect={effect.id}"
+								/>
+							{/each}
+						</div>
+					</section>
+				{:else}
+					<p class="empty">{$i18n.t('explore.noResults')}</p>
+				{/each}
+			{:else if animated.length > 0}
 				<section class="category-group category-group--animated">
-					<h2 class="category-label">
-						<span class="animated-mark" aria-hidden="true"></span>
-						{$i18n.t('effectsPanel.animatedSection')}
-					</h2>
 					<div class="grid">
 						{#each animated as effect (effect.id)}
 							<ExploreEffectCard
@@ -98,26 +154,9 @@
 						{/each}
 					</div>
 				</section>
-			{/if}
-
-			{#each Object.entries(grouped) as [category, effects] (category)}
-				<section class="category-group">
-					<h2 class="category-label">{$i18n.categoryName(category).toUpperCase()}</h2>
-					<div class="grid">
-						{#each effects as effect (effect.id)}
-							<ExploreEffectCard
-								{effect}
-								name={$i18n.effectName(effect.id, effect.name)}
-								href="/?effect={effect.id}"
-							/>
-						{/each}
-					</div>
-				</section>
 			{:else}
-				{#if !hasResults}
-					<p class="empty">{$i18n.t('explore.noResults')}</p>
-				{/if}
-			{/each}
+				<p class="empty">{$i18n.t('explore.noResultsAnimated')}</p>
+			{/if}
 		</div>
 	</main>
 
@@ -255,6 +294,50 @@
 		color: var(--text-muted);
 	}
 
+	.tabs {
+		display: flex;
+		gap: 0;
+		max-width: 360px;
+		margin-bottom: var(--space-4);
+		border-bottom: 1px solid var(--border-subtle);
+	}
+
+	.tabs button {
+		flex: 1;
+		padding: var(--space-2) var(--space-3);
+		background: none;
+		border: none;
+		border-bottom: 2px solid transparent;
+		margin-bottom: -1px;
+		color: var(--text-faint);
+		font-family: var(--font-mono);
+		font-size: var(--text-panel-label);
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		cursor: pointer;
+		transition:
+			color var(--transition-fast),
+			border-color var(--transition-fast),
+			background var(--transition-fast);
+	}
+
+	.tabs button:hover,
+	.tabs button:focus-visible {
+		color: var(--text-secondary);
+	}
+
+	.tabs button.active {
+		color: var(--text-primary);
+		border-bottom-color: var(--text-primary);
+		background: var(--bg-raised);
+	}
+
+	.tabs button.tab-animated.active {
+		color: #5dade2;
+		border-bottom-color: #5dade2;
+		background: rgba(93, 173, 226, 0.06);
+	}
+
 	.search-wrap {
 		position: relative;
 		display: flex;
@@ -312,6 +395,10 @@
 		gap: var(--space-6);
 	}
 
+	.catalog--animated {
+		gap: 0;
+	}
+
 	.category-group {
 		display: flex;
 		flex-direction: column;
@@ -327,26 +414,11 @@
 
 	.category-label {
 		margin: 0;
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
 		font-family: var(--font-mono);
 		font-size: var(--text-panel-body);
 		font-weight: 800;
 		letter-spacing: 0.12em;
 		color: var(--text-primary);
-	}
-
-	.category-group--animated .category-label {
-		color: #5dade2;
-	}
-
-	.animated-mark {
-		width: 3px;
-		height: 14px;
-		border-radius: 2px;
-		background: linear-gradient(180deg, #85c1e9 0%, #2e86c1 100%);
-		flex-shrink: 0;
 	}
 
 	.grid {

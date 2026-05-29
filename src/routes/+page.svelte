@@ -10,6 +10,7 @@
 	import LanguageMenu from '$lib/components/LanguageMenu.svelte';
 	import Timeline from '$lib/components/Timeline.svelte';
 	import { EFFECTS } from '$lib/effects/index';
+	import { isAnimatedPanelEffect } from '$lib/effects/visibleEffects';
 	import { previewSourceCandidates, previewHeroId } from '$lib/engine/effectPreviewSources';
 	import { getSampleByHeroId } from '$lib/samples/catalog';
 	import { i18n } from '$lib/i18n';
@@ -21,7 +22,8 @@
 		loadImageFile,
 		loadVideoFile,
 		loadImageUrl,
-		addEffect
+		addEffect,
+		leftTab
 	} from '$lib/stores/editor';
 	import { canUndo, canRedo, undo, redo } from '$lib/stores/history';
 	import { initSessionAutosave, restoreSession } from '$lib/stores/session';
@@ -166,6 +168,9 @@
 		}
 
 		addEffect(effect, { randomize: false });
+		if (isAnimatedPanelEffect(effectId)) {
+			leftTab.set('animated');
+		}
 		void goto('/', { replaceState: true, keepFocus: true });
 	}
 

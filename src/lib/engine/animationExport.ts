@@ -265,14 +265,7 @@ export async function exportAnimationWebm(
 	return exportAnimationVideo(renderer, canvas, effects, options, 'webm', video);
 }
 
-export function downloadBlob(blob: Blob, filename: string) {
-	const url = URL.createObjectURL(blob);
-	const a = document.createElement('a');
-	a.href = url;
-	a.download = filename;
-	a.click();
-	URL.revokeObjectURL(url);
-}
+export { downloadBlob } from './downloadFile';
 
 export function getAnimationExportFilename(format: VideoExportFormat): string {
 	return `effect-export.${format}`;

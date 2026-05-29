@@ -25,8 +25,13 @@ export const en: MessageTree = {
 		title: 'Image Effects Library',
 		subtitle:
 			'Browse curated effects. Hover to compare before and after — click to try in the editor.',
+		subtitleAnimated:
+			'Effects with built-in motion on still images. Click to preview in the editor.',
+		tabs: { effects: 'EFFECTS', animated: 'ANIMATED' },
 		search: 'Search effects…',
+		searchAnimated: 'Search animated effects…',
 		noResults: 'No effects found',
+		noResultsAnimated: 'No animated effects found',
 		navLabel: 'Main',
 		navExplore: 'Explore',
 		navEditor: 'Editor',
@@ -46,6 +51,7 @@ export const en: MessageTree = {
 	},
 	samples: {
 		biomech: 'Biomech',
+		illustration: 'Illustration',
 		portrait: 'Portrait',
 		neon: 'Neon',
 		night: 'Night'
@@ -96,15 +102,17 @@ export const en: MessageTree = {
 		drag: 'drag'
 	},
 	effectsPanel: {
-		tabs: { effects: 'EFFECTS', favorites: 'FAVORITES', presets: 'PRESETS' },
+		tabs: { effects: 'EFFECTS', animated: 'ANIMATED', favorites: 'FAVORITES', presets: 'PRESETS' },
 		animatedSection: 'ANIMATED',
 		animBadge: 'ANIM',
 		expandPanel: 'Expand effects panel',
 		collapsePanel: 'Collapse effects panel',
 		search: 'Search…',
+		searchAnimated: 'Search animated…',
 		searchPresets: 'Search presets…',
 		popular: '★ MOST POPULAR',
 		noEffects: 'No effects found',
+		noAnimated: 'No animated effects found',
 		noPresets: 'No presets found',
 		layersCount: '{n} layers',
 		layersPrefix: 'Layers:',

@@ -25,8 +25,13 @@ export const ja: MessageTree = {
 		title: '画像エフェクトライブラリ',
 		subtitle:
 			'厳選エフェクトを閲覧。ホバーでビフォーアフター、クリックでエディターで試せます。',
+		subtitleAnimated:
+			'静止画でも組み込みモーションが再生されるエフェクト。クリックでエディターでプレビュー。',
+		tabs: { effects: 'エフェクト', animated: 'アニメ' },
 		search: 'エフェクトを検索…',
+		searchAnimated: 'アニメエフェクトを検索…',
 		noResults: 'エフェクトが見つかりません',
+		noResultsAnimated: 'アニメエフェクトが見つかりません',
 		navLabel: 'メイン',
 		navExplore: '探索',
 		navEditor: 'エディター',
@@ -46,6 +51,7 @@ export const ja: MessageTree = {
 	},
 	samples: {
 		biomech: 'バイオメカ',
+		illustration: 'イラスト',
 		portrait: 'ポートレート',
 		neon: 'ネオン',
 		night: '夜景'
@@ -96,15 +102,17 @@ export const ja: MessageTree = {
 		drag: 'ドラッグ'
 	},
 	effectsPanel: {
-		tabs: { effects: 'エフェクト', favorites: 'お気に入り', presets: 'プリセット' },
+		tabs: { effects: 'エフェクト', animated: 'アニメ', favorites: 'お気に入り', presets: 'プリセット' },
 		animatedSection: 'アニメ',
 		animBadge: 'ANIM',
 		expandPanel: 'エフェクトパネルを展開',
 		collapsePanel: 'エフェクトパネルを折りたたむ',
 		search: '検索…',
+		searchAnimated: 'アニメを検索…',
 		searchPresets: 'プリセットを検索…',
 		popular: '★ 人気',
 		noEffects: 'エフェクトが見つかりません',
+		noAnimated: 'アニメエフェクトが見つかりません',
 		noPresets: 'プリセットが見つかりません',
 		layersCount: '{n} レイヤー',
 		layersPrefix: 'レイヤー：',

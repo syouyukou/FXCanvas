@@ -134,14 +134,14 @@
 		setAnimationFps(Number(value) as AnimationFps);
 	}
 
-	function download() {
+	async function download() {
 		if (!renderer?.hasImage() || !currentSize) return;
 		const url = renderer.exportImage($appliedEffects, {
 			format: format as ExportFormat,
 			width: currentSize.width,
 			height: currentSize.height
 		});
-		downloadDataUrl(url, getExportFilename(format as ExportFormat));
+		await downloadDataUrl(url, getExportFilename(format as ExportFormat));
 		closeMenu();
 	}
 
@@ -174,7 +174,7 @@
 				videoFormat,
 				sourceVideo
 			);
-			downloadBlob(blob, getAnimationExportFilename(videoFormat));
+			await downloadBlob(blob, getAnimationExportFilename(videoFormat));
 			closeMenu();
 		} catch (err) {
 			exportProgress = err instanceof Error ? err.message : 'Export failed';
@@ -184,14 +184,14 @@
 		}
 	}
 
-	function downloadLayers() {
+	async function downloadLayers() {
 		if (!renderer?.hasImage() || !currentSize || $appliedEffects.length === 0) return;
 		const frames = exportLayerSequence(renderer, $appliedEffects, {
 			format: format as ExportFormat,
 			width: currentSize.width,
 			height: currentSize.height
 		});
-		downloadLayerSequence(frames);
+		await downloadLayerSequence(frames);
 		closeMenu();
 	}
 

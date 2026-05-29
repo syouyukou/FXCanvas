@@ -3,14 +3,14 @@
 	import { get } from 'svelte/store';
 	import { Renderer } from '../engine/renderer';
 	import { resolveEffectsAtTime } from '../engine/keyframeEngine';
-	import { appliedEffects, sourceImage, sourceCredit, imageSize, isVideoSource, loadVideoFile, loadSampleImage, clearSourceCredit } from '../stores/editor';
+	import { appliedEffects, sourceImage, sourceCredit, imageSize, loadVideoFile, loadSampleImage, clearSourceCredit } from '../stores/editor';
 	import { SAMPLE_IMAGES } from '../samples/catalog';
 	import SampleCreditBar from './SampleCreditBar.svelte';
 	import {
 		animation,
 		advanceAnimationClock,
 		getRenderClockFromStores,
-		needsPreviewLoop,
+		needsAnimationUi,
 		resetAnimationClock,
 		toggleAnimationPlayback
 	} from '../stores/animation';
@@ -192,7 +192,7 @@
 
 		void $appliedEffects;
 		void $showOriginal;
-		void $needsPreviewLoop;
+		void $needsAnimationUi;
 		void $animation;
 		void $exportSessionActive;
 
@@ -201,7 +201,7 @@
 			return;
 		}
 
-		if ($needsPreviewLoop) {
+		if ($needsAnimationUi) {
 			startPreviewLoop(vid);
 		} else {
 			stopPreviewLoop();
@@ -305,7 +305,7 @@
 		<SampleCreditBar authors={$sourceCredit} />
 	{/if}
 
-	{#if $sourceImage && ($isVideoSource || $needsPreviewLoop)}
+	{#if $sourceImage && $needsAnimationUi}
 		{@const vid = $sourceImage instanceof HTMLVideoElement ? $sourceImage : null}
 		<div class="media-controls">
 			<button

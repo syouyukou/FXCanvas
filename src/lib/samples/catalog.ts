@@ -29,6 +29,18 @@ export const SAMPLE_IMAGES: SampleImage[] = [
 		]
 	},
 	{
+		id: 'kimx70-art',
+		url: '/samples/kimx70-art.jpg',
+		thumbUrl: '/samples/kimx70-art.jpg',
+		labelKey: 'samples.illustration',
+		authors: [
+			{
+				handle: 'kimx70_art',
+				instagram: 'kimx70_art'
+			}
+		]
+	},
+	{
 		id: 'hero-portrait',
 		url: '/previews/sources/hero-portrait.webp',
 		thumbUrl: '/previews/sources/hero-portrait.webp',
@@ -75,7 +87,7 @@ export function getSampleByHeroId(heroId: string): SampleImage | undefined {
 }
 
 export function authorProfileUrl(author: SampleAuthor): string {
-	if (author.instagram) return `https://instagram.com/${author.instagram}`;
+	if (author.instagram) return `https://www.instagram.com/${author.instagram}/`;
 	if (author.profileUrl) return author.profileUrl;
-	return `https://instagram.com/${author.handle}`;
+	return `https://www.instagram.com/${author.handle}/`;
 }

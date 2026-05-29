@@ -89,8 +89,10 @@
 		$leftTab === 'favorites'
 			? $filteredEffects.filter((e) => $favorites.has(e.id))
 			: $leftTab === 'effects'
-				? $filteredEffects
-				: []
+				? $filteredEffects.filter((e) => !isAnimatedPanelEffect(e.id))
+				: $leftTab === 'animated'
+					? $filteredEffects.filter((e) => isAnimatedPanelEffect(e.id))
+					: []
 	);
 
 	let animatedEffects = $derived(
@@ -99,6 +101,12 @@
 
 	let staticEffects = $derived(
 		displayedEffects.filter((e) => !isAnimatedPanelEffect(e.id))
+	);
+
+	let showAnimatedInList = $derived($leftTab === 'animated' || $leftTab === 'favorites');
+
+	let showStaticInList = $derived(
+		$leftTab === 'effects' || $leftTab === 'favorites'
 	);
 
 	let grouped = $derived(
@@ -141,6 +149,12 @@
 			: $i18n.t('effectsPanel.tooltipNoThumb', { name });
 	}
 
+	function searchPlaceholder() {
+		if ($leftTab === 'presets') return $i18n.t('effectsPanel.searchPresets');
+		if ($leftTab === 'animated') return $i18n.t('effectsPanel.searchAnimated');
+		return $i18n.t('effectsPanel.search');
+	}
+
 	let groupedPresets = $derived(
 		BUILTIN_PRESET_GROUPS.reduce(
 			(acc, group) => {
@@ -180,6 +194,13 @@
 		<button class:active={$leftTab === 'effects'} onclick={() => leftTab.set('effects')}>
 			{$i18n.t('effectsPanel.tabs.effects')}
 		</button>
+		<button
+			class="tab-animated"
+			class:active={$leftTab === 'animated'}
+			onclick={() => leftTab.set('animated')}
+		>
+			{$i18n.t('effectsPanel.tabs.animated')}
+		</button>
 		{#if SHOW_FAVORITES_TAB}
 			<button class:active={$leftTab === 'favorites'} onclick={() => leftTab.set('favorites')}>
 				{$i18n.t('effectsPanel.tabs.favorites')}
@@ -204,7 +225,7 @@
 		</svg>
 		<input
 			type="text"
-			placeholder={$leftTab === 'presets' ? $i18n.t('effectsPanel.searchPresets') : $i18n.t('effectsPanel.search')}
+			placeholder={searchPlaceholder()}
 			bind:value={$searchQuery}
 			class="search"
 		/>
@@ -247,8 +268,57 @@
 			{:else}
 				<p class="empty">{$i18n.t('effectsPanel.noPresets')}</p>
 			{/each}
-		{:else}
+		{:else if $leftTab === 'animated'}
 			{#if animatedEffects.length > 0}
+				<div class="category-group category-group--animated category-group--animated-tab">
+					<div class="grid">
+						{#each animatedEffects as effect (effect.id)}
+							<div
+								class="effect-card effect-card--animated"
+								{...railPointer(displayEffectName(effect))}
+								onclick={(e) => handleEffectClick(effect, e)}
+								role="button"
+								tabindex="0"
+								onkeydown={(e) =>
+									e.key === 'Enter' && handleEffectClick(effect, e as unknown as MouseEvent)}
+								title={effectTooltip(effect)}
+							>
+								<div class="thumb-wrap">
+									{#if $thumbnails.has(effect.id) && $sourceThumbnails.has(effect.id)}
+										<img
+											class="thumb-img thumb-after"
+											src={$thumbnails.get(effect.id)}
+											alt=""
+											aria-hidden="true"
+										/>
+										<img
+											class="thumb-img thumb-before"
+											src={$sourceThumbnails.get(effect.id)}
+											alt=""
+											aria-hidden="true"
+										/>
+									{:else if $thumbnails.has(effect.id)}
+										<img
+											class="thumb-img"
+											src={$thumbnails.get(effect.id)}
+											alt=""
+											aria-hidden="true"
+										/>
+									{:else}
+										<div class="thumb-placeholder"></div>
+									{/if}
+									<span class="anim-badge">{$i18n.t('effectsPanel.animBadge')}</span>
+									<span class="card-name">{displayEffectName(effect)}</span>
+								</div>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{:else}
+				<p class="empty">{$i18n.t('effectsPanel.noAnimated')}</p>
+			{/if}
+		{:else}
+			{#if showAnimatedInList && animatedEffects.length > 0}
 				<div class="category-group category-group--animated">
 					<h3 class="category-label category-label--major category-label--animated">
 						<span class="animated-section-mark" aria-hidden="true"></span>
@@ -298,6 +368,7 @@
 					</div>
 				</div>
 			{/if}
+			{#if showStaticInList}
 			{#each Object.entries(grouped) as [cat, effects]}
 				<div class="category-group">
 					<h3 class="category-label category-label--major">
@@ -357,6 +428,7 @@
 					</div>
 				</div>
 			{/each}
+			{/if}
 			{#if animatedEffects.length === 0 && Object.keys(grouped).length === 0}
 				<p class="empty">{$i18n.t('effectsPanel.noEffects')}</p>
 			{/if}
@@ -495,6 +567,11 @@
 		border-bottom-color: var(--text-primary);
 		background: var(--bg-raised);
 	}
+	.tabs button.tab-animated.active {
+		color: #5dade2;
+		border-bottom-color: #5dade2;
+		background: rgba(93, 173, 226, 0.06);
+	}
 	.tabs button:focus-visible {
 		color: var(--text-secondary);
 	}
@@ -578,6 +655,11 @@
 		border-radius: var(--radius-md);
 		background: linear-gradient(180deg, rgba(93, 173, 226, 0.06) 0%, rgba(93, 173, 226, 0.02) 100%);
 		border: 1px solid rgba(93, 173, 226, 0.14);
+	}
+
+	.category-group--animated-tab {
+		margin-bottom: 0;
+		padding: 10px 8px 12px;
 	}
 
 	.category-label--animated {

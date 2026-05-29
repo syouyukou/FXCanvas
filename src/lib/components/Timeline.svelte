@@ -2,6 +2,7 @@
 	import { sourceImage } from '$lib/stores/editor';
 	import {
 		animation,
+		needsAnimationUi,
 		setAnimationDuration,
 		setAnimationFps,
 		setAnimationTime,
@@ -68,7 +69,7 @@
 	);
 </script>
 
-{#if $sourceImage}
+{#if $sourceImage && $needsAnimationUi}
 	<div class="timeline" aria-label={$i18n.t('timeline.aria')}>
 		<div class="timeline-toolbar">
 			<button

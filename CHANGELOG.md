@@ -9,6 +9,15 @@ FXCanvas 版本更新紀錄（對應 [GitHub Releases](https://github.com/syouyu
 3. 建立並 push tag：`git tag vX.Y.Z && git push origin vX.Y.Z`
 4. GitHub Actions 會自動從對應區塊建立 Release
 
+## v0.11.1 — 2026-05-30
+
+- **ANIMATED 獨立分頁**：EffectPanel 新增 `ANIMATED` tab；Explore 頁 `/explore?tab=animated` 同步分區
+- 動態效果 **3:4 縱向縮圖**、藍色區塊樣式與 `ANIM` 標籤，與靜態 EFFECTS 區隔
+- 匯出改走 `downloadFile.ts`：iPad / iPhone 優先 **Web Share API**，改善行動裝置下載
+- 匯出期間 `exportSession` 暫停 canvas 預覽 loop；`needsAnimationUi` 精簡播放列顯示條件
+- 範例素材擴充（`kimx70-art.jpg`）與 `samples/catalog` credit
+- CI：`package-lock.json` 對齊 npm 10 / Node 22
+
 ## v0.11.0 — 2026-05-30
 
 - **Explore** 頁（`/explore`）：瀏覽精選效果、搜尋、分類；深連結 `/?effect=` 一鍵開編輯器

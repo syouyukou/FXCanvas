@@ -34,14 +34,15 @@ export function stackNeedsTimeLoop(effects: AppliedEffect[]): boolean {
 	return false;
 }
 
-export const needsPreviewLoop = derived(
-	[appliedEffects, isVideoSource, animation, hasKeyframes],
-	([$effects, $video, $anim, $keyframes]) =>
-		$video ||
-		$keyframes ||
-		stackNeedsTimeLoop($effects) ||
-		($anim.previewEnabled && $anim.playing)
+/** Stack has shader motion, keyframes, or video — show timeline + run preview clock. */
+export const needsAnimationUi = derived(
+	[appliedEffects, isVideoSource, hasKeyframes],
+	([$effects, $video, $keyframes]) =>
+		Boolean($video) || $keyframes || stackNeedsTimeLoop($effects)
 );
+
+/** @deprecated alias — use needsAnimationUi */
+export const needsPreviewLoop = needsAnimationUi;
 
 export function setAnimationTime(time: number) {
 	animation.update((s) => ({

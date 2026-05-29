@@ -117,7 +117,7 @@ export const thumbnails = writable<Map<string, string>>(new Map());
 /** Per-effect curated "before" image for sidebar hover preview. */
 export const sourceThumbnails = writable<Map<string, string>>(new Map());
 export const searchQuery = writable('');
-export const leftTab = writable<'effects' | 'favorites' | 'presets'>('effects');
+export const leftTab = writable<'effects' | 'animated' | 'favorites' | 'presets'>('effects');
 export const favorites = writable<Set<string>>(loadFavorites());
 
 favorites.subscribe((favs) => persistFavorites(favs));

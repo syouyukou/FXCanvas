@@ -11,7 +11,15 @@
 |-----------|------|
 | `msx_ascii` | MSX ASCII |
 
-Static-image motion (`u_time` / `animmode`). Listed under **ANIMATED** at the top of the EFFECTS tab, separate from category groups.
+Static-image motion (`u_time` / `animmode`). Shown in the dedicated **ANIMATED** tab (and a compact block at the top of **EFFECTS** when browsing all effects).
+
+### Panel tabs
+
+| Tab | Contents |
+|-----|----------|
+| **EFFECTS** | 12 static effects by category + optional animated preview strip |
+| **ANIMATED** | `msx_ascii` only (portrait 3:4 cards) |
+| **PRESETS** | Built-in presets (curated subset) |
 
 ### Static (by category, 12)
 

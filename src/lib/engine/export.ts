@@ -97,12 +97,7 @@ export function getExportFilename(format: ExportFormat, suffix = 'effect-export'
 	return `${suffix}.${FORMAT_EXT[format]}`;
 }
 
-export function downloadDataUrl(url: string, filename: string) {
-	const a = document.createElement('a');
-	a.href = url;
-	a.download = filename;
-	a.click();
-}
+export { downloadBlob, downloadDataUrl, downloadLayerSequence } from './downloadFile';
 
 export interface LayerExportFrame {
 	filename: string;
@@ -130,8 +125,3 @@ export function exportLayerSequence(
 	return frames;
 }
 
-export function downloadLayerSequence(frames: LayerExportFrame[]) {
-	for (const frame of frames) {
-		downloadDataUrl(frame.url, frame.filename);
-	}
-}
