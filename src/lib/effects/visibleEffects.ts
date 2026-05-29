@@ -18,7 +18,8 @@ export const ADJUST_VISIBLE_EFFECT_IDS = [
 	'sharpen',
 	'gaussian_blur',
 	'motion_blur',
-	'depth_of_field'
+	'depth_of_field',
+	'circular_blur'
 ] as const;
 
 /** Creative / stackable effects (thumbnail grid, EFFECTS tab). */
@@ -32,12 +33,19 @@ export const CREATIVE_VISIBLE_EFFECT_IDS = [
 	'paper_grain',
 	'glitch_digital',
 	'glitch_vhs',
+	'stripe',
+	'cubify',
+	'rgb_shift',
 	'crt',
 	'emboss',
 	'threshold',
 	'modulation_dither',
 	'star_glow',
-	'dither'
+	'dither',
+	'thermal',
+	'motion_trails',
+	'blob_tracker',
+	'layer_mix'
 ] as const;
 
 /** Built-in motion on still images (ANIMATED tab). */

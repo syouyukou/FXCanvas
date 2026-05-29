@@ -9,6 +9,15 @@ FXCanvas 版本更新紀錄（對應 [GitHub Releases](https://github.com/syouyu
 3. 建立並 push tag：`git tag vX.Y.Z && git push origin vX.Y.Z`
 4. GitHub Actions 會自動從對應區塊建立 Release
 
+## Unreleased — 2026-05-30（已 push，未部署）
+
+- **Effect.app porting 第二波**：8 個新效果 — Circular Blur（ADJUST）、Stripe、Cubify、RGB Shift、Thermal、Motion Trails、Blob Tracker、Layer Mix（EFFECTS）
+- **渲染引擎 feedback pass**：`renderer.ts` 支援 `u_feedback` ping-pong，供 Motion Trails / Blob Tracker 等時間累積效果
+- **工作區 UI**：`ControlsPanel` 自 LayerPanel 抽離；**AppMenu** 可切換參數面板 **Sidebar / Corner** 位置；Media Preview 開關持久化
+- **PRESETS +1**：`rgb_hatch`（RGB Hatch，11 層 stack，含 Stripe + Cubify 動畫）
+- **CRT** 新增 `animate` 參數（`u_time` 掃描線 + RGB drift）
+- 四語系 i18n；porting priority 文件更新
+
 ## v0.12.0 — 2026-05-30
 
 - **四區分頁**：EffectPanel 拆分 **ADJUST**（微調）／**EFFECTS**（效果）／**ANIMATED**／**PRESETS**；對齊 Effect.app 產品分區（`docs/product-zones.md`）

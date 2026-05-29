@@ -36,6 +36,10 @@ SLUG_FX: dict[str, str | None] = {
     "modulation": "modulation_dither",
     "dither": "dither",
     "depth-of-field": "depth_of_field",
+    "thermal": "thermal",
+    "motion-trails": "motion_trails",
+    "blob-tracker": "blob_tracker",
+    "layer-mix": "layer_mix",
     "ink-bleed": "ink_bleed",
     "halftone-screen": "rgb_halftone",
     "vhs": "glitch_vhs",
@@ -52,7 +56,12 @@ SLUG_FX: dict[str, str | None] = {
 
 # slug -> priority override (default computed from fx + shader complexity)
 PRIORITY_OVERRIDE: dict[str, str] = {
-    "dither": "P2",  # dither-pro GLSL ported (maintain parity)
+    "dither": "P2",
+    "thermal": "P2",
+    "motion-trails": "P2",
+    "blob-tracker": "P2",
+    "layer-mix": "P2",
+    "depth-of-field": "P2",
     "blob-tracker": "P0",
     "depth-of-field": "P2",
     "layer-mix": "P0",

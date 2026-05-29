@@ -23,7 +23,12 @@ export const TIME_DRIVEN_EFFECT_IDS = new Set([
 	'glitch_digital',
 	'glitch_vhs',
 	'modulation_dither',
-	'crt'
+	'crt',
+	'stripe',
+	'cubify',
+	'rgb_shift',
+	'motion_trails',
+	'blob_tracker'
 ]);
 
 export const animation = writable<AnimationState>({

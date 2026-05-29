@@ -3,6 +3,28 @@ import { writable } from 'svelte/store';
 /** Hold to show original image on canvas (Effect.app media preview compare). */
 export const showOriginal = writable(false);
 
+export type ControlsPlacement = 'sidebar' | 'corner';
+
+const CONTROLS_PLACEMENT_KEY = 'fx-controls-placement';
+const MEDIA_PREVIEW_KEY = 'fx-media-preview-enabled';
+
+function loadControlsPlacement(): ControlsPlacement {
+	if (typeof localStorage === 'undefined') return 'sidebar';
+	const v = localStorage.getItem(CONTROLS_PLACEMENT_KEY);
+	return v === 'corner' ? 'corner' : 'sidebar';
+}
+
+function loadMediaPreviewEnabled(): boolean {
+	if (typeof localStorage === 'undefined') return true;
+	return localStorage.getItem(MEDIA_PREVIEW_KEY) !== '0';
+}
+
+/** Where the layer parameter panel is anchored (Effect.app: dock vs corner). */
+export const controlsPlacement = writable<ControlsPlacement>('sidebar');
+
+/** Space / hold-to-compare original image when enabled. */
+export const mediaPreviewEnabled = writable(true);
+
 export const EFFECT_PANEL_MIN_WIDTH = 200;
 export const EFFECT_PANEL_MAX_WIDTH = 440;
 export const EFFECT_PANEL_DEFAULT_WIDTH = 280;
@@ -79,7 +101,13 @@ if (typeof window !== 'undefined') {
 	effectPanelWidth.set(loadWidth());
 	effectPanelSavedWidth.set(loadSavedWidth());
 	effectPanelCollapsed.set(loadCollapsed());
+	controlsPlacement.set(loadControlsPlacement());
+	mediaPreviewEnabled.set(loadMediaPreviewEnabled());
 	effectPanelWidth.subscribe((v) => localStorage.setItem(WIDTH_KEY, String(v)));
 	effectPanelSavedWidth.subscribe((v) => localStorage.setItem(SAVED_WIDTH_KEY, String(v)));
 	effectPanelCollapsed.subscribe((v) => localStorage.setItem(COLLAPSED_KEY, v ? '1' : '0'));
+	controlsPlacement.subscribe((v) => localStorage.setItem(CONTROLS_PLACEMENT_KEY, v));
+	mediaPreviewEnabled.subscribe((v) =>
+		localStorage.setItem(MEDIA_PREVIEW_KEY, v ? '1' : '0')
+	);
 }

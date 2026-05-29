@@ -3,6 +3,7 @@
  * @see docs/visible-presets.md · docs/mvp-baseline.md
  */
 export const VISIBLE_PRESET_IDS = [
+	'rgb_hatch',
 	'vintage_print',
 	'cyanotype',
 	'soft_editorial',

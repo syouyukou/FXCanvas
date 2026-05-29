@@ -53,6 +53,5 @@ Invert、Posterize、Color Balance、Vibrance、B&W Channel Mixer — 見 produc
 
 ## 待擴充（Effects / Presets）
 
-- **Presets（v0.12.0）：** 5 組內建已恢復 — 見 `docs/visible-presets.md`
+- **Presets（v0.12.0+）：** 6 組內建 — 見 `docs/visible-presets.md`（含 RGB Hatch）
 - 更多策展 preset（Glitch cyber…）、Explore 頁與 dock 對齊 effect.app
-- **WIP 效果：** thermal、motion_trails、blob_tracker、layer_mix（Effect.app porting）

@@ -41,8 +41,13 @@ export const THUMBNAIL_PARAMS: Record<string, Record<string, ParamValue>> = {
 		scanlines: 0.65,
 		noise: 0.4,
 		distortion: 0.45,
-		seed: 17
+		seed: 17,
+		animate: 1
 	},
+	stripe: { freq: 28, scroll_speed: 0.5, led_mode: true, animate: 1 },
+	cubify: { scale: 1.2, strength: 2.2, hard: true, animate: 1, animate_speed: [0.15, 0.05] },
+	circular_blur: { radius: 36, samples: 10 },
+	rgb_shift: { amount: 0.55, animate: 1 },
 	pixelate: { size: 14 },
 	monochrome: { mix: 1, tint: '#e8dcc8' },
 	star_glow: {
@@ -76,6 +81,10 @@ export const THUMBNAIL_PARAMS: Record<string, Record<string, ParamValue>> = {
 		samples: 80,
 		invert_mask: true
 	},
+	thermal: { gradient_type: 3, show_edges: true },
+	motion_trails: { threshold: 0.75, trace_intensity: 1.2, blend_mode: 2 },
+	blob_tracker: { threshold: 0.5, box_opacity: 1 },
+	layer_mix: { opacity: 0.85, blend_mode: 1, texture_scale: 1.6 },
 	bloom: { threshold: 0.45, softness: 0.15, radius: 14, intensity: 1.15 }
 };
 

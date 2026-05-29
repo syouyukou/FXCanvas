@@ -9,6 +9,15 @@ export const ja: MessageTree = {
 		en: 'English',
 		enZh: 'English & 中文'
 	},
+	menu: {
+		workspace: 'ワークスペース',
+		mediaPreview: 'メディアプレビュー',
+		mediaPreviewHint: 'Space 長押しで原画と比較',
+		controls: 'コントロール',
+		controlsSidebar: 'サイドバー',
+		controlsCorner: 'コーナー',
+		back: '戻る'
+	},
 	app: {
 		loadMedia: 'メディアを読み込む',
 		undo: '元に戻す (⌘Z)',

@@ -11,22 +11,20 @@
 | **ANIMATED** | Motion on stills | Portrait cards |
 | **PRESETS** | Multi-layer curated stacks | Preset cards |
 
-## ADJUST tab (9) — v0.12.0
+## ADJUST tab (10) — Unreleased
 
-`curves`, `gradient_map`, `exposure`, `levels`, `brightness_contrast`, `sharpen`, `gaussian_blur`, `motion_blur`, `depth_of_field`
+`curves`, `gradient_map`, `exposure`, `levels`, `brightness_contrast`, `sharpen`, `gaussian_blur`, `motion_blur`, `depth_of_field`, `circular_blur`
 
 UI：PS 風 icon 網格；Curves 使用 `CurveEditor.svelte`。
 
-## EFFECTS tab (15) — v0.12.0
+## EFFECTS tab (22) — Unreleased
 
 | Category | Effect IDs |
 |----------|------------|
-| Color | `hue_saturation`, `duotone`, `monochrome` |
+| Color | `hue_saturation`, `duotone`, `monochrome`, `thermal` |
 | Film | `noise`, `rgb_halftone`, `ink_bleed`, `paper_grain` |
-| Distort | `glitch_digital`, `glitch_vhs` |
-| Effects | `crt`, `emboss`, `threshold`, `modulation_dither`, `star_glow`, `dither` |
-
-> **v0.12.0+ WIP（未發版）：** `thermal`, `motion_trails`, `blob_tracker`, `layer_mix` 已加入 `visibleEffects.ts`，待 commit。
+| Distort | `glitch_digital`, `glitch_vhs`, `stripe`, `cubify`, `rgb_shift` |
+| Effects | `crt`, `emboss`, `threshold`, `modulation_dither`, `star_glow`, `dither`, `motion_trails`, `blob_tracker`, `layer_mix` |
 
 ## ANIMATED tab (1)
 

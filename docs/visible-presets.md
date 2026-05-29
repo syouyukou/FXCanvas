@@ -1,12 +1,13 @@
 # Visible presets (curated panel)
 
-> **Status:** Five gallery presets (v2 signature tuning) in the **PRESETS** tab (2026-05-30).  
+> **Status:** Six gallery presets in the **PRESETS** tab (2026-05-30).  
 > Signatures: [preset-signatures.md](./preset-signatures.md)
 
 ## Shown in panel
 
 | Group | Preset ID | Name | Layers |
 |-------|-----------|------|--------|
+| RGB HATCH | `rgb_hatch` | RGB Hatch | 11 |
 | OLD PAINTING | `vintage_print` | Vintage print | 6 |
 | OLD PAINTING | `cyanotype` | Cyanotype | 6 |
 | EDITORIAL | `soft_editorial` | Soft editorial | 5 |
@@ -33,7 +34,8 @@ Hero sources: `src/lib/engine/presetPreviewSources.ts` → `static/previews/sour
 1. **Load an image first**, then open **PRESETS**.
 2. Click a card → **replaces** the current stack with that preset group (one clear look).
 3. Hover the card thumbnail to compare before/after.
-4. **Lo-fi VHS:** set Export / Animation to **5s** to preview tape motion (`animate` on VHS layer).
+4. **RGB Hatch:** set Animation to **5s** for stripe scroll + cubify motion.
+5. **Lo-fi VHS:** set Export / Animation to **5s** to preview tape motion (`animate` on VHS layer).
 
 ## Restore / add presets
 

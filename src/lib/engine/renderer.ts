@@ -32,6 +32,14 @@ export interface EffectPass {
 	fragmentShader: string;
 	/** Bind chain input at start of this effect to u_original (TEXTURE1). */
 	useOriginal?: boolean;
+	/** Sample previous frame from u_feedback (TEXTURE2). */
+	needsFeedback?: boolean;
+	/** Copy this pass output into the feedback buffer for the next frame. */
+	writesFeedback?: boolean;
+}
+
+export function effectNeedsFeedback(effect: Effect): boolean {
+	return getEffectPasses(effect).some((p) => p.needsFeedback || p.writesFeedback);
 }
 
 export interface Effect {
@@ -161,6 +169,10 @@ export class Renderer {
 	private gradLutTextures = new Map<string, WebGLTexture>();
 	private sourceTexture: WebGLTexture | null = null;
 	private fbos: [WebGLFramebuffer, WebGLTexture][] = [];
+	private feedbackFbo: [WebGLFramebuffer, WebGLTexture] | null = null;
+	private feedbackSize = { w: 0, h: 0 };
+	private feedbackBlack: WebGLTexture | null = null;
+	private feedbackReady = false;
 	private vao: WebGLVertexArrayObject;
 	private passThrough: WebGLProgram;
 	private opacityBlend: WebGLProgram;
@@ -263,6 +275,7 @@ void main() {
 		}
 		this.renderWidth = 0;
 		this.renderHeight = 0;
+		this.resetFeedbackState();
 	}
 
 	/** Upload the current video frame to the source texture. Call each RAF tick. */
@@ -302,6 +315,88 @@ void main() {
 		canvas.width = width;
 		canvas.height = height;
 		this.ensureFBOs(width, height);
+	}
+
+	private resetFeedbackState(): void {
+		const gl = this.gl;
+		if (this.feedbackFbo) {
+			gl.deleteFramebuffer(this.feedbackFbo[0]);
+			gl.deleteTexture(this.feedbackFbo[1]);
+			this.feedbackFbo = null;
+		}
+		this.feedbackReady = false;
+	}
+
+	private ensureFeedbackBlack(): WebGLTexture {
+		if (this.feedbackBlack) return this.feedbackBlack;
+		const gl = this.gl;
+		const tex = gl.createTexture()!;
+		gl.bindTexture(gl.TEXTURE_2D, tex);
+		gl.texImage2D(
+			gl.TEXTURE_2D,
+			0,
+			gl.RGBA,
+			1,
+			1,
+			0,
+			gl.RGBA,
+			gl.UNSIGNED_BYTE,
+			new Uint8Array([0, 0, 0, 255])
+		);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+		this.feedbackBlack = tex;
+		return tex;
+	}
+
+	private ensureFeedbackForSize(w: number, h: number): void {
+		if (this.feedbackFbo && this.feedbackSize.w === w && this.feedbackSize.h === h) return;
+		this.ensureFeedbackFbo(w, h);
+		this.feedbackSize = { w, h };
+	}
+
+	private ensureFeedbackFbo(w: number, h: number): void {
+		const gl = this.gl;
+		if (this.feedbackFbo) {
+			gl.deleteFramebuffer(this.feedbackFbo[0]);
+			gl.deleteTexture(this.feedbackFbo[1]);
+		}
+		const tex = gl.createTexture()!;
+		gl.bindTexture(gl.TEXTURE_2D, tex);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		const fbo = gl.createFramebuffer()!;
+		gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+		this.feedbackFbo = [fbo, tex];
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+		this.clearFeedbackFbo(w, h);
+		this.feedbackReady = false;
+	}
+
+	private clearFeedbackFbo(w: number, h: number): void {
+		if (!this.feedbackFbo) return;
+		const gl = this.gl;
+		gl.bindFramebuffer(gl.FRAMEBUFFER, this.feedbackFbo[0]);
+		gl.viewport(0, 0, w, h);
+		gl.clearColor(0, 0, 0, 1);
+		gl.clear(gl.COLOR_BUFFER_BIT);
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+	}
+
+	private copyTextureToFeedback(src: WebGLTexture, w: number, h: number): void {
+		if (!this.feedbackFbo) return;
+		const gl = this.gl;
+		gl.bindFramebuffer(gl.FRAMEBUFFER, this.feedbackFbo[0]);
+		gl.viewport(0, 0, w, h);
+		gl.useProgram(this.passThrough);
+		this.bindTexture('__feedback_copy__', 0, src, 'u_texture', this.passThrough);
+		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+		this.feedbackReady = true;
 	}
 
 	private ensureFBOs(w: number, h: number) {
@@ -496,12 +591,19 @@ void main() {
 		prog: WebGLProgram,
 		inputTex: WebGLTexture,
 		originalTex: WebGLTexture | null,
-		useOriginal: boolean,
+		pass: EffectPass,
 		options: RenderOptions
 	): void {
 		this.bindTexture(cacheKey, 0, inputTex, 'u_texture', prog);
-		if (useOriginal && originalTex) {
+		if (pass.useOriginal && originalTex) {
 			this.bindTexture(cacheKey, 1, originalTex, 'u_original', prog);
+		}
+		if (pass.needsFeedback) {
+			const fbTex =
+				this.feedbackReady && this.feedbackFbo
+					? this.feedbackFbo[1]
+					: this.ensureFeedbackBlack();
+			this.bindTexture(cacheKey, 2, fbTex, 'u_feedback', prog);
 		}
 		const resLoc = this.getUniform(cacheKey, prog, 'u_resolution');
 		if (resLoc) this.gl.uniform2f(resLoc, this.renderWidth, this.renderHeight);
@@ -544,6 +646,8 @@ void main() {
 		this.ensureRenderTarget(width, height);
 
 		const enabled = appliedEffects.filter((a) => a.effect.enabled);
+		const usesFeedback = enabled.some((a) => effectNeedsFeedback(a.effect));
+		if (usesFeedback) this.ensureFeedbackForSize(width, height);
 		const clockOptions: RenderOptions = {
 			...options,
 			time: options.time ?? 0,
@@ -595,14 +699,7 @@ void main() {
 
 				const prog = this.getProgram(effect.id, pass);
 				gl.useProgram(prog);
-				this.bindPassTextures(
-					cacheKey,
-					prog,
-					passInput,
-					baseTex,
-					pass.useOriginal ?? false,
-					clockOptions
-				);
+				this.bindPassTextures(cacheKey, prog, passInput, baseTex, pass, clockOptions);
 				this.setEffectParams(cacheKey, prog, effect, params);
 				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
@@ -612,6 +709,10 @@ void main() {
 						passInput = effectOutput;
 						pingPong++;
 					}
+				}
+
+				if (pass.writesFeedback) {
+					this.copyTextureToFeedback(effectOutput, width, height);
 				}
 			}
 
@@ -697,5 +798,7 @@ void main() {
 			gl.deleteFramebuffer(fbo);
 			gl.deleteTexture(tex);
 		}
+		this.resetFeedbackState();
+		if (this.feedbackBlack) gl.deleteTexture(this.feedbackBlack);
 	}
 }

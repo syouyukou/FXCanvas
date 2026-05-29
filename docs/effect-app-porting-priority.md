@@ -24,10 +24,10 @@
 
 | 優先級 | slug | Effect.app 名稱 | 分類 | shader key(s) | FXCanvas id | 狀態 | 備註 |
 |--------|------|-----------------|------|---------------|-------------|------|------|
-| P0 | `blob-tracker` | Blob Tracker | Generate | `Generate/blob-tracker-1`<br>`Generate/blob-tracker-2` | `—` | 未實作 | 高曝光 / FXCanvas 缺口 |
-| P0 | `layer-mix` | Layer Mix | Custom | `Custom/layer-mix-curve` | `—` | 未實作 | 高曝光 / FXCanvas 缺口 |
-| P0 | `motion-trails` | Motion trails | Effects | `Effects/motion-trails-1`<br>`Effects/motion-trails-2` | `—` | 未實作 | 高曝光 / FXCanvas 缺口 |
-| P0 | `thermal` | Thermal | Color | `Color/thermal-1`<br>`Color/thermal-2`<br>`Color/thermal-3` | `—` | 未實作 | 高曝光 / FXCanvas 缺口 |
+| P0 | `blob-tracker` | Blob Tracker | Generate | `Generate/blob-tracker-1`<br>`Generate/blob-tracker-2` | `blob_tracker` | 已有（需對齊 dither-pro 等） | 高曝光 / FXCanvas 缺口 |
+| P0 | `layer-mix` | Layer Mix | Custom | `Custom/layer-mix-curve` | `layer_mix` | 已有（需對齊 dither-pro 等） | 高曝光 / FXCanvas 缺口 |
+| P0 | `motion-trails` | Motion trails | Effects | `Effects/motion-trails-1`<br>`Effects/motion-trails-2` | `motion_trails` | 已有（需對齊 dither-pro 等） | 高曝光 / FXCanvas 缺口 |
+| P0 | `thermal` | Thermal | Color | `Color/thermal-1`<br>`Color/thermal-2`<br>`Color/thermal-3` | `thermal` | 已有（需對齊 dither-pro 等） | 高曝光 / FXCanvas 缺口 |
 | P1 | `ascii` | ASCII | Effects | `Effects/ascii` | `—` | 未實作 | 差異化或 catalog 補齊 |
 | P1 | `color-matrix` | Color matrix | Color | `Color/color-matrix` | `—` | 未實作 | 差異化或 catalog 補齊 |
 | P1 | `cubify` | Cubify | Distort | `Distort/cubify` | `—` | 未實作 | 差異化或 catalog 補齊 |
@@ -80,10 +80,10 @@
 
 ## P0 建議實作順序（精簡）
 
-1. **`blob-tracker`** (Blob Tracker) — `Generate/blob-tracker-1`, `Generate/blob-tracker-2`
-2. **`layer-mix`** (Layer Mix) — `Custom/layer-mix-curve`
-3. **`motion-trails`** (Motion trails) — `Effects/motion-trails-1`, `Effects/motion-trails-2`
-4. **`thermal`** (Thermal) — `Color/thermal-1`, `Color/thermal-2`, `Color/thermal-3`
+1. **`blob-tracker`** (Blob Tracker) — `Generate/blob-tracker-1`, `Generate/blob-tracker-2` · FXCanvas `blob_tracker`
+2. **`layer-mix`** (Layer Mix) — `Custom/layer-mix-curve` · FXCanvas `layer_mix`
+3. **`motion-trails`** (Motion trails) — `Effects/motion-trails-1`, `Effects/motion-trails-2` · FXCanvas `motion_trails`
+4. **`thermal`** (Thermal) — `Color/thermal-1`, `Color/thermal-2`, `Color/thermal-3` · FXCanvas `thermal`
 
 ## 未出現在 sitemap 的 shader（僅 all-shaders.json）
 

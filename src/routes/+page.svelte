@@ -8,6 +8,8 @@
 	import ExportMenu from '$lib/components/ExportMenu.svelte';
 	import PresetMenu from '$lib/components/PresetMenu.svelte';
 	import LanguageMenu from '$lib/components/LanguageMenu.svelte';
+	import AppMenu from '$lib/components/AppMenu.svelte';
+	import ControlsPanel from '$lib/components/ControlsPanel.svelte';
 	import Timeline from '$lib/components/Timeline.svelte';
 	import { EFFECTS } from '$lib/effects/index';
 	import { isAnimatedPanelEffect } from '$lib/effects/visibleEffects';
@@ -29,6 +31,8 @@
 	import { initSessionAutosave, restoreSession } from '$lib/stores/session';
 	import {
 		showOriginal,
+		controlsPlacement,
+		mediaPreviewEnabled,
 		effectPanelWidth,
 		effectPanelCollapsed,
 		effectPanelSavedWidth,
@@ -197,7 +201,7 @@
 				redo();
 				return;
 			}
-			if (e.code === 'Space' && !e.repeat) {
+			if (e.code === 'Space' && !e.repeat && get(mediaPreviewEnabled)) {
 				e.preventDefault();
 				showOriginal.set(true);
 				return;
@@ -255,6 +259,7 @@
 
 		<div class="header-actions">
 			<a class="header-nav-link" href="/explore">{$i18n.t('app.explore')}</a>
+			<AppMenu />
 			<LanguageMenu />
 			<PresetMenu />
 
@@ -294,7 +299,12 @@
 				onpointercancel={onPanelResizeEnd}
 			></div>
 		</div>
-		<Canvas bind:renderer bind:viewZoom />
+		<div class="canvas-shell">
+			<Canvas bind:renderer bind:viewZoom />
+			{#if $controlsPlacement === 'corner'}
+				<ControlsPanel variant="corner" />
+			{/if}
+		</div>
 		<LayerPanel />
 	</main>
 
@@ -473,6 +483,15 @@
 	.main {
 		flex: 1;
 		display: flex;
+		overflow: hidden;
+	}
+
+	.canvas-shell {
+		flex: 1;
+		min-width: 0;
+		position: relative;
+		display: flex;
+		flex-direction: column;
 		overflow: hidden;
 	}
 

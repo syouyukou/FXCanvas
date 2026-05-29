@@ -202,6 +202,95 @@ const SOFT_EDITORIAL_LAYERS: BuiltinLayerDef[] = [
 	{ effectId: 'vignette', params: { strength: 0.26, softness: 1.75 } }
 ];
 
+/** RGB Hatch v1 — effect.app animated scanline + cubify glitch stack. Set Animation to 5s. */
+const RGB_HATCH_LAYERS: BuiltinLayerDef[] = [
+	{ effectId: 'exposure', params: { exposure: 0.06, offset: -0.02, gamma: 1.08 } },
+	{
+		effectId: 'gaussian_blur',
+		params: { radius: 2.8 },
+		opacity: 0.38
+	},
+	{
+		effectId: 'noise',
+		params: {
+			amount: 0.32,
+			size: 1.15,
+			chroma: 0.28,
+			shadow: 0.9,
+			midtone: 0.55,
+			highlight: 0.35
+		},
+		opacity: 0.48,
+		blendMode: 'overlay'
+	},
+	{
+		effectId: 'rgb_shift',
+		params: { amount: 0.52, angle: 0, animate: 1 }
+	},
+	{
+		effectId: 'cubify',
+		params: {
+			scale: 1.1,
+			aspect: 0,
+			strength: 1.8,
+			hard: true,
+			angle: 0,
+			phase: [0, 0],
+			animate_speed: [0.1, 0],
+			dispersion: 0.05,
+			animate: 1
+		}
+	},
+	{
+		effectId: 'stripe',
+		params: {
+			freq: 33,
+			w_min: 0.02,
+			w_max: 0.92,
+			angle: 90,
+			edge: 0.48,
+			pattern: 0,
+			scroll_speed: 0.35,
+			led_mode: true,
+			phase_r: 0.1,
+			phase_g: 0,
+			phase_b: 0,
+			benday_mode: false,
+			shift_freq: 8,
+			animate: 1
+		},
+		opacity: 0.88,
+		blendMode: 'multiply'
+	},
+	{
+		effectId: 'circular_blur',
+		params: { radius: 28, samples: 8, passes: 1, decay: 0.4 },
+		opacity: 0.55
+	},
+	{
+		effectId: 'sharpen',
+		params: { amount: 0.72, radius: 1.25, threshold: 0.02 },
+		opacity: 0.65
+	},
+	{ effectId: 'levels', params: { shadows: 0.06, midtones: 0.38, highlights: 0.9 } },
+	{ effectId: 'hue_saturation', params: { hue: -6, saturation: 0.28 } },
+	{
+		effectId: 'motion_blur',
+		params: {
+			strength: 16,
+			angle: 0,
+			box: false,
+			both_directions: false,
+			enable_mask: false,
+			mask_center: [0, 0],
+			mask_radius: 0.5,
+			mask_falloff: 2,
+			mask_invert: false
+		},
+		opacity: 0.42
+	}
+];
+
 /** Lo-fi VHS v2 — hook: animated tracking + magenta-warm tape color. */
 const LOFI_VHS_LAYERS: BuiltinLayerDef[] = [
 	{
@@ -280,6 +369,27 @@ const GLITCH_CYBER_LAYERS: BuiltinLayerDef[] = [
 ];
 
 export const BUILTIN_PRESETS: BuiltinPreset[] = [
+	{
+		id: 'rgb_hatch',
+		name: 'RGB Hatch',
+		group: 'RGB HATCH',
+		description:
+			'Vertical LED stripes, cubify glass, RGB drift — turn Animation to 5s for the full effect.app motion.',
+		layerLabels: [
+			'EXPOSURE',
+			'GAUSSIAN BLUR',
+			'NOISE',
+			'RGB SHIFT',
+			'CUBIFY',
+			'STRIPE',
+			'CIRCULAR BLUR',
+			'BLUR/SHARP',
+			'LEVELS',
+			'HUE/SAT',
+			'MOTION BLUR'
+		],
+		snapshot: snapshotFromLayers(RGB_HATCH_LAYERS)
+	},
 	{
 		id: 'vintage_print',
 		name: 'Vintage print',

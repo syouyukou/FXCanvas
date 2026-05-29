@@ -9,6 +9,15 @@ export const en: MessageTree = {
 		en: 'English',
 		enZh: 'English & 中文'
 	},
+	menu: {
+		workspace: 'Workspace settings',
+		mediaPreview: 'MEDIA PREVIEW',
+		mediaPreviewHint: 'Hold Space to compare with original',
+		controls: 'CONTROLS',
+		controlsSidebar: 'SIDEBAR',
+		controlsCorner: 'CORNER',
+		back: 'Back'
+	},
 	app: {
 		loadMedia: 'Load Media',
 		undo: 'Undo (⌘Z)',
@@ -435,6 +444,56 @@ export const en: MessageTree = {
 				seed: { label: 'Seed' }
 			}
 		},
+		stripe: {
+			name: 'Stripe',
+			params: {
+				freq: { label: 'Repetitions' },
+				w_min: { label: 'Min thickness' },
+				w_max: { label: 'Max thickness' },
+				angle: { label: 'Angle' },
+				edge: { label: 'Edge softness' },
+				pattern: { label: 'Pattern type' },
+				scroll_speed: { label: 'Scroll speed' },
+				led_mode: { label: 'Color mode' },
+				phase_r: { label: 'Red phase' },
+				phase_g: { label: 'Green phase' },
+				phase_b: { label: 'Blue phase' },
+				benday_mode: { label: 'Row shift' },
+				shift_freq: { label: 'Row shift freq' },
+				animate: { label: 'Animate' }
+			}
+		},
+		cubify: {
+			name: 'Cubify',
+			params: {
+				scale: { label: 'Cube size' },
+				aspect: { label: 'Cube stretch' },
+				strength: { label: 'Depth distortion' },
+				hard: { label: 'Hard edges' },
+				angle: { label: 'Rotation' },
+				phase: { label: 'Position offset' },
+				animate_speed: { label: 'Animation speed' },
+				dispersion: { label: 'Dispersion' },
+				animate: { label: 'Animate' }
+			}
+		},
+		circular_blur: {
+			name: 'Circular Blur',
+			params: {
+				radius: { label: 'Radius' },
+				samples: { label: 'Repetitions', hint: 'Sample count around the circle.' },
+				passes: { label: 'Passes' },
+				decay: { label: 'Pass decay' }
+			}
+		},
+		rgb_shift: {
+			name: 'RGB Shift',
+			params: {
+				amount: { label: 'Amount' },
+				angle: { label: 'Angle' },
+				animate: { label: 'Animate' }
+			}
+		},
 		emboss: {
 			name: 'Emboss',
 			params: {
@@ -462,6 +521,16 @@ export const en: MessageTree = {
 				color: { label: 'Color', hint: 'Shadow / low tone color.' }
 			}
 		},
+		thermal: { name: 'Thermal' },
+		motion_trails: {
+			name: 'Motion Trails',
+			params: {
+				threshold: { label: 'Threshold' },
+				dimming: { label: 'Dimming', hint: 'Enable Animate preview to build trails over time.' }
+			}
+		},
+		blob_tracker: { name: 'Blob Tracker' },
+		layer_mix: { name: 'Layer Mix' },
 		modulation_dither: {
 			name: 'Modulation Dither',
 			params: {
@@ -541,6 +610,25 @@ export const en: MessageTree = {
 		}
 	},
 	presets: {
+		rgb_hatch: {
+			name: 'RGB Hatch',
+			group: 'RGB HATCH',
+			description:
+				'Vertical stripes, cubify refraction, RGB drift — set Animation to 5s for effect.app motion.',
+			layerLabels: [
+				'EXPOSURE',
+				'GAUSSIAN BLUR',
+				'NOISE',
+				'RGB SHIFT',
+				'CUBIFY',
+				'STRIPE',
+				'CIRCULAR BLUR',
+				'BLUR/SHARP',
+				'LEVELS',
+				'HUE/SAT',
+				'MOTION BLUR'
+			]
+		},
 		vintage_print: {
 			name: 'Vintage print',
 			group: 'OLD PAINTING',

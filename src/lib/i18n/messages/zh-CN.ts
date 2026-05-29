@@ -10,6 +10,15 @@ export const zhCN: MessageTree = {
 		en: 'English',
 		enZh: 'English & 中文'
 	},
+	menu: {
+		workspace: '工作区设置',
+		mediaPreview: '媒体预览',
+		mediaPreviewHint: '按住 Space 可对照原图',
+		controls: '控制项',
+		controlsSidebar: '侧栏',
+		controlsCorner: '角落',
+		back: '返回'
+	},
 	app: {
 		loadMedia: '载入媒体',
 		undo: '撤销 (⌘Z)',

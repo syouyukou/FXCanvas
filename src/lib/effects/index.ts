@@ -4,6 +4,10 @@ import { CURVES_EFFECT } from './curves';
 import { GRADIENT_MAP_EFFECT } from './gradient_map';
 import { MOTION_BLUR_EFFECT } from './motion_blur';
 import { DEPTH_OF_FIELD_EFFECT } from './depth_of_field';
+import { THERMAL_EFFECT } from './thermal';
+import { MOTION_TRAILS_EFFECT } from './motion_trails';
+import { BLOB_TRACKER_EFFECT } from './blob_tracker';
+import { LAYER_MIX_EFFECT } from './layer_mix';
 import { DITHER_EFFECT } from './dither';
 import { EXPOSURE_EFFECT } from './exposure';
 import { SHARPEN_EFFECT } from './sharpen';
@@ -17,6 +21,10 @@ import { EMBOSS_EFFECT } from './emboss';
 import { THRESHOLD_EFFECT } from './threshold';
 import { INK_BLEED_EFFECT } from './ink_bleed';
 import { MODULATION_DITHER_EFFECT } from './modulation_dither';
+import { STRIPE_EFFECT } from './stripe';
+import { CUBIFY_EFFECT } from './cubify';
+import { CIRCULAR_BLUR_EFFECT } from './circular_blur';
+import { RGB_SHIFT_EFFECT } from './rgb_shift';
 import { MSX_ASCII } from './msx_ascii';
 
 const HEADER = `#version 300 es
@@ -88,6 +96,7 @@ export const EFFECTS: Effect[] = [
 			{ id: 'blur_v', fragmentShader: BLUR_V }
 		]
 	},
+	CIRCULAR_BLUR_EFFECT,
 
 	// ─── COLOR (non-adjust) ─────────────────────────────────
 	{
@@ -398,6 +407,8 @@ void main() {
 
 	GLITCH_DIGITAL_EFFECT,
 	GLITCH_VHS_EFFECT,
+	CUBIFY_EFFECT,
+	RGB_SHIFT_EFFECT,
 
 	{
 		id: 'pixelate',
@@ -468,6 +479,7 @@ void main() {
 	EMBOSS_EFFECT,
 	THRESHOLD_EFFECT,
 	MODULATION_DITHER_EFFECT,
+	STRIPE_EFFECT,
 
 	// ─── STAR GLOW (effect.app parity) ───────────────────────
 	{
@@ -628,6 +640,10 @@ void main() {
 
 	// ─── DITHER ─────────────────────────────────────────────
 	DITHER_EFFECT,
+	THERMAL_EFFECT,
+	MOTION_TRAILS_EFFECT,
+	BLOB_TRACKER_EFFECT,
+	LAYER_MIX_EFFECT,
 
 	// ─── BLOOM ──────────────────────────────────────────────
 	{

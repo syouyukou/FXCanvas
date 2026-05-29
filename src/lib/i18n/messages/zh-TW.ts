@@ -9,6 +9,15 @@ export const zhTW: MessageTree = {
 		en: 'English',
 		enZh: 'English & 中文'
 	},
+	menu: {
+		workspace: '工作區設定',
+		mediaPreview: '媒體預覽',
+		mediaPreviewHint: '按住 Space 可對照原圖',
+		controls: '控制項',
+		controlsSidebar: '側欄',
+		controlsCorner: '角落',
+		back: '返回'
+	},
 	app: {
 		loadMedia: '載入媒體',
 		undo: '復原 (⌘Z)',
@@ -432,6 +441,56 @@ export const zhTW: MessageTree = {
 				seed: { label: '種子' }
 			}
 		},
+		stripe: {
+			name: '條紋',
+			params: {
+				freq: { label: 'Repetitions' },
+				w_min: { label: 'Min thickness' },
+				w_max: { label: 'Max thickness' },
+				angle: { label: 'Angle' },
+				edge: { label: 'Edge softness' },
+				pattern: { label: 'Pattern type' },
+				scroll_speed: { label: 'Scroll speed' },
+				led_mode: { label: 'Color mode' },
+				phase_r: { label: 'Red phase' },
+				phase_g: { label: 'Green phase' },
+				phase_b: { label: 'Blue phase' },
+				benday_mode: { label: 'Row shift' },
+				shift_freq: { label: 'Row shift freq' },
+				animate: { label: 'Animate' }
+			}
+		},
+		cubify: {
+			name: 'Cubify',
+			params: {
+				scale: { label: 'Cube size' },
+				aspect: { label: 'Cube stretch' },
+				strength: { label: 'Depth distortion' },
+				hard: { label: 'Hard edges' },
+				angle: { label: 'Rotation' },
+				phase: { label: 'Position offset' },
+				animate_speed: { label: 'Animation speed' },
+				dispersion: { label: 'Dispersion' },
+				animate: { label: 'Animate' }
+			}
+		},
+		circular_blur: {
+			name: 'Circular Blur',
+			params: {
+				radius: { label: 'Radius' },
+				samples: { label: 'Repetitions' },
+				passes: { label: 'Passes' },
+				decay: { label: 'Pass decay' }
+			}
+		},
+		rgb_shift: {
+			name: 'RGB Shift',
+			params: {
+				amount: { label: 'Amount' },
+				angle: { label: 'Angle' },
+				animate: { label: 'Animate' }
+			}
+		},
 		emboss: {
 			name: '浮雕',
 			params: {
@@ -459,6 +518,10 @@ export const zhTW: MessageTree = {
 				color: { label: 'Color', hint: '暗部 / 低色調顏色。' }
 			}
 		},
+		thermal: { name: '熱成像' },
+		motion_trails: { name: '動態殘影' },
+		blob_tracker: { name: '色塊追蹤' },
+		layer_mix: { name: '圖層混合' },
 		modulation_dither: {
 			name: '調變網點',
 			params: {
@@ -538,6 +601,24 @@ export const zhTW: MessageTree = {
 		}
 	},
 	presets: {
+		rgb_hatch: {
+			name: 'RGB Hatch',
+			group: 'RGB HATCH',
+			description: '垂直條紋、Cubify 折射、RGB 漂移 — 動畫設為 5s。',
+			layerLabels: [
+				'EXPOSURE',
+				'GAUSSIAN BLUR',
+				'NOISE',
+				'RGB SHIFT',
+				'CUBIFY',
+				'STRIPE',
+				'CIRCULAR BLUR',
+				'BLUR/SHARP',
+				'LEVELS',
+				'HUE/SAT',
+				'MOTION BLUR'
+			]
+		},
 		vintage_print: {
 			name: '復古印刷',
 			group: '古典繪畫',
