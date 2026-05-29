@@ -29,14 +29,12 @@
 
 <style>
 	.credit-bar {
-		position: absolute;
-		left: 0;
-		right: 0;
-		bottom: 0;
 		display: flex;
 		align-items: center;
 		flex-wrap: wrap;
 		gap: 4px;
+		width: 100%;
+		box-sizing: border-box;
 		padding: 6px 12px;
 		background: rgba(0, 0, 0, 0.88);
 		border-top: 1px solid rgba(255, 255, 255, 0.08);
@@ -44,8 +42,6 @@
 		font-size: var(--text-xs);
 		line-height: 1.3;
 		color: rgba(255, 255, 255, 0.72);
-		pointer-events: auto;
-		z-index: 4;
 	}
 
 	.credit-prefix {

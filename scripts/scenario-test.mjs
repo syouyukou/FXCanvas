@@ -101,9 +101,14 @@ async function newPage(browser, locale) {
 	}, locale);
 	await page.goto(baseUrl, { waitUntil: 'networkidle', timeout: 25000 });
 	await page.waitForFunction(
-		() => document.querySelectorAll('.effect-card .thumb-after').length >= 8,
+		() => document.querySelectorAll('.effect-panel .effect-card').length >= 10,
 		null,
 		{ timeout: 15000 }
+	);
+	await page.waitForFunction(
+		() => document.querySelectorAll('.effect-card .thumb-after').length >= 8,
+		null,
+		{ timeout: 30000 }
 	);
 	return { page, errors };
 }
@@ -121,15 +126,24 @@ async function tab(page, index) {
 	await page.locator('.effect-panel .tabs button').nth(index).click();
 }
 
+async function clickPanelTab(page, label) {
+	await page.locator('.effect-panel .tabs button', { hasText: label }).click();
+}
+
 async function setLocale(page, locale) {
 	await page.evaluate((lang) => {
 		localStorage.setItem('fxcanvas-locale', lang);
 		location.reload();
 	}, locale);
 	await page.waitForFunction(
-		() => document.querySelectorAll('.effect-card .thumb-after').length >= 8,
+		() => document.querySelectorAll('.effect-panel .effect-card').length >= 10,
 		null,
 		{ timeout: 15000 }
+	);
+	await page.waitForFunction(
+		() => document.querySelectorAll('.effect-card .thumb-after').length >= 8,
+		null,
+		{ timeout: 30000 }
 	);
 }
 
@@ -170,15 +184,15 @@ async function runScenarios() {
 		const { page, errors } = await newPage(browser, 'en');
 		await loadFixture(page);
 
-		await page.getByText('Bloom', { exact: true }).first().click();
-		await page.locator('.layer-name', { hasText: 'BLOOM' }).waitFor({ timeout: 3000 });
+		await page.getByText('Star Glow', { exact: true }).first().click();
+		await page.locator('.layer-name', { hasText: 'STAR GLOW' }).waitFor({ timeout: 3000 });
 		pass('Add effect layer');
 
 		await page.getByText('Dither', { exact: true }).first().click({ modifiers: ['Shift'] });
 		await page.locator('.layer-name', { hasText: 'DITHER' }).waitFor({ timeout: 3000 });
 		pass('Shift+click stack effect');
 
-		await page.locator('.search').fill('bloom');
+		await page.locator('.search').fill('star');
 		await page.waitForFunction(
 			() => document.querySelectorAll('.effect-card').length <= 2,
 			null,
@@ -187,7 +201,7 @@ async function runScenarios() {
 		pass('Search filter');
 		await page.locator('.search').fill('');
 
-		await page.locator('.layer-row', { hasText: 'BLOOM' }).locator('.icon-btn.eye').click();
+		await page.locator('.layer-row', { hasText: 'STAR GLOW' }).locator('.icon-btn.eye').click();
 		await page.waitForTimeout(150);
 		pass('Layer visibility toggle');
 
@@ -208,8 +222,8 @@ async function runScenarios() {
 	{
 		const { page, errors } = await newPage(browser, 'en');
 		await loadFixture(page);
-		await page.getByText('Bloom', { exact: true }).first().click();
-		await page.locator('.layer-name', { hasText: 'BLOOM' }).waitFor();
+		await page.getByText('Star Glow', { exact: true }).first().click();
+		await page.locator('.layer-name', { hasText: 'STAR GLOW' }).waitFor();
 
 		const canvas = page.locator('.canvas-container');
 		await canvas.hover();
@@ -246,8 +260,8 @@ async function runScenarios() {
 	{
 		const { page, errors } = await newPage(browser, 'en');
 		await loadFixture(page);
-		await page.getByText('Bloom', { exact: true }).first().click();
-		await page.locator('.layer-name', { hasText: 'BLOOM' }).waitFor();
+		await page.getByText('Star Glow', { exact: true }).first().click();
+		await page.locator('.layer-name', { hasText: 'STAR GLOW' }).waitFor();
 
 		await page.locator('.header-actions .preset-menu button').click();
 		await page.getByText('Save current stack').click();
@@ -257,13 +271,13 @@ async function runScenarios() {
 		if ((await page.locator('.preset-menu .backdrop').count()) === 0) pass('Save user preset');
 		else fail('Save user preset');
 
-		await page.locator('.layer-row', { hasText: 'BLOOM' }).locator('.icon-btn.delete').click();
-		await page.waitForFunction(() => !document.body.textContent?.includes('BLOOM'), null, {
+		await page.locator('.layer-row', { hasText: 'STAR GLOW' }).locator('.icon-btn.delete').click();
+		await page.waitForFunction(() => !document.body.textContent?.includes('STAR GLOW'), null, {
 			timeout: 3000
 		});
 		await page.locator('.header-actions .preset-menu button').click();
 		await page.getByText('Scenario Preset').click();
-		await page.locator('.layer-name', { hasText: 'BLOOM' }).waitFor({ timeout: 3000 });
+		await page.locator('.layer-name', { hasText: 'STAR GLOW' }).waitFor({ timeout: 3000 });
 		pass('Load user preset');
 
 		await page.getByText('Glitch VHS', { exact: true }).first().click({ modifiers: ['Shift'] });
@@ -336,7 +350,7 @@ async function runScenarios() {
 			fail('PRESETS tab visible');
 		} else {
 			pass('PRESETS tab visible');
-			await tab(page, 1);
+			await clickPanelTab(page, 'PRESETS');
 			const empty = await page.locator('.effect-list .empty').count();
 			if (empty > 0) pass('Builtin presets hidden', 'empty state');
 			else fail('Builtin presets hidden', 'expected empty state');
@@ -360,8 +374,8 @@ async function runScenarios() {
 		else fail('Tab: 效果', await effectsTab.textContent());
 
 		await loadFixture(page);
-		await page.getByText('光暈', { exact: true }).first().click();
-		await page.locator('.layer-name', { hasText: '光暈' }).waitFor({ timeout: 3000 });
+		await page.getByText('星芒', { exact: true }).first().click();
+		await page.locator('.layer-name', { hasText: '星芒' }).waitFor({ timeout: 3000 });
 		pass('Add effect (zh-TW name)');
 
 		await page.getByText('網點化', { exact: true }).first().click({ modifiers: ['Shift'] });
@@ -397,9 +411,9 @@ async function runScenarios() {
 	{
 		const { page, errors } = await newPage(browser, 'en-zh');
 		await loadFixture(page);
-		await page.getByText(/Exposure.*曝光/i).first().click();
-		await page.locator('.param-label', { hasText: /Exposure.*曝光/i }).waitFor({ timeout: 3000 });
-		pass('Bilingual param label (Exposure / 曝光)');
+		await page.getByText(/Star Glow.*星芒/i).first().click();
+		await page.locator('.param-label', { hasText: /highlight.*高光/i }).waitFor({ timeout: 3000 });
+		pass('Bilingual param label (Star Glow / 星芒)');
 
 		if (errors.length === 0) pass('No JS errors (en-zh)');
 		else fail('No JS errors (en-zh)', errors.slice(0, 3).join(' | '));

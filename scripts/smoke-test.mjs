@@ -226,9 +226,14 @@ async function runPlaywrightSmoke() {
 		else fail('Browser title', title);
 
 		await page.waitForFunction(
-			() => document.querySelectorAll('.effect-card .thumb-after').length >= 10,
+			() => document.querySelectorAll('.effect-panel .effect-card').length >= 10,
 			null,
 			{ timeout: 15000 }
+		);
+		await page.waitForFunction(
+			() => document.querySelectorAll('.effect-card .thumb-after').length >= 8,
+			null,
+			{ timeout: 30000 }
 		);
 		const thumbCount = await page.locator('.effect-card .thumb-after').count();
 		if (thumbCount >= 10) pass('Default effect thumbnails', `${thumbCount} visible`);
@@ -385,6 +390,41 @@ async function runPlaywrightSmoke() {
 		await page.locator('#export-format').selectOption('jpeg');
 		await page.getByRole('button', { name: 'Download', exact: true }).click();
 		pass('Export JPEG download');
+
+		await page.locator('.effect-panel .tabs button', { hasText: 'ANIMATED' }).click();
+		await page.getByText('MSX ASCII', { exact: true }).first().waitFor({ timeout: 5000 });
+		pass('ANIMATED tab shows MSX ASCII');
+
+		await page.getByText('MSX ASCII', { exact: true }).first().click();
+		await page.locator('.layer-name', { hasText: 'MSX ASCII' }).waitFor({ timeout: 3000 });
+		await page.locator('.timeline').waitFor({ timeout: 5000 });
+		pass('Timeline appears with MSX ASCII motion');
+
+		await page.goto(`${baseUrl}/explore`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+		await page.locator('.explore').waitFor({ timeout: 5000 });
+		pass('Explore page loads');
+
+		await page.goto(`${baseUrl}/explore?tab=animated`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+		await page.getByText('MSX ASCII', { exact: true }).first().waitFor({ timeout: 5000 });
+		pass('Explore animated tab');
+
+		await page.goto(baseUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
+		await page.evaluate(() => {
+			localStorage.removeItem('fxcanvas-session-meta-v1');
+		});
+		await page.reload({ waitUntil: 'domcontentloaded' });
+		await page.getByRole('button', { name: 'Illustration' }).waitFor({ timeout: 10000 });
+		await page.getByRole('button', { name: 'Illustration' }).click();
+		await page.waitForFunction(
+			() => document.querySelector('.footer-info')?.textContent?.includes('×'),
+			null,
+			{ timeout: 10000 }
+		);
+		const igLink = page.locator('.credit-bar a[href*="instagram.com/dzhannatik"]');
+		await igLink.waitFor({ timeout: 5000 });
+		const igHref = await igLink.getAttribute('href');
+		if (igHref?.startsWith('https://www.instagram.com/')) pass('Sample IG credit bar', igHref);
+		else fail('Sample IG credit bar', igHref ?? 'missing href');
 
 		if (pageErrors.length === 0) pass('No page JS errors');
 		else fail('No page JS errors', pageErrors.join(' | '));

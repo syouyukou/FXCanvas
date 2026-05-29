@@ -4,9 +4,13 @@ import {
 	activeLayerIndex,
 	layerGroups,
 	sourceImage,
+	sourceCredit,
 	replaceStack
 } from './editor';
 import { fromSnapshot, resetHistory, toSnapshot, type StackSnapshot } from './history';
+import { clearAllKeyframeTracks, keyframeTracks } from './keyframes';
+import type { ParamTrack } from '../engine/keyframeEngine';
+import type { SampleAuthor } from '../samples/catalog';
 
 const META_KEY = 'fxcanvas-session-meta-v1';
 const DB_NAME = 'fxcanvas';
@@ -17,6 +21,8 @@ interface SessionMeta {
 	stack: StackSnapshot;
 	savedAt: number;
 	imageKey: string;
+	keyframeTracks?: ParamTrack[];
+	sourceCredit?: SampleAuthor[] | null;
 }
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -126,7 +132,9 @@ export async function saveSession(): Promise<void> {
 		const meta: SessionMeta = {
 			stack: toSnapshot(list, get(activeLayerIndex), get(layerGroups)),
 			savedAt: Date.now(),
-			imageKey
+			imageKey,
+			keyframeTracks: get(keyframeTracks),
+			sourceCredit: get(sourceCredit)
 		};
 		localStorage.setItem(META_KEY, JSON.stringify(meta));
 	} catch {
@@ -148,6 +156,9 @@ export async function restoreSession(): Promise<boolean> {
 		const { list, activeIndex, groups } = fromSnapshot(meta.stack);
 		sourceImage.set(img);
 		replaceStack(list, activeIndex, { skipHistory: true, groups });
+		if (meta.keyframeTracks?.length) keyframeTracks.set(meta.keyframeTracks);
+		else clearAllKeyframeTracks();
+		sourceCredit.set(meta.sourceCredit ?? null);
 		resetHistory();
 		return true;
 	} catch {
@@ -170,6 +181,8 @@ export function initSessionAutosave() {
 	layerGroups.subscribe(scheduleSave);
 	activeLayerIndex.subscribe(scheduleSave);
 	sourceImage.subscribe(scheduleSave);
+	keyframeTracks.subscribe(scheduleSave);
+	sourceCredit.subscribe(scheduleSave);
 }
 
 export function clearSession() {

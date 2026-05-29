@@ -6,6 +6,7 @@ import { cloneGradient, type GradientStop } from '../engine/gradient';
 import { createI18n } from '$lib/i18n';
 import { locale } from '$lib/i18n';
 import type { SampleAuthor, SampleImage } from '../samples/catalog';
+import { getSampleCreditForUrl } from '../samples/catalog';
 import { fromSnapshot, pushHistory, type StackSnapshot } from './history';
 import { clearAllKeyframeTracks, pruneKeyframeTracks } from './keyframes';
 import { resolveLayerId } from '../engine/keyframeEngine';
@@ -151,7 +152,7 @@ export function loadImageUrl(url: string, credit?: SampleAuthor[] | null): Promi
 	return new Promise((resolve, reject) => {
 		const img = new Image();
 		img.onload = () => {
-			sourceCredit.set(credit ?? null);
+			sourceCredit.set(credit ?? getSampleCreditForUrl(url));
 			sourceImage.set(img);
 			resolve();
 		};

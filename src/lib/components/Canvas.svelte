@@ -246,7 +246,6 @@
 <div
 	class="canvas-container"
 	class:panning={isPanning}
-	class:has-credit={!!$sourceCredit?.length}
 	bind:this={container}
 	ondrop={onDrop}
 	ondragover={onDragOver}
@@ -295,72 +294,74 @@
 		role="img"
 		aria-label={$i18n.t('canvas.ariaPreview')}
 	>
-		<canvas bind:this={canvas}></canvas>
+		<div class="canvas-frame">
+			<div class="canvas-surface">
+				<canvas bind:this={canvas}></canvas>
+				{#if $sourceImage && $needsAnimationUi}
+					{@const vid = $sourceImage instanceof HTMLVideoElement ? $sourceImage : null}
+					<div class="media-controls">
+						<button
+							class="vc-btn"
+							onclick={() => {
+								if (vid) {
+									if (vid.paused) {
+										void vid.play();
+										videoPlaying = true;
+									} else {
+										vid.pause();
+										videoPlaying = false;
+									}
+								} else {
+									toggleAnimationPlayback();
+								}
+							}}
+							title={vid ? (videoPlaying ? 'Pause' : 'Play') : $animation.playing ? 'Pause' : 'Play'}
+						>
+							{#if (vid && videoPlaying) || (!vid && $animation.playing)}
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+									<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+								</svg>
+							{:else}
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+									<polygon points="5,3 19,12 5,21"/>
+								</svg>
+							{/if}
+						</button>
+						<button
+							class="vc-btn"
+							onclick={() => {
+								if (vid) vid.currentTime = 0;
+								else resetAnimationClock();
+							}}
+							title="Restart"
+						>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+								<polyline points="3 3 3 8 8 8"/>
+							</svg>
+						</button>
+						<span class="vc-time">
+							{#if vid}
+								{formatTime(vid.currentTime)} / {formatTime(vid.duration || $animation.duration)}
+							{:else}
+								{formatTime($animation.currentTime)} / {formatTime($animation.duration)}s
+							{/if}
+						</span>
+						{#if vid}
+							<span class="vc-label">VIDEO</span>
+						{:else}
+							<span class="vc-label vc-label--anim">ANIM</span>
+						{/if}
+					</div>
+				{/if}
+			</div>
+			{#if $sourceCredit && $sourceCredit.length > 0}
+				<SampleCreditBar authors={$sourceCredit} />
+			{/if}
+		</div>
 	</div>
 	{#if $showOriginal && $sourceImage}
 		<div class="compare-badge">{$i18n.t('canvas.original')}</div>
-	{/if}
-
-	{#if $sourceCredit && $sourceCredit.length > 0}
-		<SampleCreditBar authors={$sourceCredit} />
-	{/if}
-
-	{#if $sourceImage && $needsAnimationUi}
-		{@const vid = $sourceImage instanceof HTMLVideoElement ? $sourceImage : null}
-		<div class="media-controls">
-			<button
-				class="vc-btn"
-				onclick={() => {
-					if (vid) {
-						if (vid.paused) {
-							void vid.play();
-							videoPlaying = true;
-						} else {
-							vid.pause();
-							videoPlaying = false;
-						}
-					} else {
-						toggleAnimationPlayback();
-					}
-				}}
-				title={vid ? (videoPlaying ? 'Pause' : 'Play') : $animation.playing ? 'Pause' : 'Play'}
-			>
-				{#if (vid && videoPlaying) || (!vid && $animation.playing)}
-					<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-						<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
-					</svg>
-				{:else}
-					<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-						<polygon points="5,3 19,12 5,21"/>
-					</svg>
-				{/if}
-			</button>
-			<button
-				class="vc-btn"
-				onclick={() => {
-					if (vid) vid.currentTime = 0;
-					else resetAnimationClock();
-				}}
-				title="Restart"
-			>
-				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-					<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-					<polyline points="3 3 3 8 8 8"/>
-				</svg>
-			</button>
-			<span class="vc-time">
-				{#if vid}
-					{formatTime(vid.currentTime)} / {formatTime(vid.duration || $animation.duration)}
-				{:else}
-					{formatTime($animation.currentTime)} / {formatTime($animation.duration)}s
-				{/if}
-			</span>
-			{#if vid}
-				<span class="vc-label">VIDEO</span>
-			{:else}
-				<span class="vc-label vc-label--anim">ANIM</span>
-			{/if}
-		</div>
 	{/if}
 </div>
 
@@ -384,6 +385,19 @@
 		flex-shrink: 0;
 	}
 
+	.canvas-frame {
+		display: inline-flex;
+		flex-direction: column;
+		max-width: 100%;
+		box-shadow: 0 4px 32px rgba(0, 0, 0, 0.6);
+	}
+
+	.canvas-surface {
+		position: relative;
+		display: inline-block;
+		line-height: 0;
+	}
+
 	.canvas-stage.hidden {
 		display: none;
 	}
@@ -391,7 +405,8 @@
 	canvas {
 		display: block;
 		image-rendering: pixelated;
-		box-shadow: 0 4px 32px rgba(0, 0, 0, 0.6);
+		max-width: 100%;
+		height: auto;
 	}
 
 	.empty-state {
@@ -500,10 +515,8 @@
 		border-radius: 6px;
 		padding: 5px 10px;
 		backdrop-filter: blur(4px);
-	}
-
-	.has-credit .media-controls {
-		bottom: 40px;
+		z-index: 2;
+		pointer-events: auto;
 	}
 
 	.vc-btn {

@@ -27,8 +27,30 @@ jobs:
       - name: Typecheck
         run: npm run check
 
+      - name: Build
+        run: npm run build
+
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
 
       - name: Smoke test
-        run: npm run smoke
+        run: |
+          npm run preview -- --port 4173 &
+          PREVIEW_PID=$!
+          for i in $(seq 1 40); do
+            if curl -sf http://127.0.0.1:4173/ >/dev/null; then break; fi
+            sleep 1
+          done
+          SMOKE_BASE_URL=http://127.0.0.1:4173 npm run smoke
+          kill $PREVIEW_PID || true
+
+      - name: Scenario test
+        run: |
+          npm run preview -- --port 4173 &
+          PREVIEW_PID=$!
+          for i in $(seq 1 40); do
+            if curl -sf http://127.0.0.1:4173/ >/dev/null; then break; fi
+            sleep 1
+          done
+          SMOKE_BASE_URL=http://127.0.0.1:4173 npm run test:scenarios
+          kill $PREVIEW_PID || true

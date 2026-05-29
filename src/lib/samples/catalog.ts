@@ -35,8 +35,12 @@ export const SAMPLE_IMAGES: SampleImage[] = [
 		labelKey: 'samples.illustration',
 		authors: [
 			{
-				handle: 'kimx70_art',
-				instagram: 'kimx70_art'
+				handle: 'dzhannatik',
+				instagram: 'dzhannatik'
+			},
+			{
+				handle: 'mitya_lyalin',
+				instagram: 'mitya_lyalin'
 			}
 		]
 	},
@@ -80,6 +84,16 @@ export const SAMPLE_IMAGES: SampleImage[] = [
 
 export function getSampleById(id: string): SampleImage | undefined {
 	return SAMPLE_IMAGES.find((s) => s.id === id);
+}
+
+/** Match a loaded image URL back to a curated sample (for credit restoration). */
+export function getSampleByUrl(url: string): SampleImage | undefined {
+	const path = url.split('?')[0]?.split('#')[0] ?? url;
+	return SAMPLE_IMAGES.find((s) => path.endsWith(s.url) || path === s.url);
+}
+
+export function getSampleCreditForUrl(url: string): SampleAuthor[] | null {
+	return getSampleByUrl(url)?.authors ?? null;
 }
 
 export function getSampleByHeroId(heroId: string): SampleImage | undefined {

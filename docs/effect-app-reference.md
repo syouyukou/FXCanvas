@@ -558,66 +558,48 @@ flowchart LR
 
 ## 與本專案（FXCanvas）對照
 
-> 最後更新：2026-05-29（含技術棧反推、架構圖、截取路線圖）
+> 最後更新：2026-05-30（v0.11.1）
 
 | 功能 | Effect.app | FXCanvas |
 |------|------------|----------|
 | 渲染引擎 | WebGL 2 | WebGL 2 |
-| 媒體類型 | 圖片 + 影片 | 圖片 only |
+| 媒體類型 | 圖片 + 影片 | 圖片 + 影片 |
 | 特效堆疊 Layers | ✅ | ✅ |
 | 圖層複製 / 顯示隱藏 | ✅ | ✅ duplicate + eye toggle |
-| 左側特效面板 | EXPLORE / EFFECTS / PRESETS 分頁 + 大分類 | EFFECTS / FAVORITES / PRESETS + BLUR·COLOR·DISTORT 大標 |
-| 內建 Preset | Vintage print 等策展 stack | ✅ Vintage print（`builtin.ts`） |
+| 左側特效面板 | EXPLORE / EFFECTS / PRESETS 分頁 + 大分類 | **EFFECTS / ANIMATED / PRESETS** + 分類 |
+| Explore 瀏覽頁 | ✅ | ✅ `/explore` + `?tab=animated` |
+| 內建 Preset | Vintage print 等策展 stack | ⚠️ 面板空（重寫中；`builtin.ts` 仍可用） |
 | 縮圖 hover 前後對比 | ✅ | ✅ |
 | Canvas 原圖對比 | Media preview On/Off | ✅ 按住 Space 顯示原圖 |
 | Canvas 縮放 / 平移 | ✅ | ✅ 滾輪縮放 + 拖曳平移 + 雙擊重置 |
 | Undo / Redo | ✅（Version history 雲端） | ✅ 本機 stack 歷史（⌘Z / ⌘⇧Z，最多 50 步） |
 | Preset 儲存 | ✅ 雲端 + 社群 | ✅ localStorage（最多 20 組，整個 stack） |
-| 匯出 PNG / JPEG | ✅ | ✅ + 尺寸預設（Original / 50% / 1080p / 4K） |
-| 匯出 MP4 / WebM / 逐幀 | ✅ | ❌ |
-| 動畫 / Keyframes | ✅ Animate 方案 | ❌ |
-| Exposure / Levels / Dither | ✅ | ✅ |
+| 匯出 PNG / JPEG / WebP | ✅ | ✅ + 尺寸預設（Original / 50% / 1080p / 4K） |
+| 匯出 MP4 / WebM | ✅ | ✅ WebM（Safari 優先）；MP4 視瀏覽器 |
+| 動畫 / Keyframes | ✅ Animate 方案 | ✅ 基礎：Timeline + ◆ keyframe + 插值 |
+| 程序動畫 shader | ✅ 多效果 | ⚠️ 僅 **MSX ASCII**（`u_time` / `animmode`） |
+| Exposure / Levels / Dither | ✅ | ✅（部分隱藏於面板，仍可在圖層使用） |
 | 真・誤差擴散 Dither | ✅ Pro | ❌（ordered + serpentine 近似） |
-| Bloom / CRT / Glitch 等 | ✅ | ✅ 18 種特效（含 RGB Halftone / Paper Grain / Print Stamp） |
-| Favorites 持久化 | ✅ 帳號 | ✅ localStorage |
+| Bloom / CRT / Glitch 等 | ✅ | ✅ 18+ 種特效（面板精選 12 靜態 + 1 動態） |
+| Session 自動存檔 | — | ✅ 圖片 stack + **keyframes**（IndexedDB）；影片不存 |
+| Favorites 持久化 | ✅ 帳號 | ⚠️ localStorage（分Tab 暫隱） |
 | 帳號 / 訂閱 / 浮水印 | ✅ | ❌ |
 | Figma / Chrome 整合 | ✅ | ❌ |
 | 本地端處理 | ✅ | ✅ |
 
-### FXCanvas 已實作特效（18）
+### 仍待實作（Phase 路線圖）
 
-| 分類 | 特效 |
-|------|------|
-| Blur | Gaussian Blur, Bloom |
-| Color | Brightness/Contrast, Hue/Saturation, Duotone, Monochrome, **Exposure**, **Levels** |
-| Film | Noise, **RGB Halftone**, **Paper Grain**, **Print Stamp** |
-| Distort | Glitch, Pixelate |
-| Effects | CRT, Vignette, Star Glow, Dither |
-
-### 技術對照摘要
-
-| 面向 | Effect.app | FXCanvas |
-|------|------------|----------|
-| 前端框架 | Vue 3 + Vite | SvelteKit + Vite |
-| 渲染抽象 | `ShaderNodeGroup` / Shadertoy | `EffectRenderer` / TS effects |
-| 預覽解析度 | 動態 | `PREVIEW_MAX_DIM = 1920`，大圖降採樣預覽、匯出用原圖 |
-| 多 pass 特效 | ✅ Bloom 等 | ✅ ping-pong FBO |
-| Shader uniform | GLSL 註解解析 | `u_` + param name 自動綁定 |
-| 歷史紀錄 | 伺服器 version history | 記憶體 + snapshot（effectId + params） |
-| Preset | API + 社群審核 | `localStorage` JSON snapshot |
-| 監控 | Sentry | 無 |
-| 訂閱 | Lemon Squeezy API | 無 |
-
-### 仍待實作（對齊上方 Phase 路線圖）
-
-| 優先 | 項目 | Phase | 技術要點 |
-|------|------|-------|----------|
-| P0 | 影片匯入 + MP4/WebM 匯出 | 2 | `HTMLVideoElement` texture、`captureStream` + `MediaRecorder` |
-| P1 | 圖層 opacity / blend mode | 1+ | 與 Effect 圖層合成對齊 |
-| P2 | Film Grain / Vintage LUT | 4 | 紋理 atlas、3D LUT |
-| P3 | Keyframe 時間軸 | 3 | uniform 插值 + 匯出 loop |
-| P4 | 真・Floyd-Steinberg dither | 4 | CPU worker 或 compute pass |
-| P5 | Canvas 拖放 UX | 1 | 已有 drop zone，可強化 |
+| 優先 | 項目 | 狀態 |
+|------|------|------|
+| P0 | Vercel Git 自動部署 | push 後需手動 `vercel deploy --prod` |
+| P1 | Keyframe 時間軸拖曳編輯 | 僅 playhead ◆ 切換 |
+| P1 | 更多 ANIMATED 效果 | Glitch VHS / CRT 加 `u_time` |
+| P1 | CI smoke 覆蓋 v0.11 功能 | 已補 ANIMATED / Explore / Timeline |
+| P2 | 影片 session 存檔 | 目前 skip |
+| P2 | PNG 序列動畫匯出 | 僅 WebM/MP4 |
+| P2 | PRESETS 面板策展 | `VISIBLE_PRESET_IDS = []` |
+| P3 | 真・Floyd-Steinberg dither | CPU / compute pass |
+| P3 | Canva / Figma 外掛 | 未開始 |
 
 ### Dither（effect.app 對照）
 

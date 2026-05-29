@@ -9,6 +9,14 @@ FXCanvas 版本更新紀錄（對應 [GitHub Releases](https://github.com/syouyu
 3. 建立並 push tag：`git tag vX.Y.Z && git push origin vX.Y.Z`
 4. GitHub Actions 會自動從對應區塊建立 Release
 
+## v0.11.2 — 2026-05-30
+
+- **範例圖 IG 署名列**：固定顯示在作品正下方（隨 canvas 平移）；Illustration 改為 `@dzhannatik` & `@mitya_lyalin` 可點連結
+- Session 自動存檔納入 **keyframes** 與 **sourceCredit**（重新整理後署名不消失）
+- CI 改以 `preview` 跑 smoke / scenario（修復卡死）；scenario 對齊精選面板（Star Glow 取代 Bloom）
+- Smoke 新增 ANIMATED 分Tab、Timeline、Explore、IG 署名測試
+- 更新 `docs/effect-app-reference.md` 對照表至 v0.11.x
+
 ## v0.11.1 — 2026-05-30
 
 - **ANIMATED 獨立分頁**：EffectPanel 新增 `ANIMATED` tab；Explore 頁 `/explore?tab=animated` 同步分區
