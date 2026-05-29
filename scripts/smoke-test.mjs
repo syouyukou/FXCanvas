@@ -301,6 +301,29 @@ async function runPlaywrightSmoke() {
 		if (opacityLabel?.includes('50')) pass('Layer opacity slider', opacityLabel.trim());
 		else fail('Layer opacity slider', opacityLabel ?? 'missing');
 
+		const canvas = page.locator('.canvas-container');
+		await canvas.hover();
+		const zoomBefore = await page.locator('.zoom-badge').textContent();
+		await page.mouse.wheel(0, -200);
+		await page.waitForTimeout(150);
+		const zoomAfter = await page.locator('.zoom-badge').textContent();
+		if (zoomBefore !== zoomAfter) pass('Canvas wheel zoom', `${zoomBefore?.trim()} → ${zoomAfter?.trim()}`);
+		else fail('Canvas wheel zoom', `stuck at ${zoomBefore?.trim()}`);
+		await canvas.dblclick();
+		await page.waitForTimeout(100);
+		const zoomReset = await page.locator('.zoom-badge').textContent();
+		if (zoomReset?.includes('100')) pass('Double-click reset zoom');
+		else fail('Double-click reset zoom', zoomReset ?? 'missing badge');
+
+		await page.getByRole('button', { name: 'Presets' }).click();
+		await page.getByText('Save current stack').click();
+		await page.locator('.save-row input').fill('Smoke Preset');
+		await page.locator('.save-btn').click();
+		await page.waitForTimeout(200);
+		const presetOpen = await page.locator('.preset-menu .backdrop').count();
+		if (presetOpen === 0) pass('Preset menu closes after save');
+		else fail('Preset menu closes after save', 'backdrop still visible');
+
 		await page.getByText('Glitch Digital', { exact: true }).first().click({ modifiers: ['Shift'] });
 		await page.locator('.layer-name', { hasText: 'GLITCH DIGITAL' }).waitFor({ timeout: 3000 });
 		await page.waitForTimeout(300);

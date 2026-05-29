@@ -14,6 +14,7 @@
 		saveCurrentPreset(name);
 		name = '';
 		saveOpen = false;
+		open = false;
 	}
 
 	function onLoad(id: string) {
@@ -39,7 +40,7 @@
 
 	{#if open}
 		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-		<div class="backdrop" onclick={() => (open = false)}></div>
+		<div class="backdrop" role="presentation" onclick={() => (open = false)}></div>
 		<div class="dropdown">
 			{#if saveOpen}
 				<div class="save-row">

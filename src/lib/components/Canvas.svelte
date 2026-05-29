@@ -164,6 +164,7 @@
 	ondrop={onDrop}
 	ondragover={onDragOver}
 	onwheel={onWheel}
+	ondblclick={onDoubleClick}
 	onpointerdown={onPointerDown}
 	onpointermove={onPointerMove}
 	onpointerup={onPointerUp}
@@ -186,7 +187,6 @@
 		class="canvas-stage"
 		class:hidden={!$sourceImage}
 		style="transform: translate({panX}px, {panY}px)"
-		ondblclick={onDoubleClick}
 		role="img"
 		aria-label="Preview canvas"
 	>
