@@ -179,6 +179,44 @@ flowchart LR
 | Phase 3 | Animate Keyframes | **0%** — 待做 |
 | Phase 4 | 進階特效資產 | **部分** — Dither/Star Glow 有，Grain/LUT 無 |
 
+### FXCanvas 內建 Preset：Vintage print（2026-05-29 v2）
+
+#### 與 effect.app 差異（為何舊版不像）
+
+| 面向 | effect.app | 舊 FXCanvas 近似 | v2 修正 |
+|------|------------|------------------|---------|
+| 半色網 | **RGB HATCH** — R/G/B 各自旋轉網點、套色錯位 | 灰階 `dither` palette 1 | 新增 `rgb_halftone` |
+| 色彩 | 保留品紅/青/黃網點（Risograph） | 末端 `duotone` 暖褐色 flatten | 移除 duotone，改 Risograph dither 22% 疊加 |
+| 紙張 | **PAPER SCAN** 紋理貼圖感 | `noise` ×3 糊在一起 | `paper_grain` ×2（前後各一層） |
+| 邊框 | **PRINT STAMP** 紙邊 / 留白 | 只有 `vignette` | 新增 `print_stamp` |
+| 堆疊 | ~10 層專用 shader | 12 層通用特效錯序 | 10 層、順序對齊 |
+
+#### v3 優化（2026-05-29）
+
+- **RGB Halftone**：改為白紙上三色版 **multiply 疊印**（不再 mix 糊成一團）
+- **Print Stamp**：修正遮罩（中心顯示圖、邊緣留白）
+- **Paper Grain**：overlay 紙紋混合
+- **Soft Bleed**：新增墨水滲開層
+- Preset 精簡為 9 層、網點 `cellSize` 3.5
+
+#### v2 圖層對照
+
+| effect.app | FXCanvas v2 |
+|------------|-------------|
+| BLUR/SHARP | `gaussian_blur` |
+| CURVES | `exposure` |
+| LEVELS | `levels` |
+| PAPER SCAN | `paper_grain` |
+| RGB HATCH | **`rgb_halftone`** |
+| RISO / 網點細節 | `dither`（pattern 12 + palette 6，opacity 0.22） |
+| PAPER SCAN | `paper_grain` |
+| NOISE | `noise`（opacity 0.65） |
+| PRINT STAMP | **`print_stamp`** |
+| 邊角 | `vignette` |
+
+- 程式：`src/lib/presets/builtin.ts`、`src/lib/effects/rgb_halftone.ts`
+- UI：**PRESETS → OLD PAINTING → Vintage print**
+
 ---
 
 ## 後端 API 端點（bundle 反推）
@@ -528,7 +566,8 @@ flowchart LR
 | 媒體類型 | 圖片 + 影片 | 圖片 only |
 | 特效堆疊 Layers | ✅ | ✅ |
 | 圖層複製 / 顯示隱藏 | ✅ | ✅ duplicate + eye toggle |
-| 左側特效面板 | Explore / 分類 / 搜尋 | Explore / Favorites / MOST POPULAR / 分類 / 搜尋 |
+| 左側特效面板 | EXPLORE / EFFECTS / PRESETS 分頁 + 大分類 | EFFECTS / FAVORITES / PRESETS + BLUR·COLOR·DISTORT 大標 |
+| 內建 Preset | Vintage print 等策展 stack | ✅ Vintage print（`builtin.ts`） |
 | 縮圖 hover 前後對比 | ✅ | ✅ |
 | Canvas 原圖對比 | Media preview On/Off | ✅ 按住 Space 顯示原圖 |
 | Canvas 縮放 / 平移 | ✅ | ✅ 滾輪縮放 + 拖曳平移 + 雙擊重置 |
@@ -539,19 +578,19 @@ flowchart LR
 | 動畫 / Keyframes | ✅ Animate 方案 | ❌ |
 | Exposure / Levels / Dither | ✅ | ✅ |
 | 真・誤差擴散 Dither | ✅ Pro | ❌（ordered + serpentine 近似） |
-| Bloom / CRT / Glitch 等 | ✅ | ✅ 15 種特效 |
+| Bloom / CRT / Glitch 等 | ✅ | ✅ 18 種特效（含 RGB Halftone / Paper Grain / Print Stamp） |
 | Favorites 持久化 | ✅ 帳號 | ✅ localStorage |
 | 帳號 / 訂閱 / 浮水印 | ✅ | ❌ |
 | Figma / Chrome 整合 | ✅ | ❌ |
 | 本地端處理 | ✅ | ✅ |
 
-### FXCanvas 已實作特效（15）
+### FXCanvas 已實作特效（18）
 
 | 分類 | 特效 |
 |------|------|
 | Blur | Gaussian Blur, Bloom |
 | Color | Brightness/Contrast, Hue/Saturation, Duotone, Monochrome, **Exposure**, **Levels** |
-| Film | Noise |
+| Film | Noise, **RGB Halftone**, **Paper Grain**, **Print Stamp** |
 | Distort | Glitch, Pixelate |
 | Effects | CRT, Vignette, Star Glow, Dither |
 

@@ -1,10 +1,14 @@
 <script lang="ts">
 	import {
 		appliedEffects,
+		layerGroups,
 		activeLayerIndex,
 		removeEffect,
+		removeGroup,
 		duplicateEffect,
 		toggleEffect,
+		toggleGroupExpanded,
+		toggleGroupEnabled,
 		updateParam,
 		beginParamEdit,
 		applyParams,
@@ -12,8 +16,10 @@
 		clearEffects,
 		moveEffect,
 		randomizeParams,
-		resetParams
+		resetParams,
+		type LayerGroup
 	} from '../stores/editor';
+	import type { AppliedEffect } from '../engine/renderer';
 	import type { EffectParam } from '../engine/renderer';
 	import type { GradientStop } from '../engine/gradient';
 	import {
@@ -32,6 +38,43 @@
 	);
 
 	let draggingIndex = $state<number | null>(null);
+
+	type LayerSegment = { type: 'layer'; index: number; item: AppliedEffect };
+	type GroupSegment = {
+		type: 'group';
+		group: LayerGroup;
+		children: { index: number; item: AppliedEffect }[];
+	};
+	type ListSegment = LayerSegment | GroupSegment;
+
+	function buildSegments(effects: AppliedEffect[], groups: LayerGroup[]): ListSegment[] {
+		const groupMap = new Map(groups.map((g) => [g.id, g]));
+		const segments: ListSegment[] = [];
+		let i = 0;
+		while (i < effects.length) {
+			const item = effects[i];
+			const group = item.groupId ? groupMap.get(item.groupId) : undefined;
+			if (group) {
+				const children: { index: number; item: AppliedEffect }[] = [];
+				while (i < effects.length && effects[i].groupId === group.id) {
+					children.push({ index: i, item: effects[i] });
+					i++;
+				}
+				segments.push({ type: 'group', group, children });
+				continue;
+			}
+			segments.push({ type: 'layer', index: i, item });
+			i++;
+		}
+		return segments;
+	}
+
+	let segments = $derived(buildSegments($appliedEffects, $layerGroups));
+
+	function groupAllEnabled(group: LayerGroup, children: AppliedEffect[]): boolean {
+		if (!group.enabled) return false;
+		return children.every((c) => c.effect.enabled);
+	}
 
 	function formatParamValue(
 		param: EffectParam,
@@ -125,78 +168,249 @@
 			<p class="empty">No effects applied.<br />Click an effect to add it.</p>
 		{/if}
 
-		{#each $appliedEffects as item, i}
-			<div
-				class="layer-row"
-				class:selected={i === $activeLayerIndex}
-				class:hidden-layer={!item.effect.enabled}
-				class:dragging={draggingIndex === i}
-				onclick={() => activeLayerIndex.set(i)}
-				role="button"
-				tabindex="0"
-				onkeydown={(e) => onLayerKeyDown(e, i)}
-				ondragover={(e) => onDragOver(i, e)}
-				ondrop={(e) => onDrop(i, e)}
-			>
-				<span
-					class="drag-dot"
-					draggable="true"
-					ondragstart={(e) => { e.stopPropagation(); onDragStart(i, e); }}
-					ondragend={onDragEnd}
-					role="img"
-					aria-label="drag"
-				>⠿</span>
-
-				<span class="layer-name">{item.effect.name.toUpperCase()}</span>
-
-				<div class="layer-actions">
-					<button
-						class="icon-btn"
-						title="Duplicate"
-						onclick={(e) => { e.stopPropagation(); duplicateEffect(i); }}
+		{#each segments as segment (segment.type === 'group' ? segment.group.id : `layer-${segment.index}`)}
+			{#if segment.type === 'group'}
+				{@const groupVisible = groupAllEnabled(
+					segment.group,
+					segment.children.map((c) => c.item)
+				)}
+				<div class="group-block">
+					<div
+						class="group-header"
+						class:selected={segment.children.some((c) => c.index === $activeLayerIndex)}
+						class:hidden-layer={!groupVisible}
 					>
-						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-							<rect x="9" y="9" width="13" height="13" rx="2"/>
-							<path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-						</svg>
-					</button>
-
-					<!-- Delete -->
-					<button
-						class="icon-btn delete"
-						title="Delete"
-						onclick={(e) => { e.stopPropagation(); removeEffect(i); }}
-					>
-						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-							<polyline points="3 6 5 6 21 6"/>
-							<path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-							<path d="M10 11v6M14 11v6"/>
-							<path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
-						</svg>
-					</button>
-
-					<!-- Eye toggle -->
-					<button
-						class="icon-btn eye"
-						class:eye-off={!item.effect.enabled}
-						title={item.effect.enabled ? 'Hide' : 'Show'}
-						onclick={(e) => { e.stopPropagation(); toggleEffect(i); }}
-					>
-						{#if item.effect.enabled}
-							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-								<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-								<circle cx="12" cy="12" r="3"/>
+						<button
+							class="chevron-btn"
+							title={segment.group.expanded ? 'Collapse' : 'Expand'}
+							onclick={(e) => {
+								e.stopPropagation();
+								toggleGroupExpanded(segment.group.id);
+							}}
+						>
+							<svg
+								width="12"
+								height="12"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								class:collapsed={!segment.group.expanded}
+							>
+								<polyline points="6 9 12 15 18 9" />
 							</svg>
-						{:else}
-							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-								<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
-								<path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
-								<line x1="1" y1="1" x2="23" y2="23"/>
-							</svg>
-						{/if}
-					</button>
+						</button>
+						<span
+							class="layer-name group-name"
+							role="button"
+							tabindex="0"
+							onclick={() => activeLayerIndex.set(segment.children[0]?.index ?? -1)}
+							onkeydown={(e) => {
+								if (e.key === 'Enter') activeLayerIndex.set(segment.children[0]?.index ?? -1);
+							}}
+						>
+							{segment.group.name.toUpperCase()}
+						</span>
+						<div class="layer-actions">
+							<button
+								class="icon-btn delete"
+								title="Remove preset group"
+								onclick={(e) => {
+									e.stopPropagation();
+									removeGroup(segment.group.id);
+								}}
+							>
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+									<polyline points="3 6 5 6 21 6"/>
+									<path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+									<path d="M10 11v6M14 11v6"/>
+									<path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+								</svg>
+							</button>
+							<button
+								class="icon-btn eye"
+								class:eye-off={!groupVisible}
+								title={groupVisible ? 'Hide group' : 'Show group'}
+								onclick={(e) => {
+									e.stopPropagation();
+									toggleGroupEnabled(segment.group.id);
+								}}
+							>
+								{#if groupVisible}
+									<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+										<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+										<circle cx="12" cy="12" r="3"/>
+									</svg>
+								{:else}
+									<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+										<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
+										<path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
+										<line x1="1" y1="1" x2="23" y2="23"/>
+									</svg>
+								{/if}
+							</button>
+						</div>
+					</div>
+					{#if segment.group.expanded}
+						{#each segment.children as child, childIdx (child.index)}
+							<div
+								class="layer-row nested"
+								class:selected={child.index === $activeLayerIndex}
+								class:hidden-layer={!child.item.effect.enabled}
+								class:dragging={draggingIndex === child.index}
+								class:last-nested={childIdx === segment.children.length - 1}
+								onclick={() => activeLayerIndex.set(child.index)}
+								role="button"
+								tabindex="0"
+								onkeydown={(e) => onLayerKeyDown(e, child.index)}
+								ondragover={(e) => onDragOver(child.index, e)}
+								ondrop={(e) => onDrop(child.index, e)}
+							>
+								<span class="tree-gutter" aria-hidden="true">
+									<span class="tree-line-v" class:tree-last={childIdx === segment.children.length - 1}></span>
+									<span class="tree-line-h"></span>
+								</span>
+								<span
+									class="drag-dot"
+									draggable="true"
+									ondragstart={(e) => {
+										e.stopPropagation();
+										onDragStart(child.index, e);
+									}}
+									ondragend={onDragEnd}
+									role="img"
+									aria-label="drag"
+								>⠿</span>
+								<span class="layer-name">{child.item.effect.name.toUpperCase()}</span>
+								<div class="layer-actions">
+									<button
+										class="icon-btn"
+										title="Duplicate"
+										onclick={(e) => {
+											e.stopPropagation();
+											duplicateEffect(child.index);
+										}}
+									>
+										<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+											<rect x="9" y="9" width="13" height="13" rx="2"/>
+											<path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+										</svg>
+									</button>
+									<button
+										class="icon-btn delete"
+										title="Delete"
+										onclick={(e) => {
+											e.stopPropagation();
+											removeEffect(child.index);
+										}}
+									>
+										<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+											<polyline points="3 6 5 6 21 6"/>
+											<path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+											<path d="M10 11v6M14 11v6"/>
+											<path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+										</svg>
+									</button>
+									<button
+										class="icon-btn eye"
+										class:eye-off={!child.item.effect.enabled}
+										title={child.item.effect.enabled ? 'Hide' : 'Show'}
+										onclick={(e) => {
+											e.stopPropagation();
+											toggleEffect(child.index);
+										}}
+									>
+										{#if child.item.effect.enabled}
+											<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+												<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+												<circle cx="12" cy="12" r="3"/>
+											</svg>
+										{:else}
+											<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+												<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
+												<path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
+												<line x1="1" y1="1" x2="23" y2="23"/>
+											</svg>
+										{/if}
+									</button>
+								</div>
+							</div>
+						{/each}
+					{/if}
 				</div>
-			</div>
+			{:else}
+				{@const i = segment.index}
+				{@const item = segment.item}
+				<div
+					class="layer-row"
+					class:selected={i === $activeLayerIndex}
+					class:hidden-layer={!item.effect.enabled}
+					class:dragging={draggingIndex === i}
+					onclick={() => activeLayerIndex.set(i)}
+					role="button"
+					tabindex="0"
+					onkeydown={(e) => onLayerKeyDown(e, i)}
+					ondragover={(e) => onDragOver(i, e)}
+					ondrop={(e) => onDrop(i, e)}
+				>
+					<span
+						class="drag-dot"
+						draggable="true"
+						ondragstart={(e) => { e.stopPropagation(); onDragStart(i, e); }}
+						ondragend={onDragEnd}
+						role="img"
+						aria-label="drag"
+					>⠿</span>
+
+					<span class="layer-name">{item.effect.name.toUpperCase()}</span>
+
+					<div class="layer-actions">
+						<button
+							class="icon-btn"
+							title="Duplicate"
+							onclick={(e) => { e.stopPropagation(); duplicateEffect(i); }}
+						>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+								<rect x="9" y="9" width="13" height="13" rx="2"/>
+								<path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+							</svg>
+						</button>
+
+						<button
+							class="icon-btn delete"
+							title="Delete"
+							onclick={(e) => { e.stopPropagation(); removeEffect(i); }}
+						>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+								<polyline points="3 6 5 6 21 6"/>
+								<path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+								<path d="M10 11v6M14 11v6"/>
+								<path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+							</svg>
+						</button>
+
+						<button
+							class="icon-btn eye"
+							class:eye-off={!item.effect.enabled}
+							title={item.effect.enabled ? 'Hide' : 'Show'}
+							onclick={(e) => { e.stopPropagation(); toggleEffect(i); }}
+						>
+							{#if item.effect.enabled}
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+									<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+									<circle cx="12" cy="12" r="3"/>
+								</svg>
+							{:else}
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+									<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
+									<path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
+									<line x1="1" y1="1" x2="23" y2="23"/>
+								</svg>
+							{/if}
+						</button>
+					</div>
+				</div>
+			{/if}
 		{/each}
 	</div>
 
@@ -512,6 +726,83 @@
 	}
 
 	.hidden-layer .layer-name { color: #3a3a3a; }
+
+	.group-block {
+		border-bottom: 1px solid #1e1e1e;
+	}
+
+	.group-header {
+		display: flex;
+		align-items: center;
+		padding: 10px 14px 10px 10px;
+		gap: 6px;
+		cursor: default;
+		background: #121212;
+		min-height: 42px;
+	}
+
+	.group-header.selected { background: #1e1e1e; }
+
+	.group-name {
+		cursor: pointer;
+		color: #e8e8e8;
+	}
+
+	.chevron-btn {
+		background: none;
+		border: none;
+		padding: 2px 4px;
+		cursor: pointer;
+		color: #666;
+		display: flex;
+		align-items: center;
+		flex-shrink: 0;
+	}
+
+	.chevron-btn:hover { color: #aaa; }
+
+	.chevron-btn svg {
+		transition: transform 0.15s;
+	}
+
+	.chevron-btn svg.collapsed {
+		transform: rotate(-90deg);
+	}
+
+	.layer-row.nested {
+		padding-left: 8px;
+		background: #0e0e0e;
+	}
+
+	.tree-gutter {
+		position: relative;
+		width: 18px;
+		flex-shrink: 0;
+		align-self: stretch;
+		min-height: 42px;
+	}
+
+	.tree-line-v {
+		position: absolute;
+		left: 8px;
+		top: 0;
+		bottom: 0;
+		width: 0;
+		border-left: 1px dashed #333;
+	}
+
+	.tree-line-v.tree-last {
+		bottom: 50%;
+	}
+
+	.tree-line-h {
+		position: absolute;
+		left: 8px;
+		top: 50%;
+		width: 10px;
+		height: 0;
+		border-top: 1px dashed #333;
+	}
 
 	/* ── Action buttons ── */
 	.layer-actions {

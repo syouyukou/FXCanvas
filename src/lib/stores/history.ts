@@ -2,17 +2,27 @@ import { get, writable } from 'svelte/store';
 import { EFFECTS } from '../effects/index';
 import type { AppliedEffect } from '../engine/renderer';
 import { cloneGradient, type GradientStop } from '../engine/gradient';
-import { activeLayerIndex, appliedEffects } from './editor';
+import { activeLayerIndex, appliedEffects, layerGroups, type LayerGroup } from './editor';
 
 const MAX = 50;
+
+export interface LayerGroupSnapshot {
+	id: string;
+	name: string;
+	presetId?: string;
+	expanded?: boolean;
+	enabled?: boolean;
+}
 
 export interface StackSnapshot {
 	layers: {
 		effectId: string;
 		enabled: boolean;
 		opacity?: number;
+		groupId?: string;
 		params: Record<string, number | boolean | string | GradientStop[]>;
 	}[];
+	groups?: LayerGroupSnapshot[];
 	activeIndex: number;
 }
 
@@ -28,22 +38,56 @@ function cloneParams(
 
 export function toSnapshot(
 	list: AppliedEffect[],
-	activeIndex: number
+	activeIndex: number,
+	groups: LayerGroup[] = get(layerGroups)
 ): StackSnapshot {
 	return {
 		layers: list.map((item) => ({
 			effectId: item.effect.id,
 			enabled: item.effect.enabled,
 			opacity: item.opacity ?? 1,
+			...(item.groupId ? { groupId: item.groupId } : {}),
 			params: cloneParams(item.params)
+		})),
+		groups: groups.map((g) => ({
+			id: g.id,
+			name: g.name,
+			presetId: g.presetId,
+			expanded: g.expanded,
+			enabled: g.enabled
 		})),
 		activeIndex
 	};
 }
 
+function resolveGroups(snapshot: StackSnapshot, list: AppliedEffect[]): LayerGroup[] {
+	if (snapshot.groups?.length) {
+		return snapshot.groups.map((g) => ({
+			id: g.id,
+			name: g.name,
+			presetId: g.presetId,
+			expanded: g.expanded ?? true,
+			enabled: g.enabled ?? true
+		}));
+	}
+	const seen = new Map<string, LayerGroup>();
+	for (const item of list) {
+		if (item.groupId && !seen.has(item.groupId)) {
+			seen.set(item.groupId, {
+				id: item.groupId,
+				name: 'GROUP',
+				expanded: true,
+				enabled: true
+			});
+		}
+	}
+	return [...seen.values()];
+}
+
 export function fromSnapshot(snapshot: StackSnapshot): {
 	list: AppliedEffect[];
 	activeIndex: number;
+	groups: LayerGroup[];
 } {
 	const list: AppliedEffect[] = [];
 	for (const layer of snapshot.layers) {
@@ -56,14 +100,15 @@ export function fromSnapshot(snapshot: StackSnapshot): {
 				enabled: layer.enabled
 			},
 			params: cloneParams(layer.params),
-			opacity: layer.opacity ?? 1
+			opacity: layer.opacity ?? 1,
+			...(layer.groupId ? { groupId: layer.groupId } : {})
 		});
 	}
 	const activeIndex = Math.min(
 		Math.max(snapshot.activeIndex, -1),
 		list.length - 1
 	);
-	return { list, activeIndex };
+	return { list, activeIndex, groups: resolveGroups(snapshot, list) };
 }
 
 export const canUndo = writable(false);
@@ -93,8 +138,9 @@ export function undo() {
 	future.update((f) => [current, ...f]);
 	const snap = prev[prev.length - 1];
 	past.set(prev.slice(0, -1));
-	const { list, activeIndex } = fromSnapshot(snap);
+	const { list, activeIndex, groups } = fromSnapshot(snap);
 	appliedEffects.set(list);
+	layerGroups.set(groups);
 	activeLayerIndex.set(activeIndex);
 	syncFlags();
 }
@@ -106,8 +152,9 @@ export function redo() {
 	past.update((p) => [...p, current]);
 	const snap = next[0];
 	future.set(next.slice(1));
-	const { list, activeIndex } = fromSnapshot(snap);
+	const { list, activeIndex, groups } = fromSnapshot(snap);
 	appliedEffects.set(list);
+	layerGroups.set(groups);
 	activeLayerIndex.set(activeIndex);
 	syncFlags();
 }

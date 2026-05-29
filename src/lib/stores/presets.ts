@@ -1,6 +1,7 @@
 import { get, writable } from 'svelte/store';
-import { appliedEffects, activeLayerIndex, replaceStack } from './editor';
-import { fromSnapshot, pushHistory, toSnapshot, type StackSnapshot } from './history';
+import { getBuiltinPreset } from '../presets/builtin';
+import { appendPresetGroup, appliedEffects, activeLayerIndex } from './editor';
+import { pushHistory, toSnapshot, type StackSnapshot } from './history';
 
 const STORAGE_KEY = 'fxcanvas-presets';
 
@@ -47,9 +48,20 @@ export function saveCurrentPreset(name: string) {
 export function loadPreset(id: string) {
 	const preset = get(savedPresets).find((p) => p.id === id);
 	if (!preset) return;
+	applySnapshotAsGroup(preset.snapshot, { name: preset.name, presetId: preset.id });
+}
+
+/** Load a curated preset as a collapsible group (appends to current stack). */
+export function loadBuiltinPreset(id: string) {
+	const preset = getBuiltinPreset(id);
+	if (!preset) return;
 	pushHistory();
-	const { list, activeIndex } = fromSnapshot(preset.snapshot);
-	replaceStack(list, activeIndex, { skipHistory: true });
+	appendPresetGroup(preset.snapshot, { name: preset.name, presetId: preset.id });
+}
+
+function applySnapshotAsGroup(snapshot: StackSnapshot, meta: { name: string; presetId?: string }) {
+	pushHistory();
+	appendPresetGroup(snapshot, meta);
 }
 
 export function deletePreset(id: string) {

@@ -41,6 +41,8 @@ export interface AppliedEffect {
 	params: Record<string, number | boolean | string | GradientStop[]>;
 	/** Layer blend strength 0–1 (default 1). */
 	opacity: number;
+	/** Preset / stack group this layer belongs to (contiguous block in the list). */
+	groupId?: string;
 }
 
 export interface RenderOptions {

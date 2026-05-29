@@ -4,6 +4,10 @@ import { DITHER_EFFECT } from './dither';
 import { EXPOSURE_EFFECT } from './exposure';
 import { GLITCH_DIGITAL_EFFECT, GLITCH_VHS_EFFECT } from './glitch';
 import { LEVELS_EFFECT } from './levels';
+import { PAPER_GRAIN_EFFECT } from './paper_grain';
+import { PRINT_STAMP_EFFECT } from './print_stamp';
+import { RGB_HALFTONE_EFFECT } from './rgb_halftone';
+import { SOFT_BLEED_EFFECT } from './soft_bleed';
 
 const HEADER = `#version 300 es
 precision highp float;
@@ -581,6 +585,12 @@ void main() {
 }`
 	},
 
+	// ─── PRINT / FILM (effect.app Vintage print family) ─────
+	RGB_HALFTONE_EFFECT,
+	SOFT_BLEED_EFFECT,
+	PAPER_GRAIN_EFFECT,
+	PRINT_STAMP_EFFECT,
+
 	// ─── DITHER ─────────────────────────────────────────────
 	DITHER_EFFECT,
 
@@ -635,4 +645,9 @@ void main() {
 	}
 ];
 
-export const CATEGORIES = [...new Set(EFFECTS.map((e) => e.category))];
+/** Category display order (effect.app-style section headers). */
+export const CATEGORY_ORDER = ['Blur', 'Color', 'Film', 'Distort', 'Effects'] as const;
+
+export const CATEGORIES = CATEGORY_ORDER.filter((cat) =>
+	EFFECTS.some((e) => e.category === cat)
+);

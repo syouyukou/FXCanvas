@@ -8,12 +8,88 @@
 	import PresetMenu from '$lib/components/PresetMenu.svelte';
 	import { sourceImage, imageSize, activeLayerIndex, removeEffect } from '$lib/stores/editor';
 	import { canUndo, canRedo, undo, redo } from '$lib/stores/history';
-	import { showOriginal } from '$lib/stores/view';
+	import {
+		showOriginal,
+		effectPanelWidth,
+		effectPanelCollapsed,
+		effectPanelSavedWidth,
+		EFFECT_PANEL_MIN_WIDTH,
+		EFFECT_PANEL_MAX_WIDTH,
+		EFFECT_PANEL_COLLAPSED_WIDTH,
+		EFFECT_PANEL_SNAP_RAIL_BELOW,
+		EFFECT_PANEL_DEFAULT_WIDTH
+	} from '$lib/stores/view';
 	import type { Renderer } from '$lib/engine/renderer';
 
 	let renderer: Renderer | null = $state(null);
 	let viewZoom = $state(100);
 	let fileInput = $state<HTMLInputElement | null>(null);
+	let resizingPanel = $state(false);
+	let resizeStartX = 0;
+	let resizeStartWidth = EFFECT_PANEL_MIN_WIDTH;
+	let resizeFromCollapsed = $state(false);
+	let panelShellWidth = $state(EFFECT_PANEL_DEFAULT_WIDTH);
+
+	$effect(() => {
+		if (!resizingPanel) {
+			panelShellWidth = $effectPanelCollapsed
+				? EFFECT_PANEL_COLLAPSED_WIDTH
+				: $effectPanelWidth;
+		}
+	});
+
+	function clampDragWidth(width: number) {
+		return Math.min(
+			EFFECT_PANEL_MAX_WIDTH,
+			Math.max(EFFECT_PANEL_COLLAPSED_WIDTH, width)
+		);
+	}
+
+	function onPanelResizeStart(e: PointerEvent) {
+		resizingPanel = true;
+		resizeStartX = e.clientX;
+		resizeFromCollapsed = $effectPanelCollapsed;
+		resizeStartWidth = resizeFromCollapsed
+			? EFFECT_PANEL_COLLAPSED_WIDTH
+			: $effectPanelWidth;
+		panelShellWidth = resizeStartWidth;
+		(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+	}
+
+	function onPanelResizeMove(e: PointerEvent) {
+		if (!resizingPanel) return;
+		const next = clampDragWidth(resizeStartWidth + (e.clientX - resizeStartX));
+		panelShellWidth = next;
+		effectPanelWidth.set(next);
+
+		if (next <= EFFECT_PANEL_COLLAPSED_WIDTH + 2) {
+			effectPanelCollapsed.set(true);
+			return;
+		}
+
+		effectPanelCollapsed.set(false);
+	}
+
+	function onPanelResizeEnd(e: PointerEvent) {
+		if (!resizingPanel) return;
+		resizingPanel = false;
+		(e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+
+		if (panelShellWidth <= EFFECT_PANEL_SNAP_RAIL_BELOW) {
+			effectPanelSavedWidth.set(
+				Math.max(EFFECT_PANEL_MIN_WIDTH, resizeStartWidth, $effectPanelSavedWidth)
+			);
+			effectPanelCollapsed.set(true);
+			panelShellWidth = EFFECT_PANEL_COLLAPSED_WIDTH;
+			return;
+		}
+
+		effectPanelCollapsed.set(false);
+		const snapped =
+			panelShellWidth < EFFECT_PANEL_MIN_WIDTH ? EFFECT_PANEL_MIN_WIDTH : panelShellWidth;
+		effectPanelWidth.set(snapped);
+		panelShellWidth = snapped;
+	}
 
 	function loadFile(file: File) {
 		if (!file.type.startsWith('image/')) return;
@@ -141,8 +217,21 @@
 	</header>
 
 	<!-- Main -->
-	<main class="main">
-		<EffectPanel />
+	<main class="main" class:resizing-panel={resizingPanel}>
+		<div class="effect-shell" style:width="{panelShellWidth}px">
+			<EffectPanel />
+			<div
+				class="panel-resize-handle"
+				class:active={resizingPanel}
+				role="separator"
+				aria-orientation="vertical"
+				aria-label="Resize effects panel"
+				onpointerdown={onPanelResizeStart}
+				onpointermove={onPanelResizeMove}
+				onpointerup={onPanelResizeEnd}
+				onpointercancel={onPanelResizeEnd}
+			></div>
+		</div>
 		<Canvas bind:renderer bind:viewZoom />
 		<LayerPanel />
 	</main>
@@ -160,7 +249,7 @@
 				No media loaded
 			{/if}
 		</span>
-		<span class="footer-tip">Scroll zoom · Drag pan · Double-click reset · Space compare · ⌘Z undo · Click effect (random) · Shift+click defaults</span>
+		<span class="footer-tip">Drag edge to resize · Narrow drag collapses · Wide = 3 columns · Scroll zoom · ⌘Z undo</span>
 	</footer>
 </div>
 
@@ -293,6 +382,58 @@
 		flex: 1;
 		display: flex;
 		overflow: hidden;
+	}
+
+	.main.resizing-panel {
+		cursor: col-resize;
+		user-select: none;
+	}
+
+	.main.resizing-panel * {
+		cursor: col-resize !important;
+	}
+
+	.effect-shell {
+		position: relative;
+		flex-shrink: 0;
+		display: flex;
+		border-right: 1px solid #222;
+		transition: width 0.18s ease;
+	}
+
+	.main.resizing-panel .effect-shell {
+		transition: none;
+	}
+
+	.panel-resize-handle {
+		position: absolute;
+		top: 0;
+		right: -3px;
+		width: 6px;
+		height: 100%;
+		cursor: col-resize;
+		z-index: 20;
+		touch-action: none;
+	}
+
+	.panel-resize-handle::after {
+		content: '';
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: 2px;
+		height: 32px;
+		border-radius: 2px;
+		background: #333;
+		opacity: 0;
+		transition: opacity 0.15s, background 0.15s;
+	}
+
+	.panel-resize-handle:hover::after,
+	.panel-resize-handle.active::after {
+		opacity: 1;
+		background: #666;
 	}
 
 	/* ── Footer ─────────────────────────── */

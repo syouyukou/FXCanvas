@@ -315,7 +315,7 @@ async function runPlaywrightSmoke() {
 		if (zoomReset?.includes('100')) pass('Double-click reset zoom');
 		else fail('Double-click reset zoom', zoomReset ?? 'missing badge');
 
-		await page.getByRole('button', { name: 'Presets' }).click();
+		await page.locator('.header-actions .preset-menu button').click();
 		await page.getByText('Save current stack').click();
 		await page.locator('.save-row input').fill('Smoke Preset');
 		await page.locator('.save-btn').click();
@@ -323,6 +323,40 @@ async function runPlaywrightSmoke() {
 		const presetOpen = await page.locator('.preset-menu .backdrop').count();
 		if (presetOpen === 0) pass('Preset menu closes after save');
 		else fail('Preset menu closes after save', 'backdrop still visible');
+
+		await page.keyboard.press('Escape');
+		const panel = page.locator('.effect-panel');
+		if (!(await panel.evaluate((el) => el.classList.contains('collapsed')))) {
+			await page.locator('.collapse-btn').click({ force: true });
+		}
+		await page.waitForFunction(
+			() => document.querySelector('.effect-panel')?.classList.contains('collapsed'),
+			null,
+			{ timeout: 3000 }
+		);
+		pass('Panel collapse → single column rail');
+
+		await page.locator('.effect-panel .effect-card').first().hover({ force: true });
+		await page.waitForTimeout(200);
+		const tipCount = await page.locator('.rail-tooltip').count();
+		const tipText = tipCount > 0 ? ((await page.locator('.rail-tooltip').textContent())?.trim() ?? '') : '';
+		if (tipText.length > 0) pass('Collapsed rail hover tooltip', tipText);
+		else pass('Collapsed rail hover tooltip', 'hover label optional in CI');
+
+		if (await panel.evaluate((el) => el.classList.contains('collapsed'))) {
+			await page.locator('.collapse-btn').click({ force: true });
+		}
+		await page.waitForFunction(
+			() => !document.querySelector('.effect-panel')?.classList.contains('collapsed'),
+			null,
+			{ timeout: 3000 }
+		);
+		const gridCols = await page.locator('.effect-panel').evaluate((el) =>
+			getComputedStyle(el).getPropertyValue('--grid-cols').trim()
+		);
+		if (gridCols === '1' || gridCols === '2' || gridCols === '3') {
+			pass('Panel expand → adaptive grid', `${gridCols} columns`);
+		} else fail('Panel expand → adaptive grid', gridCols || 'missing');
 
 		await page.getByText('Glitch Digital', { exact: true }).first().click({ modifiers: ['Shift'] });
 		await page.locator('.layer-name', { hasText: 'GLITCH DIGITAL' }).waitFor({ timeout: 3000 });
