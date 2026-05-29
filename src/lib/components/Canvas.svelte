@@ -3,7 +3,9 @@
 	import { get } from 'svelte/store';
 	import { Renderer } from '../engine/renderer';
 	import { resolveEffectsAtTime } from '../engine/keyframeEngine';
-	import { appliedEffects, sourceImage, imageSize, isVideoSource, loadVideoFile } from '../stores/editor';
+	import { appliedEffects, sourceImage, sourceCredit, imageSize, isVideoSource, loadVideoFile, loadSampleImage, clearSourceCredit } from '../stores/editor';
+	import { SAMPLE_IMAGES } from '../samples/catalog';
+	import SampleCreditBar from './SampleCreditBar.svelte';
 	import {
 		animation,
 		advanceAnimationClock,
@@ -14,6 +16,7 @@
 	} from '../stores/animation';
 	import { keyframeTracks } from '../stores/keyframes';
 	import { showOriginal } from '../stores/view';
+	import { exportSessionActive } from '../stores/exportSession';
 	import { i18n } from '$lib/i18n';
 
 	const MIN_ZOOM = 0.25;
@@ -191,6 +194,12 @@
 		void $showOriginal;
 		void $needsPreviewLoop;
 		void $animation;
+		void $exportSessionActive;
+
+		if ($exportSessionActive) {
+			stopPreviewLoop();
+			return;
+		}
 
 		if ($needsPreviewLoop) {
 			startPreviewLoop(vid);
@@ -216,10 +225,15 @@
 		const url = URL.createObjectURL(file);
 		const img = new Image();
 		img.onload = () => {
+			clearSourceCredit();
 			sourceImage.set(img);
 			URL.revokeObjectURL(url);
 		};
 		img.src = url;
+	}
+
+	function onSampleClick(sample: (typeof SAMPLE_IMAGES)[number]) {
+		void loadSampleImage(sample);
 	}
 
 	onDestroy(() => {
@@ -232,6 +246,7 @@
 <div
 	class="canvas-container"
 	class:panning={isPanning}
+	class:has-credit={!!$sourceCredit?.length}
 	bind:this={container}
 	ondrop={onDrop}
 	ondragover={onDragOver}
@@ -254,6 +269,23 @@
 			<p>{$i18n.t('canvas.dropImage')}</p>
 			<span>{$i18n.t('canvas.orClickLoad')}</span>
 			<span class="paste-hint">{$i18n.t('canvas.pasteHint')}</span>
+
+			<div class="samples">
+				<p class="samples-label">{$i18n.t('canvas.trySamples')}</p>
+				<div class="samples-row">
+					{#each SAMPLE_IMAGES as sample (sample.id)}
+						<button
+							type="button"
+							class="sample-btn"
+							onclick={() => onSampleClick(sample)}
+							title={$i18n.t(sample.labelKey)}
+						>
+							<img class="sample-thumb" src={sample.thumbUrl} alt="" />
+							<span class="sample-name">{$i18n.t(sample.labelKey)}</span>
+						</button>
+					{/each}
+				</div>
+			</div>
 		</div>
 	{/if}
 	<div
@@ -267,6 +299,10 @@
 	</div>
 	{#if $showOriginal && $sourceImage}
 		<div class="compare-badge">{$i18n.t('canvas.original')}</div>
+	{/if}
+
+	{#if $sourceCredit && $sourceCredit.length > 0}
+		<SampleCreditBar authors={$sourceCredit} />
 	{/if}
 
 	{#if $sourceImage && ($isVideoSource || $needsPreviewLoop)}
@@ -362,25 +398,93 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 10px;
-		color: #555;
+		gap: var(--space-2);
+		color: var(--text-muted);
 		user-select: none;
+		padding: var(--space-4);
 	}
 
 	.empty-state p {
-		font-size: 16px;
-		color: #666;
+		font-size: var(--text-lg);
+		color: var(--text-secondary);
 		margin: 0;
 	}
 
 	.empty-state span {
-		font-size: 13px;
-		color: #444;
+		font-size: var(--text-sm);
+		color: var(--text-muted);
 	}
 
 	.paste-hint {
-		font-size: 12px;
-		color: #3a3a3a;
+		font-size: var(--text-sm);
+		color: var(--text-faint);
+	}
+
+	.samples {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-2);
+		margin-top: var(--space-4);
+		padding-top: var(--space-4);
+		border-top: 1px solid var(--border-subtle);
+		max-width: 100%;
+	}
+
+	.samples-label {
+		margin: 0;
+		font-size: var(--text-xs);
+		color: var(--text-muted);
+		letter-spacing: 0.04em;
+	}
+
+	.samples-row {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: var(--space-3);
+	}
+
+	.sample-btn {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-1);
+		padding: 0;
+		background: none;
+		border: none;
+		cursor: pointer;
+		color: inherit;
+	}
+
+	.sample-thumb {
+		width: 96px;
+		height: 72px;
+		object-fit: cover;
+		border-radius: var(--radius-sm);
+		border: 1px solid var(--border-subtle);
+		display: block;
+		transition: border-color var(--transition-fast);
+	}
+
+	.sample-btn:hover .sample-thumb,
+	.sample-btn:focus-visible .sample-thumb {
+		border-color: var(--border-strong);
+	}
+
+	.sample-name {
+		font-size: var(--text-xs);
+		color: var(--text-muted);
+		max-width: 96px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		transition: color var(--transition-fast);
+	}
+
+	.sample-btn:hover .sample-name,
+	.sample-btn:focus-visible .sample-name {
+		color: var(--text-secondary);
 	}
 
 	.media-controls {
@@ -396,6 +500,10 @@
 		border-radius: 6px;
 		padding: 5px 10px;
 		backdrop-filter: blur(4px);
+	}
+
+	.has-credit .media-controls {
+		bottom: 40px;
 	}
 
 	.vc-btn {

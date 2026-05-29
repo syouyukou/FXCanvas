@@ -17,15 +17,38 @@ export const ja: MessageTree = {
 		noMedia: 'メディア未読み込み',
 		preview: 'プレビュー',
 		footerTip:
-			'端をドラッグで幅変更 · スクロールでズーム · ⌘Z 元に戻す · ⌘V 貼り付け · セッション自動保存'
+			'端をドラッグで幅変更 · スクロールでズーム · ⌘Z 元に戻す · ⌘V 貼り付け · セッション自動保存',
+		explore: '探索'
+	},
+	explore: {
+		pageTitle: '画像エフェクトライブラリ',
+		title: '画像エフェクトライブラリ',
+		subtitle:
+			'厳選エフェクトを閲覧。ホバーでビフォーアフター、クリックでエディターで試せます。',
+		search: 'エフェクトを検索…',
+		noResults: 'エフェクトが見つかりません',
+		navLabel: 'メイン',
+		navExplore: '探索',
+		navEditor: 'エディター',
+		openEditor: 'エディターを開く',
+		footerTagline: 'ブラウザ内でローカル処理 — メディアは端末から送信されません。'
 	},
 	canvas: {
 		dropImage: 'ここに画像をドロップ',
 		orClickLoad: 'またはメディアを読み込む',
 		pasteHint: '⌘V でクリップボードから貼り付け',
+		trySamples: 'サンプル画像を試す',
+		creditBy: 'by',
+		creditAria: '写真クレジット',
 		original: 'オリジナル',
 		ariaCanvas: 'キャンバス',
 		ariaPreview: 'プレビューキャンバス'
+	},
+	samples: {
+		biomech: 'バイオメカ',
+		portrait: 'ポートレート',
+		neon: 'ネオン',
+		night: '夜景'
 	},
 	timeline: {
 		aria: 'アニメーションタイムライン',
@@ -108,11 +131,16 @@ export const ja: MessageTree = {
 		jpeg: 'JPEG',
 		webp: 'WebP',
 		webm: 'WebM（アニメ）',
-		animation: 'アニメ長',
+		mp4: 'MP4（動画）',
+		animation: '長さ',
+		animationSource: '動画全体（{duration}）',
 		animation5s: '5 秒',
 		animation10s: '10 秒',
+		durationCapped: '{max} 秒を超える部分は書き出されません',
+		exportSummary: '約 {duration} · {frames} フレーム @ {fps} FPS',
 		frameRate: 'フレームレート',
 		downloadWebm: 'WebM をダウンロード',
+		downloadMp4: 'MP4 をダウンロード',
 		exporting: '書き出し中…',
 		downloadLayers: 'レイヤー PNG シーケンス',
 		sizeLabel: '{label} — {w} × {h}',

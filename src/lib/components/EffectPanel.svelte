@@ -251,9 +251,10 @@
 			{#if animatedEffects.length > 0}
 				<div class="category-group category-group--animated">
 					<h3 class="category-label category-label--major category-label--animated">
+						<span class="animated-section-mark" aria-hidden="true"></span>
 						{$i18n.t('effectsPanel.animatedSection')}
 					</h3>
-					<div class="grid">
+					<div class="grid grid--animated">
 						{#each animatedEffects as effect (effect.id)}
 							<div
 								class="effect-card effect-card--animated"
@@ -573,36 +574,86 @@
 
 	.category-group--animated {
 		margin-bottom: 16px;
-		padding-bottom: 12px;
-		border-bottom: 1px solid var(--border-subtle);
+		padding: 10px 8px 12px;
+		border-radius: var(--radius-md);
+		background: linear-gradient(180deg, rgba(93, 173, 226, 0.06) 0%, rgba(93, 173, 226, 0.02) 100%);
+		border: 1px solid rgba(93, 173, 226, 0.14);
 	}
 
 	.category-label--animated {
 		color: #5dade2;
+		gap: 8px;
+	}
+
+	.animated-section-mark {
+		width: 3px;
+		height: 14px;
+		border-radius: 2px;
+		background: linear-gradient(180deg, #85c1e9 0%, #2e86c1 100%);
+		flex-shrink: 0;
+	}
+
+	.grid--animated {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+
+	.effect-card--animated {
+		flex: 0 0 auto;
+		width: 76px;
 	}
 
 	.effect-card--animated .thumb-wrap {
-		border-color: #2e4053;
+		aspect-ratio: 3 / 4;
+		border-color: rgba(93, 173, 226, 0.22);
+		background: linear-gradient(180deg, #151922 0%, #0d1016 100%);
+		box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
 	}
 
-	.effect-card--animated:hover .thumb-wrap {
+	.effect-card--animated:hover .thumb-wrap,
+	.effect-card--animated:focus-visible .thumb-wrap {
 		border-color: #5dade2;
+		box-shadow:
+			inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+			0 0 0 1px rgba(93, 173, 226, 0.25);
+	}
+
+	.effect-card--animated .card-name {
+		font-size: var(--text-panel-label);
+		padding: 20px 6px 5px;
+		text-align: center;
 	}
 
 	.anim-badge {
 		position: absolute;
-		top: 4px;
-		right: 4px;
-		font-size: 9px;
+		top: 5px;
+		left: 5px;
+		right: auto;
+		font-size: 8px;
 		font-weight: 700;
 		letter-spacing: 0.1em;
 		color: #5dade2;
 		background: rgba(0, 0, 0, 0.72);
 		border: 1px solid #2e86c1;
 		border-radius: 3px;
-		padding: 1px 4px;
+		padding: 1px 3px;
 		pointer-events: none;
 		font-family: var(--font-mono);
+	}
+
+	.collapsed .grid--animated {
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.collapsed .effect-card--animated {
+		width: 100%;
+		max-width: 56px;
+	}
+
+	.compact .effect-card--animated {
+		width: 68px;
 	}
 
 	.grid {

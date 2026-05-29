@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
+	import { goto } from '$app/navigation';
 	import EffectPanel from '$lib/components/EffectPanel.svelte';
 	import Canvas from '$lib/components/Canvas.svelte';
 	import LayerPanel from '$lib/components/LayerPanel.svelte';
@@ -8,8 +9,20 @@
 	import PresetMenu from '$lib/components/PresetMenu.svelte';
 	import LanguageMenu from '$lib/components/LanguageMenu.svelte';
 	import Timeline from '$lib/components/Timeline.svelte';
+	import { EFFECTS } from '$lib/effects/index';
+	import { previewSourceCandidates, previewHeroId } from '$lib/engine/effectPreviewSources';
+	import { getSampleByHeroId } from '$lib/samples/catalog';
 	import { i18n } from '$lib/i18n';
-	import { sourceImage, imageSize, activeLayerIndex, removeEffect, loadImageFile, loadVideoFile } from '$lib/stores/editor';
+	import {
+		sourceImage,
+		imageSize,
+		activeLayerIndex,
+		removeEffect,
+		loadImageFile,
+		loadVideoFile,
+		loadImageUrl,
+		addEffect
+	} from '$lib/stores/editor';
 	import { canUndo, canRedo, undo, redo } from '$lib/stores/history';
 	import { initSessionAutosave, restoreSession } from '$lib/stores/session';
 	import {
@@ -136,8 +149,33 @@
 		return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
 	}
 
+	async function applyExploreDeepLink(effectId: string) {
+		const effect = EFFECTS.find((e) => e.id === effectId);
+		if (!effect) return;
+
+		const heroId = previewHeroId(effectId);
+		const sample = getSampleByHeroId(heroId);
+
+		for (const url of previewSourceCandidates(effectId)) {
+			try {
+				await loadImageUrl(url, sample?.authors ?? null);
+				break;
+			} catch {
+				// try next format
+			}
+		}
+
+		addEffect(effect, { randomize: false });
+		void goto('/', { replaceState: true, keepFocus: true });
+	}
+
 	onMount(() => {
-		void restoreSession();
+		const effectId = new URLSearchParams(window.location.search).get('effect');
+		if (effectId) {
+			void applyExploreDeepLink(effectId);
+		} else {
+			void restoreSession();
+		}
 		initSessionAutosave();
 
 		const onKeyDown = (e: KeyboardEvent) => {
@@ -211,6 +249,7 @@
 		</div>
 
 		<div class="header-actions">
+			<a class="header-nav-link" href="/explore">{$i18n.t('app.explore')}</a>
 			<LanguageMenu />
 			<PresetMenu />
 
@@ -374,6 +413,28 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
+	}
+
+	.header-nav-link {
+		display: none;
+		align-items: center;
+		height: 30px;
+		padding: 0 var(--space-2);
+		color: var(--text-muted);
+		font-size: var(--text-base);
+		text-decoration: none;
+		transition: color var(--transition-fast);
+	}
+
+	.header-nav-link:hover,
+	.header-nav-link:focus-visible {
+		color: var(--text-primary);
+	}
+
+	@media (min-width: 768px) {
+		.header-nav-link {
+			display: inline-flex;
+		}
 	}
 
 	.btn-ghost {

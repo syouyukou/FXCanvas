@@ -17,15 +17,38 @@ export const en: MessageTree = {
 		noMedia: 'No media loaded',
 		preview: 'PREVIEW',
 		footerTip:
-			'Drag edge to resize · Scroll zoom · ⌘Z undo · ⌘V paste · Session auto-saves'
+			'Drag edge to resize · Scroll zoom · ⌘Z undo · ⌘V paste · Session auto-saves',
+		explore: 'Explore'
+	},
+	explore: {
+		pageTitle: 'Image Effects Library',
+		title: 'Image Effects Library',
+		subtitle:
+			'Browse curated effects. Hover to compare before and after — click to try in the editor.',
+		search: 'Search effects…',
+		noResults: 'No effects found',
+		navLabel: 'Main',
+		navExplore: 'Explore',
+		navEditor: 'Editor',
+		openEditor: 'Open editor',
+		footerTagline: 'Processed locally in your browser — media never leaves your device.'
 	},
 	canvas: {
 		dropImage: 'Drop an image here',
 		orClickLoad: 'or click Load Media',
 		pasteHint: '⌘V to paste from clipboard',
+		trySamples: 'Try a sample',
+		creditBy: 'by',
+		creditAria: 'Photo credit',
 		original: 'ORIGINAL',
 		ariaCanvas: 'Canvas',
 		ariaPreview: 'Preview canvas'
+	},
+	samples: {
+		biomech: 'Biomech',
+		portrait: 'Portrait',
+		neon: 'Neon',
+		night: 'Night'
 	},
 	timeline: {
 		aria: 'Animation timeline',
@@ -108,11 +131,16 @@ export const en: MessageTree = {
 		jpeg: 'JPEG',
 		webp: 'WebP',
 		webm: 'WebM (animation)',
-		animation: 'Animation',
+		mp4: 'MP4 (video)',
+		animation: 'Duration',
+		animationSource: 'Full clip ({duration})',
 		animation5s: '5 seconds',
 		animation10s: '10 seconds',
+		durationCapped: 'Clips longer than {max}s are trimmed',
+		exportSummary: '~{duration} · {frames} frames @ {fps} FPS',
 		frameRate: 'Frame rate',
 		downloadWebm: 'Download WebM',
+		downloadMp4: 'Download MP4',
 		exporting: 'Exporting…',
 		downloadLayers: 'Download layer PNGs',
 		sizeLabel: '{label} — {w} × {h}',

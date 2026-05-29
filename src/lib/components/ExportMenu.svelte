@@ -19,17 +19,27 @@
 	} from '$lib/engine/export';
 	import {
 		downloadBlob,
-		exportAnimationWebm,
+		exportAnimationVideo,
+		formatDurationLabel,
 		getAnimationExportFilename,
-		getSupportedWebmMimeType
+		getMimeTypeForVideoExport,
+		getPreferredVideoExportFormat,
+		getSupportedMp4MimeType,
+		getSupportedWebmMimeType,
+		isVideoExportFormatSupported,
+		MAX_VIDEO_EXPORT_DURATION_SEC,
+		resolveVideoExportDuration,
+		type VideoExportDurationMode,
+		type VideoExportFormat
 	} from '$lib/engine/animationExport';
 	import { resolveEffectsAtTime } from '$lib/engine/keyframeEngine';
 	import { keyframeTracks } from '$lib/stores/keyframes';
 	import { get } from 'svelte/store';
 	import type { Renderer } from '$lib/engine/renderer';
 	import { i18n, locale } from '$lib/i18n';
+	import { exportSessionActive } from '$lib/stores/exportSession';
 
-	type ExportKind = ExportFormat | 'webm';
+	type ExportKind = ExportFormat | VideoExportFormat;
 
 	let { renderer = null }: { renderer: Renderer | null } = $props();
 
@@ -38,8 +48,11 @@
 	let sizePreset = $state<ExportSizePreset>('1x');
 	let exporting = $state(false);
 	let exportProgress = $state('');
+	let videoDurationMode = $state<VideoExportDurationMode>(5);
 
+	const mp4Supported = typeof MediaRecorder !== 'undefined' && getSupportedMp4MimeType() !== null;
 	const webmSupported = typeof MediaRecorder !== 'undefined' && getSupportedWebmMimeType() !== null;
+	const videoExportSupported = mp4Supported || webmSupported;
 
 	let sizeOptions = $derived.by(() => {
 		void $locale;
@@ -48,7 +61,29 @@
 	let currentSize = $derived(
 		sizeOptions.find((o) => o.id === sizePreset) ?? sizeOptions[0] ?? null
 	);
-	let isVideoExport = $derived(format === 'webm');
+	let isVideoExport = $derived(format === 'webm' || format === 'mp4');
+
+	let sourceVideo = $derived(
+		$isVideoSource && $sourceImage instanceof HTMLVideoElement ? $sourceImage : null
+	);
+
+	let sourceClipDuration = $derived.by(() => {
+		const vid = sourceVideo;
+		if (!vid || !Number.isFinite(vid.duration) || vid.duration <= 0) return null;
+		return Math.min(vid.duration, MAX_VIDEO_EXPORT_DURATION_SEC);
+	});
+
+	let sourceClipCapped = $derived(
+		sourceVideo != null &&
+			Number.isFinite(sourceVideo.duration) &&
+			sourceVideo.duration > MAX_VIDEO_EXPORT_DURATION_SEC
+	);
+
+	let exportDurationSec = $derived(
+		resolveVideoExportDuration(sourceVideo, videoDurationMode, $animation.duration)
+	);
+
+	let exportFrameCount = $derived(Math.max(1, Math.round(exportDurationSec * $animation.fps)));
 
 	$effect(() => {
 		if (sizeOptions.length === 0) return;
@@ -57,7 +92,27 @@
 		}
 	});
 
+	let hadVideoSource = $state(false);
+	$effect(() => {
+		const has = sourceVideo != null;
+		if (has && !hadVideoSource) videoDurationMode = 'source';
+		if (!has && videoDurationMode === 'source') videoDurationMode = 5;
+		hadVideoSource = has;
+	});
+
+	$effect(() => {
+		if (!isVideoExport) return;
+		if (format === 'mp4' && !mp4Supported && webmSupported) format = 'webm';
+		if (format === 'webm' && !webmSupported && mp4Supported) format = 'mp4';
+	});
+
 	function toggleMenu() {
+		if (!showMenu && videoExportSupported) {
+			const preferred = getPreferredVideoExportFormat();
+			if (isVideoExport && preferred && !isVideoExportFormatSupported(format as VideoExportFormat)) {
+				format = preferred;
+			}
+		}
 		showMenu = !showMenu;
 	}
 
@@ -66,7 +121,13 @@
 	}
 
 	function onDurationChange(value: string) {
-		setAnimationDuration(Number(value) as AnimationDuration);
+		if (value === 'source') {
+			videoDurationMode = 'source';
+			return;
+		}
+		const sec = Number(value) as AnimationDuration;
+		videoDurationMode = sec;
+		setAnimationDuration(sec);
 	}
 
 	function onFpsChange(value: string) {
@@ -84,36 +145,42 @@
 		closeMenu();
 	}
 
-	async function downloadWebm() {
+	async function downloadVideo() {
 		if (!renderer?.hasImage() || !currentSize || exporting) return;
+		const videoFormat = format as VideoExportFormat;
+		if (!isVideoExportFormatSupported(videoFormat)) return;
+
 		exporting = true;
+		exportSessionActive.set(true);
 		exportProgress = '';
 		try {
-			const video =
-				$isVideoSource && $sourceImage instanceof HTMLVideoElement ? $sourceImage : null;
-			const blob = await exportAnimationWebm(
+			const blob = await exportAnimationVideo(
 				renderer,
 				renderer.canvasElement,
 				$appliedEffects,
 				{
-					duration: $animation.duration,
+					duration: exportDurationSec,
 					fps: $animation.fps,
 					width: currentSize.width,
 					height: currentSize.height,
+					loopPeriod: sourceVideo ? undefined : $animation.duration,
+					mimeType: getMimeTypeForVideoExport(videoFormat) ?? undefined,
 					onProgress: (frame, total) => {
 						exportProgress = `${frame}/${total}`;
 					},
 					resolveAtTime: (time) =>
 						resolveEffectsAtTime($appliedEffects, get(keyframeTracks), time)
 				},
-				video
+				videoFormat,
+				sourceVideo
 			);
-			downloadBlob(blob, getAnimationExportFilename('webm'));
+			downloadBlob(blob, getAnimationExportFilename(videoFormat));
 			closeMenu();
 		} catch (err) {
 			exportProgress = err instanceof Error ? err.message : 'Export failed';
 		} finally {
 			exporting = false;
+			exportSessionActive.set(false);
 		}
 	}
 
@@ -166,6 +233,9 @@
 					<option value="png">{$i18n.t('export.png')}</option>
 					<option value="jpeg">{$i18n.t('export.jpeg')}</option>
 					<option value="webp">{$i18n.t('export.webp')}</option>
+					{#if mp4Supported}
+						<option value="mp4">{$i18n.t('export.mp4')}</option>
+					{/if}
 					{#if webmSupported}
 						<option value="webm">{$i18n.t('export.webm')}</option>
 					{/if}
@@ -178,13 +248,32 @@
 					<select
 						id="export-duration"
 						class="export-select"
-						value={String($animation.duration)}
+						value={videoDurationMode === 'source' ? 'source' : String(videoDurationMode)}
 						onchange={(e) => onDurationChange(e.currentTarget.value)}
 					>
+						{#if sourceClipDuration != null}
+							<option value="source">
+								{$i18n.t('export.animationSource', {
+									duration: formatDurationLabel(sourceClipDuration)
+								})}
+							</option>
+						{/if}
 						<option value="5">{$i18n.t('export.animation5s')}</option>
 						<option value="10">{$i18n.t('export.animation10s')}</option>
 					</select>
 				</div>
+
+				{#if sourceClipCapped}
+					<p class="export-hint">{$i18n.t('export.durationCapped', { max: MAX_VIDEO_EXPORT_DURATION_SEC })}</p>
+				{/if}
+
+				<p class="export-hint">
+					{$i18n.t('export.exportSummary', {
+						duration: formatDurationLabel(exportDurationSec),
+						frames: exportFrameCount,
+						fps: $animation.fps
+					})}
+				</p>
 
 				<div class="export-field">
 					<label class="export-label" for="export-fps">{$i18n.t('export.frameRate')}</label>
@@ -228,10 +317,14 @@
 			{#if isVideoExport}
 				<button
 					class="btn-download"
-					onclick={downloadWebm}
+					onclick={downloadVideo}
 					disabled={!currentSize || currentSize.tooLarge || exporting}
 				>
-					{exporting ? $i18n.t('export.exporting') : $i18n.t('export.downloadWebm')}
+					{exporting
+						? $i18n.t('export.exporting')
+						: format === 'mp4'
+							? $i18n.t('export.downloadMp4')
+							: $i18n.t('export.downloadWebm')}
 				</button>
 			{:else}
 				<button class="btn-download" onclick={download} disabled={!currentSize || currentSize.tooLarge}>
@@ -283,7 +376,7 @@
 		position: absolute;
 		top: calc(100% + 6px);
 		right: 0;
-		width: 240px;
+		width: 260px;
 		background: #1a1a1a;
 		border: 1px solid #333;
 		border-radius: 8px;
@@ -329,6 +422,13 @@
 		font-size: var(--text-xs);
 		color: var(--text-muted);
 		font-variant-numeric: tabular-nums;
+		margin: -4px 0 0;
+	}
+
+	.export-hint {
+		font-size: var(--text-2xs);
+		color: var(--text-muted);
+		line-height: 1.4;
 		margin: -4px 0 0;
 	}
 

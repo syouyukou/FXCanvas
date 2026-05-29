@@ -234,10 +234,10 @@ async function runPlaywrightSmoke() {
 		if (thumbCount >= 10) pass('Default effect thumbnails', `${thumbCount} visible`);
 		else fail('Default effect thumbnails', `only ${thumbCount}`);
 
-		const bloomCard = page.locator('.effect-card', { hasText: 'Bloom' }).first();
-		await bloomCard.hover();
+		const ditherCard = page.locator('.effect-card', { hasText: 'Dither' }).first();
+		await ditherCard.hover();
 		await page.waitForTimeout(250);
-		const beforeOpacity = await bloomCard.locator('.thumb-before').evaluate((el) =>
+		const beforeOpacity = await ditherCard.locator('.thumb-before').evaluate((el) =>
 			parseFloat(getComputedStyle(el).opacity)
 		);
 		if (beforeOpacity > 0.5) pass('Thumbnail hover shows original');
@@ -251,26 +251,25 @@ async function runPlaywrightSmoke() {
 		);
 		pass('Load image fixture');
 
-		await page.getByText('Bloom', { exact: true }).first().click();
-		await page.locator('.layer-name', { hasText: 'BLOOM' }).waitFor({ timeout: 3000 });
-		pass('Add Bloom layer');
+		await page.getByText('Dither', { exact: true }).first().click();
+		await page.locator('.layer-name', { hasText: 'DITHER' }).first().waitFor({ timeout: 3000 });
+		pass('Add Dither layer');
 
 		const exportEnabled = await page.getByRole('button', { name: 'Export', exact: true }).isEnabled();
 		if (exportEnabled) pass('Export enabled with image');
 		else fail('Export enabled with image');
 
-		await page.getByText('Dither', { exact: true }).first().click();
 		await page.waitForTimeout(400);
 		const ditherThumb = await thumbDataUrl(page, 'Dither');
 		if (ditherThumb && ditherThumb.length > 500) pass('Dither thumbnail renders');
 		else fail('Dither thumbnail renders', `len ${ditherThumb?.length ?? 0}`);
 
 		await page.getByText('Duotone', { exact: true }).first().click({ modifiers: ['Shift'] });
-		await page.locator('.layer-name', { hasText: 'DUOTONE' }).waitFor({ timeout: 3000 });
+		await page.locator('.layer-name', { hasText: 'DUOTONE' }).first().waitFor({ timeout: 3000 });
 		pass('Shift+click add Duotone');
 
 		await page.getByText('Star Glow', { exact: true }).first().click({ modifiers: ['Shift'] });
-		await page.locator('.layer-name', { hasText: 'STAR GLOW' }).waitFor({ timeout: 3000 });
+		await page.locator('.layer-name', { hasText: 'STAR GLOW' }).first().waitFor({ timeout: 3000 });
 		await page.locator('.grad-bar').waitFor({ timeout: 3000 });
 		pass('Star Glow gradient UI');
 
@@ -279,7 +278,7 @@ async function runPlaywrightSmoke() {
 		if (starGlowThumb && starGlowThumb.length > 500) pass('Star Glow thumbnail renders');
 		else fail('Star Glow thumbnail renders', `len ${starGlowThumb?.length ?? 0}`);
 
-		await page.locator('.search').fill('bloom');
+		await page.locator('.search').fill('dither');
 		await page.waitForFunction(
 			() => document.querySelectorAll('.effect-card').length <= 2,
 			null,
@@ -288,8 +287,8 @@ async function runPlaywrightSmoke() {
 		pass('Search filters effects');
 		await page.locator('.search').fill('');
 
-		await page.locator('.layer-row', { hasText: 'BLOOM' }).click();
-		await page.locator('.layer-row', { hasText: 'BLOOM' }).locator('.icon-btn.eye').click();
+		await page.locator('.layer-row', { hasText: 'DITHER' }).first().click();
+		await page.locator('.layer-row', { hasText: 'DITHER' }).first().locator('.icon-btn.eye').click();
 		await page.waitForTimeout(200);
 		pass('Layer visibility toggle');
 
@@ -301,7 +300,7 @@ async function runPlaywrightSmoke() {
 		);
 		pass('Delete stacked layer');
 
-		await page.locator('.layer-row', { hasText: 'BLOOM' }).click();
+		await page.locator('.layer-row', { hasText: 'DITHER' }).first().click();
 		await page.locator('.opacity-slider').waitFor({ timeout: 3000 });
 		await page.locator('.opacity-slider').fill('0.5');
 		const opacityLabel = await page.locator('.layer-opacity .param-value').textContent();

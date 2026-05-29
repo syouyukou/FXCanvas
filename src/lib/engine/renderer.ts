@@ -159,7 +159,7 @@ export class Renderer {
 	private renderHeight = 0;
 
 	constructor(canvas: HTMLCanvasElement) {
-		const gl = canvas.getContext('webgl2');
+		const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true });
 		if (!gl) throw new Error('WebGL2 not supported');
 		this.gl = gl;
 
@@ -616,6 +616,11 @@ void main() {
 
 	hasImage(): boolean {
 		return this.sourceTexture !== null;
+	}
+
+	/** Wait for the GPU to finish the last draw (needed before canvas capture). */
+	flush(): void {
+		this.gl.finish();
 	}
 
 	destroy() {

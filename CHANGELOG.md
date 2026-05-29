@@ -9,6 +9,14 @@ FXCanvas 版本更新紀錄（對應 [GitHub Releases](https://github.com/syouyu
 3. 建立並 push tag：`git tag vX.Y.Z && git push origin vX.Y.Z`
 4. GitHub Actions 會自動從對應區塊建立 Release
 
+## v0.11.0 — 2026-05-30
+
+- **Explore** 頁（`/explore`）：瀏覽精選效果、搜尋、分類；深連結 `/?effect=` 一鍵開編輯器
+- **MSX ASCII** 效果與 **影片** 載入／播放預覽
+- **動畫時間軸**：關鍵影格、scrub、`Timeline`、WebM／序列匯出；EffectPanel **ANIMATED** 區
+- 匯出流程強化（`exportSession` 暫停預覽 loop、`animationExport` 擴充）
+- Smoke test 改對齊精選面板（Star Glow 取代 Bloom）
+
 ## v0.10.2 — 2026-05-29
 
 - PRESETS 分頁保留，內建 preset 全部隱藏（重寫中，顯示空狀態）

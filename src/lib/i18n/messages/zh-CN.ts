@@ -17,15 +17,37 @@ export const zhCN: MessageTree = {
 		resizePanel: '调整效果面板宽度',
 		noMedia: '尚未载入媒体',
 		preview: '预览',
-		footerTip: '拖拽边缘调整宽度 · 滚轮缩放 · ⌘Z 撤销 · ⌘V 粘贴 · 自动保存会话'
+		footerTip: '拖拽边缘调整宽度 · 滚轮缩放 · ⌘Z 撤销 · ⌘V 粘贴 · 自动保存会话',
+		explore: '探索'
+	},
+	explore: {
+		pageTitle: '影像特效库',
+		title: '影像特效库',
+		subtitle: '浏览策展特效。移入卡片可对照前后效果，点击即可在编辑器中试用。',
+		search: '搜索特效…',
+		noResults: '找不到特效',
+		navLabel: '主导航',
+		navExplore: '探索',
+		navEditor: '编辑器',
+		openEditor: '打开编辑器',
+		footerTagline: '所有处理都在浏览器本地完成 — 媒体不会离开你的设备。'
 	},
 	canvas: {
 		dropImage: '将图片拖放到这里',
 		orClickLoad: '或点击载入媒体',
 		pasteHint: '⌘V 从剪贴板粘贴',
+		trySamples: '试试示例图',
+		creditBy: 'by',
+		creditAria: '照片作者',
 		original: '原图',
 		ariaCanvas: '画布',
 		ariaPreview: '预览画布'
+	},
+	samples: {
+		biomech: '生物机械',
+		portrait: '人像',
+		neon: '霓虹',
+		night: '夜景'
 	},
 	timeline: {
 		aria: '动画时间轴',
@@ -108,11 +130,16 @@ export const zhCN: MessageTree = {
 		jpeg: 'JPEG',
 		webp: 'WebP',
 		webm: 'WebM（动画）',
-		animation: '动画长度',
+		mp4: 'MP4（视频）',
+		animation: '长度',
+		animationSource: '完整视频（{duration}）',
 		animation5s: '5 秒',
 		animation10s: '10 秒',
+		durationCapped: '超过 {max} 秒的部分不会导出',
+		exportSummary: '约 {duration} · {frames} 帧 @ {fps} FPS',
 		frameRate: '帧率',
 		downloadWebm: '下载 WebM',
+		downloadMp4: '下载 MP4',
 		exporting: '导出中…',
 		downloadLayers: '下载图层 PNG 序列',
 		sizeLabel: '{label} — {w} × {h}',

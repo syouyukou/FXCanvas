@@ -5,6 +5,7 @@ import type { Effect, AppliedEffect, EffectParam, BlendMode } from '../engine/re
 import { cloneGradient, type GradientStop } from '../engine/gradient';
 import { createI18n } from '$lib/i18n';
 import { locale } from '$lib/i18n';
+import type { SampleAuthor, SampleImage } from '../samples/catalog';
 import { fromSnapshot, pushHistory, type StackSnapshot } from './history';
 import { clearAllKeyframeTracks, pruneKeyframeTracks } from './keyframes';
 import { resolveLayerId } from '../engine/keyframeEngine';
@@ -102,6 +103,12 @@ export const appliedEffects = writable<AppliedEffect[]>([]);
 export const layerGroups = writable<LayerGroup[]>([]);
 export const activeLayerIndex = writable<number>(-1);
 export const sourceImage = writable<HTMLImageElement | ImageBitmap | HTMLVideoElement | null>(null);
+/** Attribution for curated sample images (cleared on user upload). */
+export const sourceCredit = writable<SampleAuthor[] | null>(null);
+
+export function clearSourceCredit() {
+	sourceCredit.set(null);
+}
 export const isVideoSource = derived(sourceImage, ($s) =>
 	typeof HTMLVideoElement !== 'undefined' && $s instanceof HTMLVideoElement
 );
@@ -126,6 +133,7 @@ export function loadImageFile(file: File): Promise<void> {
 		const url = URL.createObjectURL(file);
 		const img = new Image();
 		img.onload = () => {
+			clearSourceCredit();
 			sourceImage.set(img);
 			URL.revokeObjectURL(url);
 			resolve();
@@ -136,6 +144,25 @@ export function loadImageFile(file: File): Promise<void> {
 		};
 		img.src = url;
 	});
+}
+
+/** Load a static image URL (e.g. explore deep-link sample). */
+export function loadImageUrl(url: string, credit?: SampleAuthor[] | null): Promise<void> {
+	return new Promise((resolve, reject) => {
+		const img = new Image();
+		img.onload = () => {
+			sourceCredit.set(credit ?? null);
+			sourceImage.set(img);
+			resolve();
+		};
+		img.onerror = () => reject(new Error('Failed to load image'));
+		img.src = url;
+	});
+}
+
+/** Load a curated sample with author attribution. */
+export function loadSampleImage(sample: SampleImage): Promise<void> {
+	return loadImageUrl(sample.url, sample.authors);
 }
 
 export function loadVideoFile(file: File): Promise<HTMLVideoElement> {
@@ -150,6 +177,7 @@ export function loadVideoFile(file: File): Promise<HTMLVideoElement> {
 		vid.muted = true;
 		vid.playsInline = true;
 		vid.onloadedmetadata = () => {
+			clearSourceCredit();
 			sourceImage.set(vid);
 			void vid.play();
 			resolve(vid);
