@@ -9,6 +9,15 @@ FXCanvas 版本更新紀錄（對應 [GitHub Releases](https://github.com/syouyu
 3. 建立並 push tag：`git tag vX.Y.Z && git push origin vX.Y.Z`
 4. GitHub Actions 會自動從對應區塊建立 Release
 
+## v0.9.0 — 2026-05-29
+
+- 多語系支援：English、繁體中文、简体中文、日本語
+- 新增 LanguageMenu 語言切換，UI 文案全面 i18n 化
+- 效果縮圖改為 bundled 靜態 preview 來源，載入更穩定
+- 新增 `previews:generate` 腳本產生 preview 素材
+- 新增 scenario test（多語系使用流程）與 `npm run test` 整合測試
+- Smoke test 固定 English locale，選擇器跨語系穩定
+
 ## v0.8.0 — 2026-05-29
 
 - 左側效果面板可拖曳縮放、收合成 icon rail（類 Effect.app）
