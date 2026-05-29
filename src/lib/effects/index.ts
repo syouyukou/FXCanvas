@@ -2,6 +2,7 @@ import type { Effect } from '../engine/renderer';
 import { DEFAULT_STAR_GLOW_GRADIENT } from '../engine/gradient';
 import { DITHER_EFFECT } from './dither';
 import { EXPOSURE_EFFECT } from './exposure';
+import { GLITCH_DIGITAL_EFFECT, GLITCH_VHS_EFFECT } from './glitch';
 import { LEVELS_EFFECT } from './levels';
 
 const HEADER = `#version 300 es
@@ -364,57 +365,8 @@ void main() {
 }`
 	},
 
-	{
-		id: 'glitch',
-		name: 'Glitch',
-		category: 'Distort',
-		enabled: true,
-		params: [
-			{
-				name: 'intensity',
-				label: 'Intensity',
-				type: 'float',
-				min: 0,
-				max: 1,
-				step: 0.01,
-				default: 0.3,
-				value: 0.3
-			},
-			{
-				name: 'seed',
-				label: 'Seed',
-				type: 'float',
-				min: 0,
-				max: 100,
-				step: 1,
-				default: 42,
-				value: 42
-			}
-		],
-		fragmentShader:
-			HEADER +
-			`
-uniform float u_intensity;
-uniform float u_seed;
-
-float rand(float n) { return fract(sin(n) * 43758.5453); }
-
-void main() {
-  float row = floor(v_texCoord.y * 80.0);
-  float r = rand(row + u_seed);
-  float shift = 0.0;
-  if (r > 1.0 - u_intensity * 0.3) {
-    shift = (rand(row + u_seed + 1.0) - 0.5) * u_intensity * 0.1;
-  }
-  vec2 uv = vec2(fract(v_texCoord.x + shift), v_texCoord.y);
-  vec4 col = texture(u_texture, uv);
-  if (r > 1.0 - u_intensity * 0.1) {
-    col.r = texture(u_texture, uv + vec2(0.01, 0.0)).r;
-    col.b = texture(u_texture, uv - vec2(0.01, 0.0)).b;
-  }
-  outColor = col;
-}`
-	},
+	GLITCH_DIGITAL_EFFECT,
+	GLITCH_VHS_EFFECT,
 
 	{
 		id: 'pixelate',

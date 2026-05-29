@@ -117,17 +117,18 @@ function validateEffectsRegistry() {
 		readFileSync(join(ROOT, 'src/lib/effects/index.ts'), 'utf8') +
 		readFileSync(join(ROOT, 'src/lib/effects/dither.ts'), 'utf8') +
 		readFileSync(join(ROOT, 'src/lib/effects/exposure.ts'), 'utf8') +
-		readFileSync(join(ROOT, 'src/lib/effects/levels.ts'), 'utf8');
+		readFileSync(join(ROOT, 'src/lib/effects/levels.ts'), 'utf8') +
+		readFileSync(join(ROOT, 'src/lib/effects/glitch.ts'), 'utf8');
 	const ids = [...src.matchAll(/\{\n\t*id: '([^']+)',\n\t*name:/g)].map((m) => m[1]);
 	const unique = new Set(ids);
 
-	if (ids.length < 15) fail('Effect count', `expected ≥15, got ${ids.length}`);
+	if (ids.length < 16) fail('Effect count', `expected ≥16, got ${ids.length}`);
 	else pass('Effect count', `${ids.length} effects`);
 
 	if (unique.size !== ids.length) fail('Effect ids unique', 'duplicate ids found');
 	else pass('Effect ids unique');
 
-	for (const id of ['gaussian_blur', 'bloom', 'dither', 'exposure', 'levels', 'star_glow', 'duotone']) {
+	for (const id of ['gaussian_blur', 'bloom', 'dither', 'exposure', 'levels', 'star_glow', 'duotone', 'glitch_digital', 'glitch_vhs']) {
 		if (!ids.includes(id)) fail(`Required effect: ${id}`);
 		else pass(`Required effect: ${id}`);
 	}
@@ -299,6 +300,19 @@ async function runPlaywrightSmoke() {
 		const opacityLabel = await page.locator('.layer-opacity .param-value').textContent();
 		if (opacityLabel?.includes('50')) pass('Layer opacity slider', opacityLabel.trim());
 		else fail('Layer opacity slider', opacityLabel ?? 'missing');
+
+		await page.getByText('Glitch Digital', { exact: true }).first().click({ modifiers: ['Shift'] });
+		await page.locator('.layer-name', { hasText: 'GLITCH DIGITAL' }).waitFor({ timeout: 3000 });
+		await page.waitForTimeout(300);
+		const digitalThumb = await thumbDataUrl(page, 'Glitch Digital');
+		if (digitalThumb && digitalThumb.length > 500) pass('Glitch Digital thumbnail');
+		else fail('Glitch Digital thumbnail', `len ${digitalThumb?.length ?? 0}`);
+
+		await page.getByText('Glitch VHS', { exact: true }).first().click({ modifiers: ['Shift'] });
+		await page.locator('.layer-name', { hasText: 'GLITCH VHS' }).waitFor({ timeout: 3000 });
+		await page.getByText('舊磁帶', { exact: true }).click();
+		await page.waitForTimeout(300);
+		pass('Glitch VHS preset');
 
 		await page.getByText('Gaussian Blur', { exact: true }).first().click({ modifiers: ['Shift'] });
 		await page.locator('.layer-name', { hasText: 'GAUSSIAN BLUR' }).waitFor({ timeout: 3000 });

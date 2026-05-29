@@ -21,6 +21,10 @@
 		DITHER_PALETTE_ZH,
 		DITHER_PATTERN_ZH
 	} from '../effects/dither';
+	import {
+		GLITCH_DIGITAL_PRESETS,
+		GLITCH_VHS_PRESETS
+	} from '../effects/glitch';
 	import GradientMapParam from './GradientMapParam.svelte';
 
 	let active = $derived(
@@ -57,6 +61,17 @@
 
 	function applyDitherPreset(params: (typeof DITHER_PRESETS)[number]['params']) {
 		applyParams($activeLayerIndex, params);
+	}
+
+	function applyGlitchPreset(params: Record<string, number>) {
+		applyParams($activeLayerIndex, params);
+	}
+
+	function matchesPreset(
+		current: Record<string, unknown>,
+		preset: Record<string, number>
+	): boolean {
+		return Object.keys(preset).every((key) => current[key] === preset[key]);
 	}
 
 	function matchesDitherPreset(
@@ -218,6 +233,40 @@
 							class:active={matchesDitherPreset(active.params, preset.params)}
 							title="套用 {preset.label} 參數"
 							onclick={() => applyDitherPreset(preset.params)}
+						>
+							{preset.label}
+						</button>
+					{/each}
+				</div>
+			</div>
+		{/if}
+		{#if active.effect.id === 'glitch_digital'}
+			<div class="preset-section">
+				<span class="preset-label">一鍵風格</span>
+				<div class="preset-grid">
+					{#each GLITCH_DIGITAL_PRESETS as preset (preset.id)}
+						<button
+							class="preset-btn"
+							class:active={matchesPreset(active.params, preset.params)}
+							title="套用 {preset.label}"
+							onclick={() => applyGlitchPreset(preset.params)}
+						>
+							{preset.label}
+						</button>
+					{/each}
+				</div>
+			</div>
+		{/if}
+		{#if active.effect.id === 'glitch_vhs'}
+			<div class="preset-section">
+				<span class="preset-label">一鍵風格</span>
+				<div class="preset-grid">
+					{#each GLITCH_VHS_PRESETS as preset (preset.id)}
+						<button
+							class="preset-btn"
+							class:active={matchesPreset(active.params, preset.params)}
+							title="套用 {preset.label}"
+							onclick={() => applyGlitchPreset(preset.params)}
 						>
 							{preset.label}
 						</button>

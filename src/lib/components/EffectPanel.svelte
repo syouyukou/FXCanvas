@@ -3,7 +3,7 @@
 	import { addEffect, searchQuery, filteredEffects, favorites, leftTab, thumbnails, sourceThumbnail, sourceImage } from '../stores/editor';
 	import type { Effect } from '../engine/renderer';
 
-	const POPULAR_IDS = ['dither', 'levels', 'noise', 'exposure', 'crt', 'bloom'] as const;
+	const POPULAR_IDS = ['dither', 'glitch_digital', 'glitch_vhs', 'levels', 'noise', 'exposure', 'crt', 'bloom'] as const;
 
 	const categoryIcons: Record<string, string> = {
 		Blur: '◎', Color: '◑', Distort: '◈', Effects: '✦', Generate: '❋', Film: '▤'
