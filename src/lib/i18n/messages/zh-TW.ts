@@ -26,6 +26,16 @@ export const zhTW: MessageTree = {
 		ariaCanvas: '畫布',
 		ariaPreview: '預覽畫布'
 	},
+	timeline: {
+		aria: '動畫時間軸',
+		play: '播放',
+		pause: '暫停',
+		duration: '長度',
+		fps: '影格率',
+		scrub: '拖曳時間軸',
+		hint: '◆ 在圖層參數上加入 keyframe',
+		toggleKeyframe: '在目前時間加入/移除 keyframe'
+	},
 	layers: {
 		title: '圖層',
 		clearAll: '全部清除',
@@ -63,6 +73,8 @@ export const zhTW: MessageTree = {
 	},
 	effectsPanel: {
 		tabs: { effects: '效果', favorites: '收藏', presets: '預設' },
+		animatedSection: '動態效果',
+		animBadge: '動態',
 		expandPanel: '展開效果面板',
 		collapsePanel: '收合效果面板',
 		search: '搜尋…',
@@ -94,6 +106,13 @@ export const zhTW: MessageTree = {
 		png: 'PNG',
 		jpeg: 'JPEG',
 		webp: 'WebP',
+		webm: 'WebM（動畫）',
+		animation: '動畫長度',
+		animation5s: '5 秒',
+		animation10s: '10 秒',
+		frameRate: '影格率',
+		downloadWebm: '下載 WebM',
+		exporting: '匯出中…',
 		downloadLayers: '下載圖層 PNG 序列',
 		sizeLabel: '{label} — {w} × {h}',
 		px: '{w} × {h} px',

@@ -30,6 +30,9 @@
 	} from '../effects/glitch';
 	import GradientMapParam from './GradientMapParam.svelte';
 	import { i18n } from '$lib/i18n';
+	import { animation } from '../stores/animation';
+	import { hasKeyframeAt, toggleActiveParamKeyframe, OPACITY_PARAM } from '../stores/keyframes';
+	import { isKeyframeableParam, resolveLayerId } from '../engine/keyframeEngine';
 
 	let active = $derived(
 		$activeLayerIndex >= 0 ? $appliedEffects[$activeLayerIndex] : null
@@ -121,6 +124,18 @@
 		preset: (typeof DITHER_PRESETS)[number]['params']
 	): boolean {
 		return (Object.keys(preset) as (keyof typeof preset)[]).every((key) => current[key] === preset[key]);
+	}
+
+	function paramHasKeyframe(paramName: string): boolean {
+		if ($activeLayerIndex < 0) return false;
+		const item = $appliedEffects[$activeLayerIndex];
+		if (!item) return false;
+		const layerId = resolveLayerId(item, $activeLayerIndex);
+		return hasKeyframeAt(layerId, paramName, $animation.currentTime);
+	}
+
+	function toggleParamKeyframe(paramName: string) {
+		toggleActiveParamKeyframe($animation.currentTime, paramName);
 	}
 
 	function onLayerKeyDown(e: KeyboardEvent, i: number) {
@@ -500,7 +515,16 @@
 		<div class="layer-opacity">
 			<div class="param-meta">
 				<span class="param-label">{$i18n.t('layers.opacity')}</span>
-				<span class="param-value">{Math.round((active.opacity ?? 1) * 100)}%</span>
+				<div class="param-meta-right">
+					<button
+						type="button"
+						class="kf-btn"
+						class:active={paramHasKeyframe(OPACITY_PARAM)}
+						title={$i18n.t('timeline.toggleKeyframe')}
+						onclick={() => toggleParamKeyframe(OPACITY_PARAM)}
+					>◆</button>
+					<span class="param-value">{Math.round((active.opacity ?? 1) * 100)}%</span>
+				</div>
 			</div>
 			<input
 				type="range"
@@ -544,11 +568,22 @@
 						<span class="param-label"
 							>{$i18n.paramLabel(active.effect.id, param.name, param.label).toUpperCase()}</span
 						>
-						{#if param.type !== 'gradient'}
-							<span class="param-value">
-								{formatParamValue(param, active.params[param.name], active.effect.id)}
-							</span>
-						{/if}
+						<div class="param-meta-right">
+							{#if isKeyframeableParam(param)}
+								<button
+									type="button"
+									class="kf-btn"
+									class:active={paramHasKeyframe(param.name)}
+									title={$i18n.t('timeline.toggleKeyframe')}
+									onclick={() => toggleParamKeyframe(param.name)}
+								>◆</button>
+							{/if}
+							{#if param.type !== 'gradient'}
+								<span class="param-value">
+									{formatParamValue(param, active.params[param.name], active.effect.id)}
+								</span>
+							{/if}
+						</div>
 					</div>
 					{#if param.type === 'gradient'}
 						<GradientMapParam
@@ -976,6 +1011,28 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
+	}
+
+	.param-meta-right {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+
+	.kf-btn {
+		background: none;
+		border: none;
+		color: var(--text-faint);
+		font-size: 10px;
+		line-height: 1;
+		padding: 0 2px;
+		cursor: pointer;
+		transition: color var(--transition-fast);
+	}
+
+	.kf-btn:hover,
+	.kf-btn.active {
+		color: #5dade2;
 	}
 
 	.param-label {

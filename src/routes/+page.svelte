@@ -7,6 +7,7 @@
 	import ExportMenu from '$lib/components/ExportMenu.svelte';
 	import PresetMenu from '$lib/components/PresetMenu.svelte';
 	import LanguageMenu from '$lib/components/LanguageMenu.svelte';
+	import Timeline from '$lib/components/Timeline.svelte';
 	import { i18n } from '$lib/i18n';
 	import { sourceImage, imageSize, activeLayerIndex, removeEffect, loadImageFile, loadVideoFile } from '$lib/stores/editor';
 	import { canUndo, canRedo, undo, redo } from '$lib/stores/history';
@@ -252,6 +253,8 @@
 		<Canvas bind:renderer bind:viewZoom />
 		<LayerPanel />
 	</main>
+
+	<Timeline />
 
 	<!-- Status bar -->
 	<footer class="footer">

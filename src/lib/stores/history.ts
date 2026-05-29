@@ -18,6 +18,7 @@ export interface StackSnapshot {
 		layers: {
 		effectId: string;
 		enabled: boolean;
+		layerId?: string;
 		opacity?: number;
 		blendMode?: BlendMode;
 		groupId?: string;
@@ -47,6 +48,7 @@ export function toSnapshot(
 			effectId: item.effect.id,
 			enabled: item.effect.enabled,
 			opacity: item.opacity ?? 1,
+			...(item.layerId ? { layerId: item.layerId } : {}),
 			...(item.blendMode && item.blendMode !== 'normal' ? { blendMode: item.blendMode } : {}),
 			...(item.groupId ? { groupId: item.groupId } : {}),
 			params: cloneParams(item.params)
@@ -103,6 +105,7 @@ export function fromSnapshot(snapshot: StackSnapshot): {
 			},
 			params: cloneParams(layer.params),
 			opacity: layer.opacity ?? 1,
+			...(layer.layerId ? { layerId: layer.layerId } : {}),
 			...(layer.blendMode ? { blendMode: layer.blendMode } : {}),
 			...(layer.groupId ? { groupId: layer.groupId } : {})
 		});

@@ -115,9 +115,13 @@ export async function saveSession(): Promise<void> {
 		localStorage.removeItem(META_KEY);
 		return;
 	}
+	if (typeof HTMLVideoElement !== 'undefined' && img instanceof HTMLVideoElement) {
+		return;
+	}
+	const staticImage = img as HTMLImageElement | ImageBitmap;
 	try {
 		const imageKey = `session-${Date.now()}`;
-		const blob = await imageToBlob(img);
+		const blob = await imageToBlob(staticImage);
 		await putImage(imageKey, blob);
 		const meta: SessionMeta = {
 			stack: toSnapshot(list, get(activeLayerIndex), get(layerGroups)),

@@ -3,7 +3,17 @@
 > **Status:** Temporary — hide uncurated effects from the left **EFFECTS** tab while keeping full registry in code.  
 > **Set on:** 2026-05-29
 
-## Shown in panel (12)
+## Shown in panel
+
+### Animated (dedicated section)
+
+| Effect ID | Name |
+|-----------|------|
+| `msx_ascii` | MSX ASCII |
+
+Static-image motion (`u_time` / `animmode`). Listed under **ANIMATED** at the top of the EFFECTS tab, separate from category groups.
+
+### Static (by category, 12)
 
 | Category | Effect ID | Name |
 |----------|-----------|------|
@@ -42,5 +52,7 @@ Edit `VISIBLE_EFFECT_IDS` in `src/lib/effects/visibleEffects.ts`, or replace the
 
 ```ts
 // src/lib/effects/visibleEffects.ts
-export const VISIBLE_EFFECT_IDS = [ ... ];
+export const STATIC_VISIBLE_EFFECT_IDS = [ ... ];
+export const ANIMATED_VISIBLE_EFFECT_IDS = [ 'msx_ascii' ];
+export const VISIBLE_EFFECT_IDS = [ ...STATIC, ...ANIMATED ];
 ```

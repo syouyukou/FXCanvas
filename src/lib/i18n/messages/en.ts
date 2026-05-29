@@ -27,6 +27,16 @@ export const en: MessageTree = {
 		ariaCanvas: 'Canvas',
 		ariaPreview: 'Preview canvas'
 	},
+	timeline: {
+		aria: 'Animation timeline',
+		play: 'Play',
+		pause: 'Pause',
+		duration: 'Duration',
+		fps: 'Frame rate',
+		scrub: 'Scrub timeline',
+		hint: '◆ Add keyframes on layer params',
+		toggleKeyframe: 'Toggle keyframe at playhead'
+	},
 	layers: {
 		title: 'LAYERS',
 		clearAll: 'CLEAR ALL',
@@ -64,6 +74,8 @@ export const en: MessageTree = {
 	},
 	effectsPanel: {
 		tabs: { effects: 'EFFECTS', favorites: 'FAVORITES', presets: 'PRESETS' },
+		animatedSection: 'ANIMATED',
+		animBadge: 'ANIM',
 		expandPanel: 'Expand effects panel',
 		collapsePanel: 'Collapse effects panel',
 		search: 'Search…',
@@ -95,6 +107,13 @@ export const en: MessageTree = {
 		png: 'PNG',
 		jpeg: 'JPEG',
 		webp: 'WebP',
+		webm: 'WebM (animation)',
+		animation: 'Animation',
+		animation5s: '5 seconds',
+		animation10s: '10 seconds',
+		frameRate: 'Frame rate',
+		downloadWebm: 'Download WebM',
+		exporting: 'Exporting…',
 		downloadLayers: 'Download layer PNGs',
 		sizeLabel: '{label} — {w} × {h}',
 		px: '{w} × {h} px',

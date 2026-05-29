@@ -1,5 +1,12 @@
 <script lang="ts">
-	import { appliedEffects, sourceImage, imageSize } from '$lib/stores/editor';
+	import { appliedEffects, sourceImage, imageSize, isVideoSource } from '$lib/stores/editor';
+	import {
+		animation,
+		setAnimationDuration,
+		setAnimationFps,
+		type AnimationDuration,
+		type AnimationFps
+	} from '$lib/stores/animation';
 	import {
 		downloadDataUrl,
 		downloadLayerSequence,
@@ -10,14 +17,29 @@
 		type ExportFormat,
 		type ExportSizePreset
 	} from '$lib/engine/export';
+	import {
+		downloadBlob,
+		exportAnimationWebm,
+		getAnimationExportFilename,
+		getSupportedWebmMimeType
+	} from '$lib/engine/animationExport';
+	import { resolveEffectsAtTime } from '$lib/engine/keyframeEngine';
+	import { keyframeTracks } from '$lib/stores/keyframes';
+	import { get } from 'svelte/store';
 	import type { Renderer } from '$lib/engine/renderer';
 	import { i18n, locale } from '$lib/i18n';
+
+	type ExportKind = ExportFormat | 'webm';
 
 	let { renderer = null }: { renderer: Renderer | null } = $props();
 
 	let showMenu = $state(false);
-	let format = $state<ExportFormat>('png');
+	let format = $state<ExportKind>('png');
 	let sizePreset = $state<ExportSizePreset>('1x');
+	let exporting = $state(false);
+	let exportProgress = $state('');
+
+	const webmSupported = typeof MediaRecorder !== 'undefined' && getSupportedWebmMimeType() !== null;
 
 	let sizeOptions = $derived.by(() => {
 		void $locale;
@@ -26,6 +48,7 @@
 	let currentSize = $derived(
 		sizeOptions.find((o) => o.id === sizePreset) ?? sizeOptions[0] ?? null
 	);
+	let isVideoExport = $derived(format === 'webm');
 
 	$effect(() => {
 		if (sizeOptions.length === 0) return;
@@ -42,21 +65,62 @@
 		showMenu = false;
 	}
 
+	function onDurationChange(value: string) {
+		setAnimationDuration(Number(value) as AnimationDuration);
+	}
+
+	function onFpsChange(value: string) {
+		setAnimationFps(Number(value) as AnimationFps);
+	}
+
 	function download() {
 		if (!renderer?.hasImage() || !currentSize) return;
 		const url = renderer.exportImage($appliedEffects, {
-			format,
+			format: format as ExportFormat,
 			width: currentSize.width,
 			height: currentSize.height
 		});
-		downloadDataUrl(url, getExportFilename(format));
+		downloadDataUrl(url, getExportFilename(format as ExportFormat));
 		closeMenu();
+	}
+
+	async function downloadWebm() {
+		if (!renderer?.hasImage() || !currentSize || exporting) return;
+		exporting = true;
+		exportProgress = '';
+		try {
+			const video =
+				$isVideoSource && $sourceImage instanceof HTMLVideoElement ? $sourceImage : null;
+			const blob = await exportAnimationWebm(
+				renderer,
+				renderer.canvasElement,
+				$appliedEffects,
+				{
+					duration: $animation.duration,
+					fps: $animation.fps,
+					width: currentSize.width,
+					height: currentSize.height,
+					onProgress: (frame, total) => {
+						exportProgress = `${frame}/${total}`;
+					},
+					resolveAtTime: (time) =>
+						resolveEffectsAtTime($appliedEffects, get(keyframeTracks), time)
+				},
+				video
+			);
+			downloadBlob(blob, getAnimationExportFilename('webm'));
+			closeMenu();
+		} catch (err) {
+			exportProgress = err instanceof Error ? err.message : 'Export failed';
+		} finally {
+			exporting = false;
+		}
 	}
 
 	function downloadLayers() {
 		if (!renderer?.hasImage() || !currentSize || $appliedEffects.length === 0) return;
 		const frames = exportLayerSequence(renderer, $appliedEffects, {
-			format,
+			format: format as ExportFormat,
 			width: currentSize.width,
 			height: currentSize.height
 		});
@@ -102,8 +166,40 @@
 					<option value="png">{$i18n.t('export.png')}</option>
 					<option value="jpeg">{$i18n.t('export.jpeg')}</option>
 					<option value="webp">{$i18n.t('export.webp')}</option>
+					{#if webmSupported}
+						<option value="webm">{$i18n.t('export.webm')}</option>
+					{/if}
 				</select>
 			</div>
+
+			{#if isVideoExport}
+				<div class="export-field">
+					<label class="export-label" for="export-duration">{$i18n.t('export.animation')}</label>
+					<select
+						id="export-duration"
+						class="export-select"
+						value={String($animation.duration)}
+						onchange={(e) => onDurationChange(e.currentTarget.value)}
+					>
+						<option value="5">{$i18n.t('export.animation5s')}</option>
+						<option value="10">{$i18n.t('export.animation10s')}</option>
+					</select>
+				</div>
+
+				<div class="export-field">
+					<label class="export-label" for="export-fps">{$i18n.t('export.frameRate')}</label>
+					<select
+						id="export-fps"
+						class="export-select"
+						value={String($animation.fps)}
+						onchange={(e) => onFpsChange(e.currentTarget.value)}
+					>
+						<option value="24">24 FPS</option>
+						<option value="30">30 FPS</option>
+						<option value="60">60 FPS</option>
+					</select>
+				</div>
+			{/if}
 
 			<div class="export-field">
 				<label class="export-label" for="export-size">{$i18n.t('export.size')}</label>
@@ -125,16 +221,30 @@
 				{/if}
 			{/if}
 
-			<button class="btn-download" onclick={download} disabled={!currentSize || currentSize.tooLarge}>
-				{$i18n.t('export.download')}
-			</button>
-			<button
-				class="btn-download btn-download--secondary"
-				onclick={downloadLayers}
-				disabled={!currentSize || currentSize.tooLarge || $appliedEffects.length === 0}
-			>
-				{$i18n.t('export.downloadLayers')}
-			</button>
+			{#if exportProgress}
+				<p class="export-progress">{exportProgress}</p>
+			{/if}
+
+			{#if isVideoExport}
+				<button
+					class="btn-download"
+					onclick={downloadWebm}
+					disabled={!currentSize || currentSize.tooLarge || exporting}
+				>
+					{exporting ? $i18n.t('export.exporting') : $i18n.t('export.downloadWebm')}
+				</button>
+			{:else}
+				<button class="btn-download" onclick={download} disabled={!currentSize || currentSize.tooLarge}>
+					{$i18n.t('export.download')}
+				</button>
+				<button
+					class="btn-download btn-download--secondary"
+					onclick={downloadLayers}
+					disabled={!currentSize || currentSize.tooLarge || $appliedEffects.length === 0}
+				>
+					{$i18n.t('export.downloadLayers')}
+				</button>
+			{/if}
 		</div>
 	{/if}
 </div>
@@ -226,6 +336,13 @@
 		font-size: var(--text-2xs);
 		color: var(--text-danger);
 		line-height: 1.4;
+		margin: -4px 0 0;
+	}
+
+	.export-progress {
+		font-size: var(--text-xs);
+		color: var(--text-secondary);
+		font-variant-numeric: tabular-nums;
 		margin: -4px 0 0;
 	}
 

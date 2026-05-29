@@ -27,6 +27,16 @@ export const ja: MessageTree = {
 		ariaCanvas: 'キャンバス',
 		ariaPreview: 'プレビューキャンバス'
 	},
+	timeline: {
+		aria: 'アニメーションタイムライン',
+		play: '再生',
+		pause: '一時停止',
+		duration: '長さ',
+		fps: 'フレームレート',
+		scrub: 'タイムラインをスクラブ',
+		hint: '◆ レイヤーパラメータにキーフレームを追加',
+		toggleKeyframe: '現在位置でキーフレームを切替'
+	},
 	layers: {
 		title: 'レイヤー',
 		clearAll: 'すべてクリア',
@@ -64,6 +74,8 @@ export const ja: MessageTree = {
 	},
 	effectsPanel: {
 		tabs: { effects: 'エフェクト', favorites: 'お気に入り', presets: 'プリセット' },
+		animatedSection: 'アニメ',
+		animBadge: 'ANIM',
 		expandPanel: 'エフェクトパネルを展開',
 		collapsePanel: 'エフェクトパネルを折りたたむ',
 		search: '検索…',
@@ -95,6 +107,13 @@ export const ja: MessageTree = {
 		png: 'PNG',
 		jpeg: 'JPEG',
 		webp: 'WebP',
+		webm: 'WebM（アニメ）',
+		animation: 'アニメ長',
+		animation5s: '5 秒',
+		animation10s: '10 秒',
+		frameRate: 'フレームレート',
+		downloadWebm: 'WebM をダウンロード',
+		exporting: '書き出し中…',
 		downloadLayers: 'レイヤー PNG シーケンス',
 		sizeLabel: '{label} — {w} × {h}',
 		px: '{w} × {h} px',

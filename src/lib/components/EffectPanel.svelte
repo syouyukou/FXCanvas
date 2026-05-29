@@ -2,7 +2,7 @@
 	import { CATEGORIES } from '../effects/index';
 	import { BUILTIN_PRESETS, BUILTIN_PRESET_GROUPS } from '../presets/builtin';
 	import { isPresetVisibleInPanel } from '../presets/visiblePresets';
-	import { SHOW_FAVORITES_TAB } from '../effects/visibleEffects';
+	import { SHOW_FAVORITES_TAB, isAnimatedPanelEffect } from '../effects/visibleEffects';
 	import { loadBuiltinPreset } from '../stores/presets';
 	import {
 		addEffect,
@@ -93,10 +93,18 @@
 				: []
 	);
 
+	let animatedEffects = $derived(
+		displayedEffects.filter((e) => isAnimatedPanelEffect(e.id))
+	);
+
+	let staticEffects = $derived(
+		displayedEffects.filter((e) => !isAnimatedPanelEffect(e.id))
+	);
+
 	let grouped = $derived(
 		CATEGORIES.reduce(
 			(acc, cat) => {
-				const items = displayedEffects.filter((e) => e.category === cat);
+				const items = staticEffects.filter((e) => e.category === cat);
 				if (items.length) acc[cat] = items;
 				return acc;
 			},
@@ -240,6 +248,55 @@
 				<p class="empty">{$i18n.t('effectsPanel.noPresets')}</p>
 			{/each}
 		{:else}
+			{#if animatedEffects.length > 0}
+				<div class="category-group category-group--animated">
+					<h3 class="category-label category-label--major category-label--animated">
+						{$i18n.t('effectsPanel.animatedSection')}
+					</h3>
+					<div class="grid">
+						{#each animatedEffects as effect (effect.id)}
+							<div
+								class="effect-card effect-card--animated"
+								{...railPointer(displayEffectName(effect))}
+								onclick={(e) => handleEffectClick(effect, e)}
+								role="button"
+								tabindex="0"
+								onkeydown={(e) =>
+									e.key === 'Enter' && handleEffectClick(effect, e as unknown as MouseEvent)}
+								title={effectTooltip(effect)}
+							>
+								<div class="thumb-wrap">
+									{#if $thumbnails.has(effect.id) && $sourceThumbnails.has(effect.id)}
+										<img
+											class="thumb-img thumb-after"
+											src={$thumbnails.get(effect.id)}
+											alt=""
+											aria-hidden="true"
+										/>
+										<img
+											class="thumb-img thumb-before"
+											src={$sourceThumbnails.get(effect.id)}
+											alt=""
+											aria-hidden="true"
+										/>
+									{:else if $thumbnails.has(effect.id)}
+										<img
+											class="thumb-img"
+											src={$thumbnails.get(effect.id)}
+											alt=""
+											aria-hidden="true"
+										/>
+									{:else}
+										<div class="thumb-placeholder"></div>
+									{/if}
+									<span class="anim-badge">{$i18n.t('effectsPanel.animBadge')}</span>
+									<span class="card-name">{displayEffectName(effect)}</span>
+								</div>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
 			{#each Object.entries(grouped) as [cat, effects]}
 				<div class="category-group">
 					<h3 class="category-label category-label--major">
@@ -298,9 +355,10 @@
 						{/each}
 					</div>
 				</div>
-			{:else}
-				<p class="empty">{$i18n.t('effectsPanel.noEffects')}</p>
 			{/each}
+			{#if animatedEffects.length === 0 && Object.keys(grouped).length === 0}
+				<p class="empty">{$i18n.t('effectsPanel.noEffects')}</p>
+			{/if}
 		{/if}
 	</div>
 </aside>
@@ -511,6 +569,40 @@
 		letter-spacing: 0.12em;
 		color: var(--text-primary);
 		margin: 0 0 var(--space-2) 4px;
+	}
+
+	.category-group--animated {
+		margin-bottom: 16px;
+		padding-bottom: 12px;
+		border-bottom: 1px solid var(--border-subtle);
+	}
+
+	.category-label--animated {
+		color: #5dade2;
+	}
+
+	.effect-card--animated .thumb-wrap {
+		border-color: #2e4053;
+	}
+
+	.effect-card--animated:hover .thumb-wrap {
+		border-color: #5dade2;
+	}
+
+	.anim-badge {
+		position: absolute;
+		top: 4px;
+		right: 4px;
+		font-size: 9px;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		color: #5dade2;
+		background: rgba(0, 0, 0, 0.72);
+		border: 1px solid #2e86c1;
+		border-radius: 3px;
+		padding: 1px 4px;
+		pointer-events: none;
+		font-family: var(--font-mono);
 	}
 
 	.grid {

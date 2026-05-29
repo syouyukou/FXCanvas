@@ -6,6 +6,8 @@ import { cloneGradient, type GradientStop } from '../engine/gradient';
 import { createI18n } from '$lib/i18n';
 import { locale } from '$lib/i18n';
 import { fromSnapshot, pushHistory, type StackSnapshot } from './history';
+import { clearAllKeyframeTracks, pruneKeyframeTracks } from './keyframes';
+import { resolveLayerId } from '../engine/keyframeEngine';
 
 const FAVORITES_KEY = 'fxcanvas-favorites';
 
@@ -23,6 +25,14 @@ function loadFavorites(): Set<string> {
 function persistFavorites(favs: Set<string>) {
 	if (typeof localStorage === 'undefined') return;
 	localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favs]));
+}
+
+function newLayerId(): string {
+	return crypto.randomUUID();
+}
+
+function withLayerId(item: Omit<AppliedEffect, 'layerId'> & { layerId?: string }): AppliedEffect {
+	return { ...item, layerId: item.layerId ?? newLayerId() };
 }
 
 function cloneEffect(effect: Effect): Effect {
@@ -179,7 +189,7 @@ export function addEffect(effectTemplate: Effect, options?: { randomize?: boolea
 					: (p.default as number | boolean | string);
 	}
 	appliedEffects.update((list) => {
-		const newList = [...list, { effect: cloned, params, opacity: 1 }];
+		const newList = [...list, withLayerId({ effect: cloned, params, opacity: 1 })];
 		activeLayerIndex.set(newList.length - 1);
 		return newList;
 	});
@@ -202,7 +212,7 @@ export function addEffectWithParams(
 					: (p.default as number | boolean | string);
 	}
 	appliedEffects.update((list) => {
-		const newList = [...list, { effect: cloned, params: merged, opacity: 1 }];
+		const newList = [...list, withLayerId({ effect: cloned, params: merged, opacity: 1 })];
 		activeLayerIndex.set(newList.length - 1);
 		return newList;
 	});
@@ -216,6 +226,8 @@ function pruneOrphanGroups(list: AppliedEffect[]) {
 export function removeEffect(index: number) {
 	pushHistory();
 	appliedEffects.update((list) => {
+		const removed = list[index];
+		if (removed?.layerId) pruneKeyframeTracks(removed.layerId);
 		const newList = list.filter((_, i) => i !== index);
 		pruneOrphanGroups(newList);
 		activeLayerIndex.update((idx) => {
@@ -231,6 +243,9 @@ export function removeEffect(index: number) {
 export function removeGroup(groupId: string) {
 	pushHistory();
 	appliedEffects.update((list) => {
+		for (const item of list) {
+			if (item.groupId === groupId && item.layerId) pruneKeyframeTracks(item.layerId);
+		}
 		const newList = list.filter((item) => item.groupId !== groupId);
 		layerGroups.update((groups) => groups.filter((g) => g.id !== groupId));
 		activeLayerIndex.update((idx) => {
@@ -304,6 +319,7 @@ export function appendPresetGroup(
 	}
 
 	const { list } = fromSnapshot({ layers, groups, activeIndex: 0 });
+	const withIds = list.map((item) => withLayerId(item));
 	const newGroups: LayerGroup[] = groups.map((g) => ({
 		id: g.id,
 		name: g.name,
@@ -312,7 +328,7 @@ export function appendPresetGroup(
 		enabled: g.enabled ?? true
 	}));
 
-	appliedEffects.update((stack) => [...stack, ...list]);
+	appliedEffects.update((stack) => [...stack, ...withIds]);
 	layerGroups.update((stack) => [...stack, ...newGroups]);
 	activeLayerIndex.set(get(appliedEffects).length - 1);
 }
@@ -322,13 +338,13 @@ export function duplicateEffect(index: number) {
 	appliedEffects.update((list) => {
 		const item = list[index];
 		if (!item) return list;
-		const copy: AppliedEffect = {
+		const copy: AppliedEffect = withLayerId({
 			effect: cloneEffect(item.effect),
 			params: cloneParams(item.params),
 			opacity: item.opacity ?? 1,
 			...(item.blendMode ? { blendMode: item.blendMode } : {}),
 			...(item.groupId ? { groupId: item.groupId } : {})
-		};
+		});
 		copy.effect.enabled = item.effect.enabled;
 		const newList = [...list];
 		newList.splice(index + 1, 0, copy);
@@ -398,6 +414,7 @@ export function clearEffects() {
 	appliedEffects.set([]);
 	layerGroups.set([]);
 	activeLayerIndex.set(-1);
+	clearAllKeyframeTracks();
 }
 
 export function randomizeParams(index: number) {
@@ -437,7 +454,7 @@ export function replaceStack(
 	options?: { skipHistory?: boolean; groups?: LayerGroup[] }
 ) {
 	if (!options?.skipHistory) pushHistory();
-	appliedEffects.set(list);
+	appliedEffects.set(list.map((item) => withLayerId(item)));
 	layerGroups.set(options?.groups ?? []);
 	activeLayerIndex.set(activeIndex);
 }

@@ -41,6 +41,8 @@ export interface Effect {
 export interface AppliedEffect {
 	effect: Effect;
 	params: Record<string, number | boolean | string | GradientStop[]>;
+	/** Stable id for keyframes and layer identity. */
+	layerId?: string;
 	/** Layer blend strength 0–1 (default 1). */
 	opacity: number;
 	/** Compositing mode when blending onto the stack below. */
@@ -63,6 +65,12 @@ export interface RenderOptions {
 	fullRes?: boolean;
 	width?: number;
 	height?: number;
+	/** Elapsed time in seconds (shader u_time). */
+	time?: number;
+	/** Frame index (shader u_frame). */
+	frame?: number;
+	/** Loop duration in seconds (shader u_duration). */
+	duration?: number;
 }
 
 export interface ExportImageOptions {
@@ -399,12 +407,33 @@ void main() {
 		}
 	}
 
+	private setTimeUniforms(
+		cacheKey: string,
+		prog: WebGLProgram,
+		options: RenderOptions
+	): void {
+		const gl = this.gl;
+		const time = options.time ?? 0;
+		const frame = options.frame ?? 0;
+		const duration = options.duration ?? 5;
+
+		const timeLoc = this.getUniform(cacheKey, prog, 'u_time');
+		if (timeLoc) gl.uniform1f(timeLoc, time);
+
+		const frameLoc = this.getUniform(cacheKey, prog, 'u_frame');
+		if (frameLoc) gl.uniform1f(frameLoc, frame);
+
+		const durLoc = this.getUniform(cacheKey, prog, 'u_duration');
+		if (durLoc) gl.uniform1f(durLoc, duration);
+	}
+
 	private bindPassTextures(
 		cacheKey: string,
 		prog: WebGLProgram,
 		inputTex: WebGLTexture,
 		originalTex: WebGLTexture | null,
-		useOriginal: boolean
+		useOriginal: boolean,
+		options: RenderOptions
 	): void {
 		this.bindTexture(cacheKey, 0, inputTex, 'u_texture', prog);
 		if (useOriginal && originalTex) {
@@ -412,6 +441,7 @@ void main() {
 		}
 		const resLoc = this.getUniform(cacheKey, prog, 'u_resolution');
 		if (resLoc) this.gl.uniform2f(resLoc, this.renderWidth, this.renderHeight);
+		this.setTimeUniforms(cacheKey, prog, options);
 	}
 
 	private blendLayer(
@@ -450,6 +480,12 @@ void main() {
 		this.ensureRenderTarget(width, height);
 
 		const enabled = appliedEffects.filter((a) => a.effect.enabled);
+		const clockOptions: RenderOptions = {
+			...options,
+			time: options.time ?? 0,
+			frame: options.frame ?? 0,
+			duration: options.duration ?? 5
+		};
 
 		gl.bindVertexArray(this.vao);
 		gl.viewport(0, 0, width, height);
@@ -461,6 +497,7 @@ void main() {
 			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 			gl.useProgram(this.passThrough);
 			this.bindTexture('__passthrough__', 0, currentTex, 'u_texture', this.passThrough);
+			this.setTimeUniforms('__passthrough__', this.passThrough, clockOptions);
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 			gl.bindVertexArray(null);
 			return;
@@ -494,7 +531,14 @@ void main() {
 
 				const prog = this.getProgram(effect.id, pass);
 				gl.useProgram(prog);
-				this.bindPassTextures(cacheKey, prog, passInput, baseTex, pass.useOriginal ?? false);
+				this.bindPassTextures(
+					cacheKey,
+					prog,
+					passInput,
+					baseTex,
+					pass.useOriginal ?? false,
+					clockOptions
+				);
 				this.setEffectParams(cacheKey, prog, effect, params);
 				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
@@ -560,6 +604,10 @@ void main() {
 
 	get imageSize(): { width: number; height: number } {
 		return { width: this.srcWidth, height: this.srcHeight };
+	}
+
+	get canvasElement(): HTMLCanvasElement {
+		return this.gl.canvas as HTMLCanvasElement;
 	}
 
 	get isPreviewScaled(): boolean {

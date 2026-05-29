@@ -1,7 +1,18 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { get } from 'svelte/store';
 	import { Renderer } from '../engine/renderer';
+	import { resolveEffectsAtTime } from '../engine/keyframeEngine';
 	import { appliedEffects, sourceImage, imageSize, isVideoSource, loadVideoFile } from '../stores/editor';
+	import {
+		animation,
+		advanceAnimationClock,
+		getRenderClockFromStores,
+		needsPreviewLoop,
+		resetAnimationClock,
+		toggleAnimationPlayback
+	} from '../stores/animation';
+	import { keyframeTracks } from '../stores/keyframes';
 	import { showOriginal } from '../stores/view';
 	import { i18n } from '$lib/i18n';
 
@@ -112,33 +123,60 @@
 		resizeObserver.observe(container);
 	});
 
-	onDestroy(() => {
-		resizeObserver?.disconnect();
-		renderer?.destroy();
-	});
-
-	function stopVideoLoop() {
-		if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
+	function stopPreviewLoop() {
+		if (rafId) {
+			cancelAnimationFrame(rafId);
+			rafId = 0;
+		}
 	}
 
-	function startVideoLoop(vid: HTMLVideoElement) {
-		stopVideoLoop();
-		const loop = () => {
+	function renderFrame(vid: HTMLVideoElement | null) {
+		if (!renderer) return;
+		if (vid) renderer.updateVideoFrame(vid);
+		const clock = getRenderClockFromStores(vid);
+		const effects = resolveEffectsAtTime(
+			get(appliedEffects),
+			get(keyframeTracks),
+			clock.time
+		);
+		renderer.render($showOriginal ? [] : effects, clock);
+	}
+
+	function startPreviewLoop(vid: HTMLVideoElement | null) {
+		stopPreviewLoop();
+		let lastTs = performance.now();
+		const loop = (ts: number) => {
 			if (!renderer) return;
-			renderer.updateVideoFrame(vid);
-			renderer.render($showOriginal ? [] : $appliedEffects);
+			const delta = Math.min(0.1, (ts - lastTs) / 1000);
+			lastTs = ts;
+
+			if (vid) {
+				videoPlaying = !vid.paused;
+			} else {
+				advanceAnimationClock(delta);
+			}
+
+			renderFrame(vid);
 			rafId = requestAnimationFrame(loop);
 		};
 		rafId = requestAnimationFrame(loop);
+	}
+
+	function formatTime(sec: number): string {
+		const m = Math.floor(sec / 60);
+		const s = sec % 60;
+		return `${m}:${s.toFixed(1).padStart(4, '0')}`;
 	}
 
 	$effect(() => {
 		if (!renderer || !$sourceImage) {
 			lastImage = null;
 			viewZoom = 100;
-			stopVideoLoop();
+			stopPreviewLoop();
 			return;
 		}
+
+		const vid = $sourceImage instanceof HTMLVideoElement ? $sourceImage : null;
 
 		if ($sourceImage !== lastImage) {
 			renderer.loadImage($sourceImage);
@@ -146,18 +184,19 @@
 			imageSize.set(renderer.imageSize);
 			resetView();
 			applyLayout(renderer.imageSize);
-
-			if ($sourceImage instanceof HTMLVideoElement) {
-				videoPlaying = !$sourceImage.paused;
-				startVideoLoop($sourceImage);
-				return; // RAF handles rendering
-			} else {
-				stopVideoLoop();
-			}
+			resetAnimationClock();
 		}
 
-		if (!$isVideoSource) {
-			renderer.render($showOriginal ? [] : $appliedEffects);
+		void $appliedEffects;
+		void $showOriginal;
+		void $needsPreviewLoop;
+		void $animation;
+
+		if ($needsPreviewLoop) {
+			startPreviewLoop(vid);
+		} else {
+			stopPreviewLoop();
+			renderFrame(vid);
 		}
 	});
 
@@ -182,6 +221,12 @@
 		};
 		img.src = url;
 	}
+
+	onDestroy(() => {
+		resizeObserver?.disconnect();
+		stopPreviewLoop();
+		renderer?.destroy();
+	});
 </script>
 
 <div
@@ -224,18 +269,27 @@
 		<div class="compare-badge">{$i18n.t('canvas.original')}</div>
 	{/if}
 
-	{#if $isVideoSource && $sourceImage instanceof HTMLVideoElement}
-		{@const vid = $sourceImage}
-		<div class="video-controls">
+	{#if $sourceImage && ($isVideoSource || $needsPreviewLoop)}
+		{@const vid = $sourceImage instanceof HTMLVideoElement ? $sourceImage : null}
+		<div class="media-controls">
 			<button
 				class="vc-btn"
 				onclick={() => {
-					if (vid.paused) { void vid.play(); videoPlaying = true; }
-					else { vid.pause(); videoPlaying = false; }
+					if (vid) {
+						if (vid.paused) {
+							void vid.play();
+							videoPlaying = true;
+						} else {
+							vid.pause();
+							videoPlaying = false;
+						}
+					} else {
+						toggleAnimationPlayback();
+					}
 				}}
-				title={videoPlaying ? 'Pause' : 'Play'}
+				title={vid ? (videoPlaying ? 'Pause' : 'Play') : $animation.playing ? 'Pause' : 'Play'}
 			>
-				{#if videoPlaying}
+				{#if (vid && videoPlaying) || (!vid && $animation.playing)}
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
 						<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
 					</svg>
@@ -247,7 +301,10 @@
 			</button>
 			<button
 				class="vc-btn"
-				onclick={() => { vid.currentTime = 0; }}
+				onclick={() => {
+					if (vid) vid.currentTime = 0;
+					else resetAnimationClock();
+				}}
 				title="Restart"
 			>
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -255,7 +312,18 @@
 					<polyline points="3 3 3 8 8 8"/>
 				</svg>
 			</button>
-			<span class="vc-label">VIDEO</span>
+			<span class="vc-time">
+				{#if vid}
+					{formatTime(vid.currentTime)} / {formatTime(vid.duration || $animation.duration)}
+				{:else}
+					{formatTime($animation.currentTime)} / {formatTime($animation.duration)}s
+				{/if}
+			</span>
+			{#if vid}
+				<span class="vc-label">VIDEO</span>
+			{:else}
+				<span class="vc-label vc-label--anim">ANIM</span>
+			{/if}
 		</div>
 	{/if}
 </div>
@@ -315,7 +383,7 @@
 		color: #3a3a3a;
 	}
 
-	.video-controls {
+	.media-controls {
 		position: absolute;
 		bottom: 14px;
 		left: 50%;
@@ -343,6 +411,14 @@
 	}
 	.vc-btn:hover { background: #2a2a2a; color: #fff; }
 
+	.vc-time {
+		font-size: 10px;
+		font-variant-numeric: tabular-nums;
+		color: #888;
+		margin: 0 4px;
+		font-family: 'SF Mono', monospace;
+	}
+
 	.vc-label {
 		font-size: 9px;
 		font-weight: 700;
@@ -350,6 +426,10 @@
 		color: #e74c3c;
 		margin-left: 4px;
 		font-family: 'SF Mono', monospace;
+	}
+
+	.vc-label--anim {
+		color: #5dade2;
 	}
 
 	.compare-badge {
