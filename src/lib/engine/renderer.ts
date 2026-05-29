@@ -217,7 +217,7 @@ void main() {
 		this.opacityBlend = createProgram(gl, VERTEX_SHADER, opacityFrag);
 	}
 
-	loadImage(image: HTMLImageElement | ImageBitmap): void {
+	loadImage(image: HTMLImageElement | ImageBitmap | HTMLVideoElement): void {
 		const gl = this.gl;
 		if (this.sourceTexture) gl.deleteTexture(this.sourceTexture);
 
@@ -232,12 +232,27 @@ void main() {
 		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
 		this.sourceTexture = tex;
 
-		const w = 'naturalWidth' in image ? image.naturalWidth : image.width;
-		const h = 'naturalHeight' in image ? image.naturalHeight : image.height;
-		this.srcWidth = w;
-		this.srcHeight = h;
+		if (image instanceof HTMLVideoElement) {
+			this.srcWidth = image.videoWidth || 1280;
+			this.srcHeight = image.videoHeight || 720;
+		} else {
+			const w = 'naturalWidth' in image ? image.naturalWidth : image.width;
+			const h = 'naturalHeight' in image ? image.naturalHeight : image.height;
+			this.srcWidth = w;
+			this.srcHeight = h;
+		}
 		this.renderWidth = 0;
 		this.renderHeight = 0;
+	}
+
+	/** Upload the current video frame to the source texture. Call each RAF tick. */
+	updateVideoFrame(video: HTMLVideoElement): void {
+		if (!this.sourceTexture || video.readyState < 2) return;
+		const gl = this.gl;
+		gl.bindTexture(gl.TEXTURE_2D, this.sourceTexture);
+		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
 	}
 
 	private computeRenderSize(options: RenderOptions): { width: number; height: number } {

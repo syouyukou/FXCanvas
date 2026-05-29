@@ -91,7 +91,10 @@ export interface LayerGroup {
 export const appliedEffects = writable<AppliedEffect[]>([]);
 export const layerGroups = writable<LayerGroup[]>([]);
 export const activeLayerIndex = writable<number>(-1);
-export const sourceImage = writable<HTMLImageElement | ImageBitmap | null>(null);
+export const sourceImage = writable<HTMLImageElement | ImageBitmap | HTMLVideoElement | null>(null);
+export const isVideoSource = derived(sourceImage, ($s) =>
+	typeof HTMLVideoElement !== 'undefined' && $s instanceof HTMLVideoElement
+);
 export const imageSize = writable<{ width: number; height: number }>({ width: 0, height: 0 });
 export const thumbnails = writable<Map<string, string>>(new Map());
 /** Per-effect curated "before" image for sidebar hover preview. */
@@ -122,6 +125,30 @@ export function loadImageFile(file: File): Promise<void> {
 			reject(new Error('Failed to load image'));
 		};
 		img.src = url;
+	});
+}
+
+export function loadVideoFile(file: File): Promise<HTMLVideoElement> {
+	return new Promise((resolve, reject) => {
+		if (!file.type.startsWith('video/')) {
+			reject(new Error('Not a video'));
+			return;
+		}
+		const url = URL.createObjectURL(file);
+		const vid = document.createElement('video');
+		vid.loop = true;
+		vid.muted = true;
+		vid.playsInline = true;
+		vid.onloadedmetadata = () => {
+			sourceImage.set(vid);
+			void vid.play();
+			resolve(vid);
+		};
+		vid.onerror = () => {
+			URL.revokeObjectURL(url);
+			reject(new Error('Failed to load video'));
+		};
+		vid.src = url;
 	});
 }
 

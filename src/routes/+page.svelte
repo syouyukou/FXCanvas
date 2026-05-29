@@ -8,7 +8,7 @@
 	import PresetMenu from '$lib/components/PresetMenu.svelte';
 	import LanguageMenu from '$lib/components/LanguageMenu.svelte';
 	import { i18n } from '$lib/i18n';
-	import { sourceImage, imageSize, activeLayerIndex, removeEffect, loadImageFile } from '$lib/stores/editor';
+	import { sourceImage, imageSize, activeLayerIndex, removeEffect, loadImageFile, loadVideoFile } from '$lib/stores/editor';
 	import { canUndo, canRedo, undo, redo } from '$lib/stores/history';
 	import { initSessionAutosave, restoreSession } from '$lib/stores/session';
 	import {
@@ -95,7 +95,8 @@
 	}
 
 	function loadFile(file: File) {
-		void loadImageFile(file);
+		if (file.type.startsWith('video/')) void loadVideoFile(file);
+		else void loadImageFile(file);
 	}
 
 	function onPaste(e: ClipboardEvent) {
@@ -224,7 +225,7 @@
 				bind:this={fileInput}
 				use:fileInputAction
 				type="file"
-				accept="image/*"
+				accept="image/*,video/*"
 				class="hidden-input"
 			/>
 

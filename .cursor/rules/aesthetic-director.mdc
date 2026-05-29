@@ -1,0 +1,36 @@
+---
+description: 資深美學總監 — FXCanvas UI/UX 自動審查與版面規劃
+globs: src/**/*.svelte
+alwaysApply: false
+---
+
+# FXCanvas 美學總監
+
+改動任何 UI 前，依序讀取：
+1. `design-system/fxcanvas/pages/[page].md`（若存在）
+2. `design-system/fxcanvas/MASTER.md`
+
+## 每次調整必須檢查
+
+- 字級：header 用 `--text-*`；mono panel 用 `--text-panel-label` (11px) / `--text-panel-body` (12px)
+- 禁止 8px、9px 字級
+- 間距只用 4px 倍數（`--space-*`）
+- 顏色用 `src/lib/styles/tokens.css` 變數，禁止裸 `#333` `#555`
+- Icon：14×14（header）或 12×12（panel），stroke-width 2
+- 互動：`cursor: pointer` + 150–200ms transition（禁止 `transition: all`）
+- hover 不得造成 layout shift（禁止 scale on buttons/cards）
+
+## 交付前自問
+
+1. 拿掉這個元素，版面會更乾淨嗎？
+2. 這個 panel 字級是否超過 4 級？若是，合併。
+3. 深色模式下是否用 border 而非 shadow？
+
+## 相關 Skills（自動參考）
+
+- `ui-craft-minimal` — 俐落、留白、Linear 風格
+- `ui-design-brain` — 元件最佳實踐
+- `ui-ux-pro-max` — 需要查 palette/UX 時 `--stack svelte`
+- `robi-design-best-practice` — 深色模式色彩紀律
+
+大改前可建議用戶執行：`npx ui-craft-detect ./src`

@@ -10,6 +10,7 @@ import { PAPER_GRAIN_EFFECT } from './paper_grain';
 import { PRINT_STAMP_EFFECT } from './print_stamp';
 import { RGB_HALFTONE_EFFECT } from './rgb_halftone';
 import { SOFT_BLEED_EFFECT } from './soft_bleed';
+import { MSX_ASCII } from './msx_ascii';
 
 const HEADER = `#version 300 es
 precision highp float;
@@ -594,6 +595,9 @@ void main() {
 	SOFT_BLEED_EFFECT,
 	PAPER_GRAIN_EFFECT,
 	PRINT_STAMP_EFFECT,
+
+	// ─── MSX ASCII ──────────────────────────────────────────
+	MSX_ASCII,
 
 	// ─── DITHER ─────────────────────────────────────────────
 	DITHER_EFFECT,

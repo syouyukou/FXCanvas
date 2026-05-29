@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { Renderer } from '../engine/renderer';
-	import { appliedEffects, sourceImage, imageSize } from '../stores/editor';
+	import { appliedEffects, sourceImage, imageSize, isVideoSource, loadVideoFile } from '../stores/editor';
 	import { showOriginal } from '../stores/view';
 	import { i18n } from '$lib/i18n';
 
@@ -9,7 +9,9 @@
 	const MAX_ZOOM = 8;
 
 	let resizeObserver: ResizeObserver | null = null;
-	let lastImage = $state<HTMLImageElement | ImageBitmap | null>(null);
+	let lastImage = $state<HTMLImageElement | ImageBitmap | HTMLVideoElement | null>(null);
+	let rafId = 0;
+	let videoPlaying = $state(false);
 	let fitScale = $state(1);
 	let userZoom = $state(1);
 	let panX = $state(0);
@@ -115,14 +117,28 @@
 		renderer?.destroy();
 	});
 
+	function stopVideoLoop() {
+		if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
+	}
+
+	function startVideoLoop(vid: HTMLVideoElement) {
+		stopVideoLoop();
+		const loop = () => {
+			if (!renderer) return;
+			renderer.updateVideoFrame(vid);
+			renderer.render($showOriginal ? [] : $appliedEffects);
+			rafId = requestAnimationFrame(loop);
+		};
+		rafId = requestAnimationFrame(loop);
+	}
+
 	$effect(() => {
 		if (!renderer || !$sourceImage) {
 			lastImage = null;
 			viewZoom = 100;
+			stopVideoLoop();
 			return;
 		}
-
-		const stack = $showOriginal ? [] : $appliedEffects;
 
 		if ($sourceImage !== lastImage) {
 			renderer.loadImage($sourceImage);
@@ -130,15 +146,27 @@
 			imageSize.set(renderer.imageSize);
 			resetView();
 			applyLayout(renderer.imageSize);
+
+			if ($sourceImage instanceof HTMLVideoElement) {
+				videoPlaying = !$sourceImage.paused;
+				startVideoLoop($sourceImage);
+				return; // RAF handles rendering
+			} else {
+				stopVideoLoop();
+			}
 		}
 
-		renderer.render(stack);
+		if (!$isVideoSource) {
+			renderer.render($showOriginal ? [] : $appliedEffects);
+		}
 	});
 
 	function onDrop(e: DragEvent) {
 		e.preventDefault();
 		const file = e.dataTransfer?.files[0];
-		if (file && file.type.startsWith('image/')) loadFile(file);
+		if (!file) return;
+		if (file.type.startsWith('video/')) void loadVideoFile(file);
+		else if (file.type.startsWith('image/')) loadFile(file);
 	}
 
 	function onDragOver(e: DragEvent) {
@@ -195,6 +223,41 @@
 	{#if $showOriginal && $sourceImage}
 		<div class="compare-badge">{$i18n.t('canvas.original')}</div>
 	{/if}
+
+	{#if $isVideoSource && $sourceImage instanceof HTMLVideoElement}
+		{@const vid = $sourceImage}
+		<div class="video-controls">
+			<button
+				class="vc-btn"
+				onclick={() => {
+					if (vid.paused) { void vid.play(); videoPlaying = true; }
+					else { vid.pause(); videoPlaying = false; }
+				}}
+				title={videoPlaying ? 'Pause' : 'Play'}
+			>
+				{#if videoPlaying}
+					<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+						<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+					</svg>
+				{:else}
+					<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+						<polygon points="5,3 19,12 5,21"/>
+					</svg>
+				{/if}
+			</button>
+			<button
+				class="vc-btn"
+				onclick={() => { vid.currentTime = 0; }}
+				title="Restart"
+			>
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+					<polyline points="3 3 3 8 8 8"/>
+				</svg>
+			</button>
+			<span class="vc-label">VIDEO</span>
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -250,6 +313,43 @@
 	.paste-hint {
 		font-size: 12px;
 		color: #3a3a3a;
+	}
+
+	.video-controls {
+		position: absolute;
+		bottom: 14px;
+		left: 50%;
+		transform: translateX(-50%);
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		background: rgba(0, 0, 0, 0.7);
+		border: 1px solid #333;
+		border-radius: 6px;
+		padding: 5px 10px;
+		backdrop-filter: blur(4px);
+	}
+
+	.vc-btn {
+		background: none;
+		border: none;
+		color: #ccc;
+		cursor: pointer;
+		padding: 3px 5px;
+		border-radius: 4px;
+		display: flex;
+		align-items: center;
+		transition: color 0.15s, background 0.15s;
+	}
+	.vc-btn:hover { background: #2a2a2a; color: #fff; }
+
+	.vc-label {
+		font-size: 9px;
+		font-weight: 700;
+		letter-spacing: 0.12em;
+		color: #e74c3c;
+		margin-left: 4px;
+		font-family: 'SF Mono', monospace;
 	}
 
 	.compare-badge {
