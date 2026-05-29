@@ -143,7 +143,8 @@ function validateRendererApi() {
 		['uniformCache', 'Uniform cache'],
 		['exportImage(appliedEffects', 'Scaled export API'],
 		['PREVIEW_MAX_DIM', 'Preview downscale'],
-		['useOriginal', 'Original texture binding']
+		['useOriginal', 'Original texture binding'],
+		['u_opacity', 'Layer opacity blend']
 	]) {
 		if (src.includes(needle)) pass(label);
 		else fail(label, `missing ${needle}`);
@@ -283,6 +284,13 @@ async function runPlaywrightSmoke() {
 		await page.locator('.layer-row', { hasText: 'BLOOM' }).locator('.icon-btn.eye').click();
 		await page.waitForTimeout(200);
 		pass('Layer visibility toggle');
+
+		await page.locator('.layer-row', { hasText: 'BLOOM' }).click();
+		await page.locator('.opacity-slider').waitFor({ timeout: 3000 });
+		await page.locator('.opacity-slider').fill('0.5');
+		const opacityLabel = await page.locator('.layer-opacity .param-value').textContent();
+		if (opacityLabel?.includes('50')) pass('Layer opacity slider', opacityLabel.trim());
+		else fail('Layer opacity slider', opacityLabel ?? 'missing');
 
 		await page.getByText('Gaussian Blur', { exact: true }).first().click({ modifiers: ['Shift'] });
 		await page.locator('.layer-name', { hasText: 'GAUSSIAN BLUR' }).waitFor({ timeout: 3000 });

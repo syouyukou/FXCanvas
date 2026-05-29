@@ -8,6 +8,7 @@
 		updateParam,
 		beginParamEdit,
 		applyParams,
+		updateLayerOpacity,
 		clearEffects,
 		moveEffect,
 		randomizeParams,
@@ -204,6 +205,23 @@
 				</div>
 			</div>
 		{/if}
+		<div class="layer-opacity">
+			<div class="param-meta">
+				<span class="param-label">OPACITY</span>
+				<span class="param-value">{Math.round((active.opacity ?? 1) * 100)}%</span>
+			</div>
+			<input
+				type="range"
+				class="opacity-slider"
+				min="0"
+				max="1"
+				step="0.01"
+				value={active.opacity ?? 1}
+				onpointerdown={beginParamEdit}
+				oninput={(e) =>
+					updateLayerOpacity($activeLayerIndex, parseFloat((e.target as HTMLInputElement).value))}
+			/>
+		</div>
 		<div class="params-list">
 			{#each active.effect.params as param}
 				<div class="param-row" title={param.hint ?? ''}>
@@ -452,6 +470,22 @@
 	.icon-btn.eye-off { color: #3a3a3a; opacity: 1; }
 
 	/* ── Configure ── */
+	.layer-opacity {
+		padding: 12px 14px 0;
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		flex-shrink: 0;
+		border-top: 1px solid #222;
+	}
+
+	.opacity-slider {
+		width: 100%;
+		accent-color: #fff;
+		cursor: pointer;
+		height: 2px;
+	}
+
 	.params-list {
 		flex: 1;
 		overflow-y: auto;

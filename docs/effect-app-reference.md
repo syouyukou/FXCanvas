@@ -1,7 +1,265 @@
 # Effect.app 參考網站
 
 > 來源：[https://effect.app/](https://effect.app/)  
-> 最後整理：2026-05-28
+> 最後整理：2026-05-29（含 production bundle 技術棧反推）
+
+## 目錄
+
+1. [技術棧總覽](#技術棧總覽反推自-production)
+2. [系統架構圖](#系統架構圖可截取區塊)
+3. [可截取區塊與路線圖](#你可以截取哪些部分)
+4. [後端 API / 方案上限 / Bundle](#後端-api-端點bundle-反推)
+5. [產品功能與定價](#產品定位)
+6. [與 FXCanvas 對照](#與本專案fxcanvas對照)
+
+---
+
+## 技術棧總覽（反推自 production）
+
+> 依據 [effect.app](https://effect.app/) HTML、`/assets/*.js` chunk 與 HTTP headers 整理。前端 bundle 有 obfuscation，但核心 class 名與 GLSL 字串仍可辨識。
+
+| 層級 | 技術 | 證據 / 說明 |
+|------|------|-------------|
+| 部署 | **nginx** 靜態站 | `server: nginx`，`content-type: text/html` |
+| 建置 | **Vite** | `type="module"` + hash chunk（`index-*.js`、`ShaderNodeGroup-*.js`） |
+| UI 框架 | **Vue 3** | bundle 內 Sentry 整合含 `__isVue`、`[VueViewModel]` |
+| 監控 | **Sentry** | `__SENTRY_DEBUG__`、shader compile 失敗上報 |
+| 渲染 | **自研 WebGL2 引擎**（Shadertoy 風格） | `ShaderNode`、`ShaderNodeGroup`、`ImageEffectRenderer` |
+| 特效定義 | **GLSL fragment + uniform 註解** | `mainImage()`、`// uniform float foo // label=...` |
+| 影片 | **HTMLVideoElement / VideoFrame** | texture upload 分支 |
+| 匯出 | **即時錄製**（非 ffmpeg.wasm） | FAQ：依機器實際 FPS 錄製 |
+| 後端 | **REST API**（推測 FastAPI） | `/api/auth/*`、`REGISTER_*` 錯誤碼風格 |
+| 訂閱 | **Lemon Squeezy** | HTML 連結 `app.lemonsqueezy.com`、checkout / billing-portal |
+| 整合 | Figma Plugin、Chrome Extension | `frame-ancestors figma.com`、postMessage OAuth |
+
+### 渲染引擎（核心，可對照 FXCanvas）
+
+Effect.app 的 GPU 管線與 [Shadertoy](https://www.shadertoy.com/) 高度同源，再包一層產品化的 node graph：
+
+```
+媒體輸入 (圖/影片/VideoFrame)
+        │
+        ▼
+┌───────────────────┐
+│ ImageEffectRenderer│  ← 共用 WebGL2 context（可 useSharedContext）
+│  · iTime / iFrame  │
+│  · iResolution     │
+│  · iMouse (可選)   │
+│  · iChannel0–7     │  ← 最多 8 路 texture slot
+└─────────┬─────────┘
+          │ 每層 ShaderNode
+          ▼
+┌───────────────────┐
+│ Nt (ping-pong FBO)│  ← frameBuffer0 / frameBuffer1 雙緩衝
+│  multi-pass 特效   │
+└─────────┬─────────┘
+          │
+          ▼
+   Canvas 2D blit 或直出 WebGL canvas
+```
+
+**Shader 編譯策略**
+
+- 偵測 shader 類型：`mainImage` → Shadertoy 包裝；`#version 300 es` → 原生 ES 3.0
+- 使用 `KHR_parallel_shader_compile` 非同步連結 program
+- Uniform 由 GLSL 註解解析為 UI 控件（`ge` int、`float`、`vec2/3/4`）
+- `@animated`、`@feedback channel=N` pragma 控制動畫與 feedback pass
+
+**與 FXCanvas (`src/lib/engine/renderer.ts`) 的對應**
+
+| Effect.app | FXCanvas |
+|------------|----------|
+| `ShaderNodeGroup` + `ShaderNode` | `EffectRenderer` + `effects/*.ts` |
+| `iChannel` ping-pong | `fbos` ping-pong |
+| uniform 註解 → 自動 UI | `u_` + param name 綁定 |
+| `ImageEffectRenderer` 時間軸 | 尚無（待 keyframe） |
+
+---
+
+## 系統架構圖（可截取區塊）
+
+```mermaid
+flowchart TB
+  subgraph Client["瀏覽器 · effect.app"]
+    UI["Vue 3 UI<br/>Layers · Controls · Export · Timeline"]
+    Dock["Dock / Explore<br/>特效清單 · 縮圖 lazy load"]
+    Engine["WebGL2 Engine<br/>ShaderNodeGroup"]
+    Export["Export Pipeline<br/>Canvas 錄製 · MP4/WebM/PNG seq"]
+    UI --> Engine
+    Dock --> Engine
+    Engine --> Export
+  end
+
+  subgraph Integrations["整合（可選）"]
+    Figma["Figma Plugin<br/>postMessage + OAuth"]
+    Chrome["Chrome Extension<br/>送圖到 session"]
+  end
+
+  subgraph Backend["後端 API"]
+    Auth["/api/auth/*<br/>email · Google · verify"]
+    Users["/api/users/me"]
+    Pay["/api/payments/*<br/>checkout · billing-portal"]
+    Events["/api/events<br/>analytics visitor_id"]
+    Presets["Preset / Community<br/>（推測）"]
+  end
+
+  subgraph External["第三方"]
+    LS["Lemon Squeezy<br/>訂閱 · 發票"]
+    CDN["cdn.effect.app<br/>範例圖 · preset 封面"]
+    Sentry["Sentry<br/>shader / WebGL 診斷"]
+  end
+
+  Client --> Auth
+  Client --> Users
+  Client --> Pay
+  Client --> Events
+  Client -.-> Presets
+  Pay --> LS
+  UI --> CDN
+  Engine --> Sentry
+  Figma --> Client
+  Chrome --> Client
+```
+
+---
+
+## 你可以「截取」哪些部分？
+
+依 **FXCanvas 目標**（本地 WebGL 編輯器、無帳號）與 **實作成本** 分級：
+
+| 區塊 | 建議 | 難度 | 說明 |
+|------|------|------|------|
+| **WebGL2 特效堆疊 + ping-pong FBO** | ✅ 優先 clone | 中 | 你已有 `renderer.ts`；可對齊 multi-pass、layer opacity |
+| **Uniform 驅動參數面板** | ✅ 已有 | 低 | Effect 用 GLSL 註解；你用 TS effect 定義，等價 |
+| **預覽降採樣、匯出原圖** | ✅ 已有 | 低 | `PREVIEW_MAX_DIM` 策略與其 FAQ 一致 |
+| **Explore / 分類 / 搜尋 / Favorites** | ✅ 大部分已有 | 低 | Dock hover 縮圖可再加 |
+| **Canvas 縮放平移、Space 對比** | ✅ 已有 | 低 | — |
+| **Undo 本機 stack** | ✅ 已有 | 低 | 他們是雲端 version history |
+| **Preset localStorage** | ✅ 已有 | 低 | 他們是 API + 社群審核 |
+| **單張 PNG/JPEG 匯出** | ✅ 已有 | 低 | — |
+| **Shadertoy 式 `mainImage` + iChannel** | ⚠️ 選做 | 中 | 可讓進階用戶貼 GLSL；需沙箱與編譯錯誤 UX |
+| **影片 decode + 時間軸** | 📋 下一階段 | 高 | `HTMLVideoElement` + `requestAnimationFrame` 逐幀 |
+| **MediaRecorder MP4/WebM** | 📋 下一階段 | 高 | 瀏覽器差異大（Firefox 無 MP4） |
+| **Keyframe 參數動畫** | 📋 長期 | 很高 | Animate 方案核心 |
+| **真・誤差擴散 dither** | 📋 長期 | 高 | CPU worker 或 compute |
+| **Film Grain 貼圖庫** | 📋 中期 | 中 | 18 種 stock 紋理 + tonal weighting |
+| **LUT 系（Vintage / B&W Film）** | 📋 中期 | 中 | 3D LUT texture 或 2D strip |
+| **帳號 / OAuth / Email verify** | ❌ 不建議 clone | 高 | 與本地 privacy 定位衝突 |
+| **Lemon Squeezy / 浮水印 / 方案牆** | ❌ 不建議 | 中 | 商業模式，非編輯器核心 |
+| **Community Preset 審核** | ❌ 不建議 | 高 | 需後端 + moderation |
+| **Figma / Chrome 整合** | ❌ 選用 | 高 | 獨立產品線 |
+| **Sentry + shader 診斷** | ⚠️ 選用 | 低 | 開發期有用，MVP 可略 |
+
+### 建議的「截取」路線圖
+
+```mermaid
+flowchart LR
+  P1["Phase 1<br/>你現在<br/>圖片 + 15 特效 + PNG"]
+  P2["Phase 2<br/>影片 in/out<br/>5–120s 錄製"]
+  P3["Phase 3<br/>Keyframe<br/>參數動畫"]
+  P4["Phase 4<br/>進階特效<br/>LUT · Grain · FS Dither"]
+
+  P1 --> P2 --> P3 --> P4
+```
+
+**Phase 1（對齊 Effect 免費版核心）**：圖層堆疊、即時預覽、preset、undo、靜態匯出 — **FXCanvas 已覆蓋約 70%**。
+
+**Phase 2（Pro 賣點）**：`HTMLVideoElement` → texture、動畫長度、FPS 選擇、`canvas.captureStream()` + `MediaRecorder`。
+
+**Phase 3（Animate）**：每個 uniform 的 keyframe track、時間軸 UI、匯出時插值。
+
+**Phase 4（品質差異化）**：Film Grain、Vintage LUT、Blob Tracker 等需專用 shader + 資產的特效。
+
+### 實作覆蓋率（2026-05-29）
+
+| Phase | 對齊 Effect 方案 | FXCanvas 狀態 |
+|-------|------------------|---------------|
+| Phase 1 | Free 核心編輯 | **約 70%** — 圖層、特效、undo、preset、PNG/JPEG |
+| Phase 2 | Pro 影片匯出 | **0%** — 待做 |
+| Phase 3 | Animate Keyframes | **0%** — 待做 |
+| Phase 4 | 進階特效資產 | **部分** — Dither/Star Glow 有，Grain/LUT 無 |
+
+---
+
+## 後端 API 端點（bundle 反推）
+
+> Auth chunk 內 `fetch('/api/...')` 字串整理。實際 schema 以 server 為準。
+
+| 方法 | 路徑 | 用途 |
+|------|------|------|
+| POST | `/api/auth/register` | Email 註冊 |
+| POST | `/api/auth/login` | 登入（FormData） |
+| POST | `/api/auth/logout` | 登出 |
+| POST | `/api/auth/verify` | Email 驗證碼 |
+| POST | `/api/auth/request-verify-code` | 重發驗證碼 |
+| GET | `/api/auth/google/authorize` | Google OAuth URL |
+| GET | `/api/auth/figma/google/authorize` | Figma 內 Google OAuth |
+| GET | `/api/auth/figma/google/status/{read_key}` | Figma OAuth 輪詢 token |
+| POST | `/api/auth/figma/login` | Figma 內登入 |
+| POST | `/api/auth/figma/logout` | Figma 內登出 |
+| GET | `/api/users/me` | 讀取個人資料 |
+| PATCH | `/api/users/me` | 更新 username / avatar |
+| DELETE | `/api/users/me` | 刪除帳號（推測） |
+| POST | `/api/payments/checkout` | 建立 checkout（tier + variant） |
+| GET | `/api/payments/billing-portal` | 訂閱管理入口 |
+| POST | `/api/payments/change-plan` | 升降級 |
+| POST | `/api/events` | 訪客 / 行為 analytics（`visitor_id`） |
+
+**常見錯誤碼（前端處理）**
+
+| code | 情境 |
+|------|------|
+| `REGISTER_USER_ALREADY_EXISTS` | 註冊 email 重複 |
+| `REGISTER_INVALID_PASSWORD` | 密碼不符規則 |
+| `LOGIN_BAD_CREDENTIALS` | 帳密錯誤 |
+| `LOGIN_USER_NOT_VERIFIED` | 未驗證 → 導向 code modal |
+| `VERIFY_USER_BAD_TOKEN` | 驗證碼錯誤 |
+| `VERIFY_USER_ALREADY_VERIFIED` | 已驗證 |
+| `MISSING_TOKEN_OR_INACTIVE` | Figma token 無效 |
+
+---
+
+## 方案上限（`planLimits` 模組）
+
+| tier | `exportRes` | `maxDuration`（秒） | `totalPresets` |
+|------|-------------|---------------------|----------------|
+| free | 1080 (`0x438`) | 5 | 0（僅基本控制） |
+| pro | 4096 (`0x1000`) | 120 | 10 |
+| animate | 4096 | 300（5 分鐘） | ∞ |
+| ultra | 16384 (`0x4000`) | 7200（2 小時） | ∞ |
+
+價格（USD，模組內常數）：Pro $12/月、$72/年；Animate $20/月、$216/年。
+
+---
+
+## 前端 Bundle 清單（2026-05-28 build）
+
+| Chunk | 職責 |
+|-------|------|
+| `index-*.js` | 主應用（obfuscated） |
+| `ShaderNodeGroup-*.js` | WebGL2 引擎、`ShaderNode`、`ImageEffectRenderer` |
+| `Auth-*.js` | 登入、Modal、API client、Figma postMessage |
+| `Dock-*.js` | Explore dock、lazy 縮圖、hover 放大 |
+| `planLimits-*.js` | `free/pro/animate/ultra` 權限比較 |
+| `pro-*.js` | Pro 相關 UI |
+| `prices-*.js` | 定價 |
+| `getEffectId-*.js` | 特效 ID 對照 |
+| `tooltip-*.js` | Tooltip |
+| `SurveyPanel-*.js` | 問卷 |
+| `nullCheck-*.js` | DOM 工具 |
+
+**CSP 重點**：`frame-ancestors` 允許 `https://www.figma.com`（Figma plugin 嵌入）。
+
+---
+
+## 反推方法紀錄
+
+| 項目 | 內容 |
+|------|------|
+| 分析日期 | 2026-05-29 |
+| 來源 | `curl -sI https://effect.app/`、`curl` HTML + `/assets/*.js` |
+| 限制 | JS 經 obfuscation；class 名保留、變數名混淆 |
+| 未含 | 後端語言/資料庫、shader 原始碼 repo、完整 preset API |
 
 ---
 
@@ -262,7 +520,7 @@
 
 ## 與本專案（FXCanvas）對照
 
-> 最後更新：2026-05-28（含 Undo / Preset / Levels / Compare 改良）
+> 最後更新：2026-05-29（含技術棧反推、架構圖、截取路線圖）
 
 | 功能 | Effect.app | FXCanvas |
 |------|------------|----------|
@@ -301,20 +559,26 @@
 
 | 面向 | Effect.app | FXCanvas |
 |------|------------|----------|
+| 前端框架 | Vue 3 + Vite | SvelteKit + Vite |
+| 渲染抽象 | `ShaderNodeGroup` / Shadertoy | `EffectRenderer` / TS effects |
 | 預覽解析度 | 動態 | `PREVIEW_MAX_DIM = 1920`，大圖降採樣預覽、匯出用原圖 |
 | 多 pass 特效 | ✅ Bloom 等 | ✅ ping-pong FBO |
-| Shader uniform | 內建 | `u_` + param name 自動綁定 |
+| Shader uniform | GLSL 註解解析 | `u_` + param name 自動綁定 |
 | 歷史紀錄 | 伺服器 version history | 記憶體 + snapshot（effectId + params） |
 | Preset | API + 社群審核 | `localStorage` JSON snapshot |
+| 監控 | Sentry | 無 |
+| 訂閱 | Lemon Squeezy API | 無 |
 
-### 仍待實作（優先序建議）
+### 仍待實作（對齊上方 Phase 路線圖）
 
-1. **影片匯入 / MP4·WebM 匯出** — MediaRecorder + 逐幀 render loop
-2. **Keyframe 時間軸** — Animate 方案核心
-3. **真・Floyd-Steinberg dither** — CPU worker 或 compute pass
-4. **Ink Bleed / Film Grain** — Effect.app 熱門特效
-5. **圖層 opacity / blend mode**
-6. **Canvas 拖放載入** — 已有 drop zone，可強化 UX
+| 優先 | 項目 | Phase | 技術要點 |
+|------|------|-------|----------|
+| P0 | 影片匯入 + MP4/WebM 匯出 | 2 | `HTMLVideoElement` texture、`captureStream` + `MediaRecorder` |
+| P1 | 圖層 opacity / blend mode | 1+ | 與 Effect 圖層合成對齊 |
+| P2 | Film Grain / Vintage LUT | 4 | 紋理 atlas、3D LUT |
+| P3 | Keyframe 時間軸 | 3 | uniform 插值 + 匯出 loop |
+| P4 | 真・Floyd-Steinberg dither | 4 | CPU worker 或 compute pass |
+| P5 | Canvas 拖放 UX | 1 | 已有 drop zone，可強化 |
 
 ### Dither（effect.app 對照）
 

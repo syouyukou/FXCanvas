@@ -110,7 +110,7 @@ export function addEffect(effectTemplate: Effect, options?: { randomize?: boolea
 					: (p.default as number | boolean | string);
 	}
 	appliedEffects.update((list) => {
-		const newList = [...list, { effect: cloned, params }];
+		const newList = [...list, { effect: cloned, params, opacity: 1 }];
 		activeLayerIndex.set(newList.length - 1);
 		return newList;
 	});
@@ -133,7 +133,7 @@ export function addEffectWithParams(
 					: (p.default as number | boolean | string);
 	}
 	appliedEffects.update((list) => {
-		const newList = [...list, { effect: cloned, params: merged }];
+		const newList = [...list, { effect: cloned, params: merged, opacity: 1 }];
 		activeLayerIndex.set(newList.length - 1);
 		return newList;
 	});
@@ -155,7 +155,8 @@ export function duplicateEffect(index: number) {
 		if (!item) return list;
 		const copy: AppliedEffect = {
 			effect: cloneEffect(item.effect),
-			params: cloneParams(item.params)
+			params: cloneParams(item.params),
+			opacity: item.opacity ?? 1
 		};
 		copy.effect.enabled = item.effect.enabled;
 		const newList = [...list];
@@ -186,6 +187,14 @@ export function updateParam(
 	appliedEffects.update((list) =>
 		list.map((item, i) =>
 			i === index ? { ...item, params: { ...item.params, [paramName]: value } } : item
+		)
+	);
+}
+
+export function updateLayerOpacity(index: number, opacity: number) {
+	appliedEffects.update((list) =>
+		list.map((item, i) =>
+			i === index ? { ...item, opacity: Math.min(1, Math.max(0, opacity)) } : item
 		)
 	);
 }

@@ -10,6 +10,7 @@ export interface StackSnapshot {
 	layers: {
 		effectId: string;
 		enabled: boolean;
+		opacity?: number;
 		params: Record<string, number | boolean | string | GradientStop[]>;
 	}[];
 	activeIndex: number;
@@ -33,6 +34,7 @@ export function toSnapshot(
 		layers: list.map((item) => ({
 			effectId: item.effect.id,
 			enabled: item.effect.enabled,
+			opacity: item.opacity ?? 1,
 			params: cloneParams(item.params)
 		})),
 		activeIndex
@@ -53,7 +55,8 @@ export function fromSnapshot(snapshot: StackSnapshot): {
 				params: template.params.map((p) => ({ ...p })),
 				enabled: layer.enabled
 			},
-			params: cloneParams(layer.params)
+			params: cloneParams(layer.params),
+			opacity: layer.opacity ?? 1
 		});
 	}
 	const activeIndex = Math.min(

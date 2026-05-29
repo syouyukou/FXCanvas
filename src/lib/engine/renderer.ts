@@ -39,6 +39,8 @@ export interface Effect {
 export interface AppliedEffect {
 	effect: Effect;
 	params: Record<string, number | boolean | string | GradientStop[]>;
+	/** Layer blend strength 0–1 (default 1). */
+	opacity: number;
 }
 
 export interface RenderOptions {
@@ -125,6 +127,7 @@ export class Renderer {
 	private fbos: [WebGLFramebuffer, WebGLTexture][] = [];
 	private vao: WebGLVertexArrayObject;
 	private passThrough: WebGLProgram;
+	private opacityBlend: WebGLProgram;
 
 	private srcWidth = 0;
 	private srcHeight = 0;
@@ -160,6 +163,20 @@ out vec4 outColor;
 uniform sampler2D u_texture;
 void main() { outColor = texture(u_texture, v_texCoord); }`;
 		this.passThrough = createProgram(gl, VERTEX_SHADER, passFrag);
+
+		const opacityFrag = `#version 300 es
+precision highp float;
+in vec2 v_texCoord;
+out vec4 outColor;
+uniform sampler2D u_base;
+uniform sampler2D u_effect;
+uniform float u_opacity;
+void main() {
+  vec4 base = texture(u_base, v_texCoord);
+  vec4 effect = texture(u_effect, v_texCoord);
+  outColor = mix(base, effect, u_opacity);
+}`;
+		this.opacityBlend = createProgram(gl, VERTEX_SHADER, opacityFrag);
 	}
 
 	loadImage(image: HTMLImageElement | ImageBitmap): void {
@@ -344,6 +361,31 @@ void main() { outColor = texture(u_texture, v_texCoord); }`;
 		if (resLoc) this.gl.uniform2f(resLoc, this.renderWidth, this.renderHeight);
 	}
 
+	private blendLayerOpacity(
+		baseTex: WebGLTexture,
+		effectTex: WebGLTexture,
+		opacity: number,
+		toScreen: boolean,
+		pingPong: number
+	): WebGLTexture | null {
+		const gl = this.gl;
+		const cacheKey = '__opacity_blend__';
+		if (toScreen) {
+			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+			gl.viewport(0, 0, (gl.canvas as HTMLCanvasElement).width, (gl.canvas as HTMLCanvasElement).height);
+		} else {
+			gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbos[pingPong % 2][0]);
+			gl.viewport(0, 0, this.renderWidth, this.renderHeight);
+		}
+		gl.useProgram(this.opacityBlend);
+		this.bindTexture(cacheKey, 0, baseTex, 'u_base', this.opacityBlend);
+		this.bindTexture(cacheKey, 1, effectTex, 'u_effect', this.opacityBlend);
+		const opacityLoc = this.getUniform(cacheKey, this.opacityBlend, 'u_opacity');
+		if (opacityLoc) gl.uniform1f(opacityLoc, opacity);
+		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+		return toScreen ? null : this.fbos[pingPong % 2][1];
+	}
+
 	render(appliedEffects: AppliedEffect[], options: RenderOptions = {}): void {
 		if (!this.sourceTexture) return;
 		const gl = this.gl;
@@ -369,16 +411,20 @@ void main() { outColor = texture(u_texture, v_texCoord); }`;
 		}
 
 		for (let i = 0; i < enabled.length; i++) {
-			const { effect, params } = enabled[i];
+			const item = enabled[i];
+			const { effect, params } = item;
+			const opacity = item.opacity ?? 1;
+			const needsBlend = opacity < 0.999;
 			const isLastEffect = i === enabled.length - 1;
 			const passes = getEffectPasses(effect);
-			const effectInput = currentTex;
-			let passInput = effectInput;
+			const baseTex = currentTex;
+			let passInput = baseTex;
+			let effectOutput: WebGLTexture = baseTex;
 
 			for (let p = 0; p < passes.length; p++) {
 				const pass = passes[p];
 				const isLastPass = p === passes.length - 1;
-				const drawToScreen = isLastPass && isLastEffect;
+				const drawToScreen = isLastPass && isLastEffect && !needsBlend;
 				const cacheKey = this.programKey(effect.id, pass.id);
 
 				if (drawToScreen) {
@@ -391,18 +437,31 @@ void main() { outColor = texture(u_texture, v_texCoord); }`;
 
 				const prog = this.getProgram(effect.id, pass);
 				gl.useProgram(prog);
-				this.bindPassTextures(cacheKey, prog, passInput, effectInput, pass.useOriginal ?? false);
+				this.bindPassTextures(cacheKey, prog, passInput, baseTex, pass.useOriginal ?? false);
 				this.setEffectParams(cacheKey, prog, effect, params);
 				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
 				if (!drawToScreen) {
-					passInput = this.fbos[pingPong % 2][1];
-					pingPong++;
+					effectOutput = this.fbos[pingPong % 2][1];
+					if (!isLastPass) {
+						passInput = effectOutput;
+						pingPong++;
+					}
 				}
 			}
 
-			if (!isLastEffect) {
-				currentTex = passInput;
+			if (needsBlend) {
+				const blended = this.blendLayerOpacity(
+					baseTex,
+					effectOutput,
+					opacity,
+					isLastEffect,
+					pingPong
+				);
+				pingPong++;
+				if (!isLastEffect && blended) currentTex = blended;
+			} else if (!isLastEffect) {
+				currentTex = effectOutput;
 			}
 		}
 
