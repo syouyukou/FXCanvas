@@ -550,9 +550,6 @@
 							</span>
 						{/if}
 					</div>
-					{#if $i18n.paramHint(active.effect.id, param.name) ?? param.hint}
-						<p class="param-hint">{$i18n.paramHint(active.effect.id, param.name) ?? param.hint}</p>
-					{/if}
 					{#if param.type === 'gradient'}
 						<GradientMapParam
 							stops={(active.params[param.name] ?? param.default) as GradientStop[]}
@@ -974,13 +971,6 @@
 	}
 
 	.param-row { display: flex; flex-direction: column; gap: var(--panel-gap-tight); }
-
-	.param-hint {
-		font-size: var(--text-panel-label);
-		line-height: 1.4;
-		color: var(--text-faint);
-		margin: -2px 0 0;
-	}
 
 	.param-meta {
 		display: flex;

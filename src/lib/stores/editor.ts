@@ -1,5 +1,6 @@
 import { get, writable, derived } from 'svelte/store';
 import { EFFECTS } from '../effects/index';
+import { isEffectVisibleInPanel } from '../effects/visibleEffects';
 import type { Effect, AppliedEffect, EffectParam, BlendMode } from '../engine/renderer';
 import { cloneGradient, type GradientStop } from '../engine/gradient';
 import { createI18n } from '$lib/i18n';
@@ -131,10 +132,11 @@ export function updateLayerBlendMode(index: number, blendMode: BlendMode) {
 }
 
 export const filteredEffects = derived([searchQuery, locale], ([$search, $lang]) => {
-	if (!$search.trim()) return EFFECTS;
+	const panelEffects = EFFECTS.filter((e) => isEffectVisibleInPanel(e.id));
+	if (!$search.trim()) return panelEffects;
 	const q = $search.toLowerCase();
 	const i18n = createI18n($lang);
-	return EFFECTS.filter((e) => i18n.effectSearchText(e.id, e.name, e.category).includes(q));
+	return panelEffects.filter((e) => i18n.effectSearchText(e.id, e.name, e.category).includes(q));
 });
 
 export function addEffect(effectTemplate: Effect, options?: { randomize?: boolean; skipHistory?: boolean }) {

@@ -9,6 +9,12 @@ FXCanvas 版本更新紀錄（對應 [GitHub Releases](https://github.com/syouyu
 3. 建立並 push tag：`git tag vX.Y.Z && git push origin vX.Y.Z`
 4. GitHub Actions 會自動從對應區塊建立 Release
 
+## v0.10.1 — 2026-05-29
+
+- 左側 EFFECTS 面板改為精選 12 個效果（其餘仍可在圖層／Preset 使用）
+- 新增 `visibleEffects.ts` 與 `docs/visible-effects.md` 說明取捨
+- LayerPanel 移除參數 hint 文案，介面更簡潔
+
 ## v0.10.0 — 2026-05-29
 
 - 新增 **Curves**、**Sharpen** 效果
