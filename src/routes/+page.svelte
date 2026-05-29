@@ -6,6 +6,8 @@
 	import LayerPanel from '$lib/components/LayerPanel.svelte';
 	import ExportMenu from '$lib/components/ExportMenu.svelte';
 	import PresetMenu from '$lib/components/PresetMenu.svelte';
+	import LanguageMenu from '$lib/components/LanguageMenu.svelte';
+	import { i18n } from '$lib/i18n';
 	import { sourceImage, imageSize, activeLayerIndex, removeEffect } from '$lib/stores/editor';
 	import { canUndo, canRedo, undo, redo } from '$lib/stores/history';
 	import {
@@ -180,12 +182,12 @@
 
 		<div class="header-center">
 			<div class="history-btns">
-				<button class="btn-icon" disabled={!$canUndo} onclick={undo} title="Undo (⌘Z)">
+				<button class="btn-icon" disabled={!$canUndo} onclick={undo} title={$i18n.t('app.undo')}>
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 						<path d="M3 7v6h6"/><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"/>
 					</svg>
 				</button>
-				<button class="btn-icon" disabled={!$canRedo} onclick={redo} title="Redo (⌘⇧Z)">
+				<button class="btn-icon" disabled={!$canRedo} onclick={redo} title={$i18n.t('app.redo')}>
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 						<path d="M21 7v6h-6"/><path d="M3 17a9 9 0 019-9 9 9 0 016 2.3L21 13"/>
 					</svg>
@@ -194,6 +196,7 @@
 		</div>
 
 		<div class="header-actions">
+			<LanguageMenu />
 			<PresetMenu />
 
 			<button class="btn-ghost" onclick={() => fileInput?.click()}>
@@ -202,7 +205,7 @@
 					<polyline points="17 8 12 3 7 8"/>
 					<line x1="12" y1="3" x2="12" y2="15"/>
 				</svg>
-				Load Media
+				{$i18n.t('app.loadMedia')}
 			</button>
 			<input
 				bind:this={fileInput}
@@ -225,7 +228,7 @@
 				class:active={resizingPanel}
 				role="separator"
 				aria-orientation="vertical"
-				aria-label="Resize effects panel"
+				aria-label={$i18n.t('app.resizePanel')}
 				onpointerdown={onPanelResizeStart}
 				onpointermove={onPanelResizeMove}
 				onpointerup={onPanelResizeEnd}
@@ -243,13 +246,13 @@
 				{$imageSize.width} × {$imageSize.height} px
 				<span class="zoom-badge">{viewZoom}%</span>
 				{#if Math.max($imageSize.width, $imageSize.height) > 1920}
-					<span class="preview-badge">PREVIEW</span>
+					<span class="preview-badge">{$i18n.t('app.preview')}</span>
 				{/if}
 			{:else}
-				No media loaded
+				{$i18n.t('app.noMedia')}
 			{/if}
 		</span>
-		<span class="footer-tip">Drag edge to resize · Narrow drag collapses · Wide = 3 columns · Scroll zoom · ⌘Z undo</span>
+		<span class="footer-tip">{$i18n.t('app.footerTip')}</span>
 	</footer>
 </div>
 

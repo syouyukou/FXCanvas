@@ -210,6 +210,11 @@ async function runPlaywrightSmoke() {
 	const pageErrors = [];
 	page.on('pageerror', (err) => pageErrors.push(err.message));
 
+	// Pin English so browser selectors stay stable across i18n.
+	await page.addInitScript(() => {
+		localStorage.setItem('fxcanvas-locale', 'en');
+	});
+
 	try {
 		await page.goto(baseUrl, { waitUntil: 'networkidle', timeout: 20000 });
 		pass('Browser page load');
@@ -367,7 +372,7 @@ async function runPlaywrightSmoke() {
 
 		await page.getByText('Glitch VHS', { exact: true }).first().click({ modifiers: ['Shift'] });
 		await page.locator('.layer-name', { hasText: 'GLITCH VHS' }).waitFor({ timeout: 3000 });
-		await page.getByText('舊磁帶', { exact: true }).click();
+		await page.getByText('Old tape', { exact: true }).click();
 		await page.waitForTimeout(300);
 		pass('Glitch VHS preset');
 

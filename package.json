@@ -11,7 +11,10 @@
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"smoke": "node scripts/smoke-test.mjs"
+		"previews:generate": "node scripts/generate-preview-sources.mjs",
+		"smoke": "node scripts/smoke-test.mjs",
+		"test:scenarios": "node scripts/scenario-test.mjs",
+		"test": "npm run check && npm run build && npm run smoke && npm run test:scenarios"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^7.0.1",

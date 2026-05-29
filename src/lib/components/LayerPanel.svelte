@@ -22,16 +22,13 @@
 	import type { AppliedEffect } from '../engine/renderer';
 	import type { EffectParam } from '../engine/renderer';
 	import type { GradientStop } from '../engine/gradient';
-	import {
-		DITHER_PRESETS,
-		DITHER_PALETTE_ZH,
-		DITHER_PATTERN_ZH
-	} from '../effects/dither';
+	import { DITHER_PRESETS } from '../effects/dither';
 	import {
 		GLITCH_DIGITAL_PRESETS,
 		GLITCH_VHS_PRESETS
 	} from '../effects/glitch';
 	import GradientMapParam from './GradientMapParam.svelte';
+	import { i18n } from '$lib/i18n';
 
 	let active = $derived(
 		$activeLayerIndex >= 0 ? $appliedEffects[$activeLayerIndex] : null
@@ -82,7 +79,7 @@
 		effectId?: string
 	): string {
 		if (param.type === 'gradient') return '';
-		if (param.type === 'bool') return value ? 'ON' : 'OFF';
+		if (param.type === 'bool') return value ? $i18n.t('layers.on') : $i18n.t('layers.off');
 		if (param.type === 'color') return String(value ?? param.default).toUpperCase();
 		if (param.type === 'enum') {
 			const opt = param.options?.find((o) => o.value === value);
@@ -90,13 +87,13 @@
 		}
 		const n = Number(value ?? param.default);
 		if (effectId === 'dither' && param.name === 'pattern') {
-			return DITHER_PATTERN_ZH[n] ?? String(n);
+			return $i18n.ditherPatternLabel(n, String(n));
 		}
 		if (effectId === 'dither' && param.name === 'palette') {
-			return DITHER_PALETTE_ZH[n] ?? String(n);
+			return $i18n.ditherPaletteLabel(n, String(n));
 		}
 		if (effectId === 'dither' && param.name === 'distance') {
-			return n < 0.5 ? 'RGB' : '自然';
+			return $i18n.ditherDistanceLabel(n);
 		}
 		const decimals = param.step && param.step < 0.1 ? 3 : param.step && param.step < 1 ? 2 : param.type === 'int' ? 0 : 1;
 		return n.toFixed(decimals);
@@ -157,15 +154,15 @@
 <aside class="layer-panel">
 	<!-- Layers header -->
 	<div class="panel-header">
-		<span>LAYERS</span>
+		<span>{$i18n.t('layers.title')}</span>
 		{#if $appliedEffects.length > 0}
-			<button class="clear-btn" onclick={clearEffects}>CLEAR ALL</button>
+			<button class="clear-btn" onclick={clearEffects}>{$i18n.t('layers.clearAll')}</button>
 		{/if}
 	</div>
 
 	<div class="layers-list">
 		{#if $appliedEffects.length === 0}
-			<p class="empty">No effects applied.<br />Click an effect to add it.</p>
+			<p class="empty">{$i18n.t('layers.empty')}<br />{$i18n.t('layers.emptyHint')}</p>
 		{/if}
 
 		{#each segments as segment (segment.type === 'group' ? segment.group.id : `layer-${segment.index}`)}
@@ -182,7 +179,7 @@
 					>
 						<button
 							class="chevron-btn"
-							title={segment.group.expanded ? 'Collapse' : 'Expand'}
+							title={segment.group.expanded ? $i18n.t('layers.collapse') : $i18n.t('layers.expand')}
 							onclick={(e) => {
 								e.stopPropagation();
 								toggleGroupExpanded(segment.group.id);
@@ -214,7 +211,7 @@
 						<div class="layer-actions">
 							<button
 								class="icon-btn delete"
-								title="Remove preset group"
+								title={$i18n.t('layers.removeGroup')}
 								onclick={(e) => {
 									e.stopPropagation();
 									removeGroup(segment.group.id);
@@ -230,7 +227,7 @@
 							<button
 								class="icon-btn eye"
 								class:eye-off={!groupVisible}
-								title={groupVisible ? 'Hide group' : 'Show group'}
+								title={groupVisible ? $i18n.t('layers.hideGroup') : $i18n.t('layers.showGroup')}
 								onclick={(e) => {
 									e.stopPropagation();
 									toggleGroupEnabled(segment.group.id);
@@ -279,13 +276,15 @@
 									}}
 									ondragend={onDragEnd}
 									role="img"
-									aria-label="drag"
+									aria-label={$i18n.t('layers.drag')}
 								>⠿</span>
-								<span class="layer-name">{child.item.effect.name.toUpperCase()}</span>
+								<span class="layer-name"
+									>{$i18n.effectName(child.item.effect.id, child.item.effect.name).toUpperCase()}</span
+								>
 								<div class="layer-actions">
 									<button
 										class="icon-btn"
-										title="Duplicate"
+										title={$i18n.t('layers.duplicate')}
 										onclick={(e) => {
 											e.stopPropagation();
 											duplicateEffect(child.index);
@@ -298,7 +297,7 @@
 									</button>
 									<button
 										class="icon-btn delete"
-										title="Delete"
+										title={$i18n.t('layers.delete')}
 										onclick={(e) => {
 											e.stopPropagation();
 											removeEffect(child.index);
@@ -314,7 +313,7 @@
 									<button
 										class="icon-btn eye"
 										class:eye-off={!child.item.effect.enabled}
-										title={child.item.effect.enabled ? 'Hide' : 'Show'}
+										title={child.item.effect.enabled ? $i18n.t('layers.hide') : $i18n.t('layers.show')}
 										onclick={(e) => {
 											e.stopPropagation();
 											toggleEffect(child.index);
@@ -362,12 +361,12 @@
 						aria-label="drag"
 					>⠿</span>
 
-					<span class="layer-name">{item.effect.name.toUpperCase()}</span>
+					<span class="layer-name">{$i18n.effectName(item.effect.id, item.effect.name).toUpperCase()}</span>
 
 					<div class="layer-actions">
 						<button
 							class="icon-btn"
-							title="Duplicate"
+							title={$i18n.t('layers.duplicate')}
 							onclick={(e) => { e.stopPropagation(); duplicateEffect(i); }}
 						>
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -378,7 +377,7 @@
 
 						<button
 							class="icon-btn delete"
-							title="Delete"
+							title={$i18n.t('layers.delete')}
 							onclick={(e) => { e.stopPropagation(); removeEffect(i); }}
 						>
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -392,7 +391,7 @@
 						<button
 							class="icon-btn eye"
 							class:eye-off={!item.effect.enabled}
-							title={item.effect.enabled ? 'Hide' : 'Show'}
+							title={item.effect.enabled ? $i18n.t('layers.hide') : $i18n.t('layers.show')}
 							onclick={(e) => { e.stopPropagation(); toggleEffect(i); }}
 						>
 							{#if item.effect.enabled}
@@ -419,17 +418,19 @@
 		<div class="configure-area">
 		<div class="panel-header configure-label">
 			<div class="controls-title">
-				<span>CONTROLS</span>
-				<span class="controls-effect">{active.effect.name.toUpperCase()}</span>
+				<span>{$i18n.t('layers.controls')}</span>
+				<span class="controls-effect"
+					>{$i18n.effectName(active.effect.id, active.effect.name).toUpperCase()}</span
+				>
 			</div>
 			<div class="config-actions">
-				<button class="cfg-btn" title="Randomize" onclick={() => randomizeParams($activeLayerIndex)}>
+				<button class="cfg-btn" title={$i18n.t('layers.randomize')} onclick={() => randomizeParams($activeLayerIndex)}>
 					<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 						<polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/>
 						<polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
 					</svg>
 				</button>
-				<button class="cfg-btn" title="Reset" onclick={() => resetParams($activeLayerIndex)}>
+				<button class="cfg-btn" title={$i18n.t('layers.reset')} onclick={() => resetParams($activeLayerIndex)}>
 					<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 						<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
 						<polyline points="3 3 3 8 8 8"/>
@@ -439,16 +440,18 @@
 		</div>
 		{#if active.effect.id === 'dither'}
 			<div class="preset-section">
-				<span class="preset-label">一鍵風格</span>
+				<span class="preset-label">{$i18n.t('layers.oneClickStyle')}</span>
 				<div class="preset-grid">
 					{#each DITHER_PRESETS as preset (preset.id)}
 						<button
 							class="preset-btn"
 							class:active={matchesDitherPreset(active.params, preset.params)}
-							title="套用 {preset.label} 參數"
+							title={$i18n.t('layers.applyDitherPreset', {
+								label: $i18n.ditherPresetLabel(preset.id, preset.label)
+							})}
 							onclick={() => applyDitherPreset(preset.params)}
 						>
-							{preset.label}
+							{$i18n.ditherPresetLabel(preset.id, preset.label)}
 						</button>
 					{/each}
 				</div>
@@ -456,16 +459,18 @@
 		{/if}
 		{#if active.effect.id === 'glitch_digital'}
 			<div class="preset-section">
-				<span class="preset-label">一鍵風格</span>
+				<span class="preset-label">{$i18n.t('layers.oneClickStyle')}</span>
 				<div class="preset-grid">
 					{#each GLITCH_DIGITAL_PRESETS as preset (preset.id)}
 						<button
 							class="preset-btn"
 							class:active={matchesPreset(active.params, preset.params)}
-							title="套用 {preset.label}"
+							title={$i18n.t('layers.applyGlitchPreset', {
+								label: $i18n.glitchDigitalPresetLabel(preset.id, preset.label)
+							})}
 							onclick={() => applyGlitchPreset(preset.params)}
 						>
-							{preset.label}
+							{$i18n.glitchDigitalPresetLabel(preset.id, preset.label)}
 						</button>
 					{/each}
 				</div>
@@ -473,16 +478,18 @@
 		{/if}
 		{#if active.effect.id === 'glitch_vhs'}
 			<div class="preset-section">
-				<span class="preset-label">一鍵風格</span>
+				<span class="preset-label">{$i18n.t('layers.oneClickStyle')}</span>
 				<div class="preset-grid">
 					{#each GLITCH_VHS_PRESETS as preset (preset.id)}
 						<button
 							class="preset-btn"
 							class:active={matchesPreset(active.params, preset.params)}
-							title="套用 {preset.label}"
+							title={$i18n.t('layers.applyGlitchPreset', {
+								label: $i18n.glitchVhsPresetLabel(preset.id, preset.label)
+							})}
 							onclick={() => applyGlitchPreset(preset.params)}
 						>
-							{preset.label}
+							{$i18n.glitchVhsPresetLabel(preset.id, preset.label)}
 						</button>
 					{/each}
 				</div>
@@ -490,7 +497,7 @@
 		{/if}
 		<div class="layer-opacity">
 			<div class="param-meta">
-				<span class="param-label">OPACITY</span>
+				<span class="param-label">{$i18n.t('layers.opacity')}</span>
 				<span class="param-value">{Math.round((active.opacity ?? 1) * 100)}%</span>
 			</div>
 			<input
@@ -507,17 +514,22 @@
 		</div>
 		<div class="params-list">
 			{#each active.effect.params as param}
-				<div class="param-row" title={param.hint ?? ''}>
+				<div
+					class="param-row"
+					title={$i18n.paramHint(active.effect.id, param.name) ?? param.hint ?? ''}
+				>
 					<div class="param-meta">
-						<span class="param-label">{param.label.toUpperCase()}</span>
+						<span class="param-label"
+							>{$i18n.paramLabel(active.effect.id, param.name, param.label).toUpperCase()}</span
+						>
 						{#if param.type !== 'gradient'}
 							<span class="param-value">
 								{formatParamValue(param, active.params[param.name], active.effect.id)}
 							</span>
 						{/if}
 					</div>
-					{#if param.hint}
-						<p class="param-hint">{param.hint}</p>
+					{#if $i18n.paramHint(active.effect.id, param.name) ?? param.hint}
+						<p class="param-hint">{$i18n.paramHint(active.effect.id, param.name) ?? param.hint}</p>
 					{/if}
 					{#if param.type === 'gradient'}
 						<GradientMapParam
@@ -533,7 +545,7 @@
 								updateParam($activeLayerIndex, param.name, !active.params[param.name]);
 							}}
 						>
-							{active.params[param.name] ? 'ON' : 'OFF'}
+							{active.params[param.name] ? $i18n.t('layers.on') : $i18n.t('layers.off')}
 						</button>
 					{:else if param.type === 'enum' && param.options}
 						<select
@@ -587,7 +599,7 @@
 		</div>
 		</div>
 	{:else if $appliedEffects.length > 0}
-		<div class="hint">Click a layer to configure</div>
+		<div class="hint">{$i18n.t('layers.selectHint')}</div>
 	{/if}
 </aside>
 

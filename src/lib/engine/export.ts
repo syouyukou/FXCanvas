@@ -1,3 +1,7 @@
+import { get } from 'svelte/store';
+import { exportSizeLabel } from '$lib/i18n';
+import { locale } from '$lib/i18n';
+
 export type ExportFormat = 'png' | 'jpeg';
 export type ExportSizePreset = 'half' | '1x' | '2x' | '3x' | '4x' | '1080p' | '4k';
 
@@ -67,14 +71,17 @@ export function getExportSizeOptions(srcW: number, srcH: number): ExportSizeOpti
 		});
 	};
 
+	// Touch locale so export options refresh when language changes.
+	void get(locale);
+
 	for (const preset of SCALE_PRESETS) {
 		const { width, height, scale } = dimsForScale(srcW, srcH, preset.scale);
-		push(preset.id, preset.label, width, height, scale);
+		push(preset.id, exportSizeLabel(preset.id, preset.label), width, height, scale);
 	}
 
 	for (const preset of CAP_PRESETS) {
 		const { width, height, scale } = dimsForCap(srcW, srcH, preset.maxLongEdge);
-		push(preset.id, preset.label, width, height, scale);
+		push(preset.id, exportSizeLabel(preset.id, preset.label), width, height, scale);
 	}
 
 	return options;

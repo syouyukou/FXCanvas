@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+<rect width="256" height="256" fill="#e8e4dc"/>
+<path d="M128 40 Q60 120 100 200 Q128 160 156 200 Q196 120 128 40" fill="#0a0a0a" opacity="0.85"/>
+<path d="M128 50 Q90 130 120 190" fill="#1a1a1a" opacity="0.4"/>
+</svg>

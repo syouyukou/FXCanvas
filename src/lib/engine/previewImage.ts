@@ -1,59 +1,51 @@
-/** Curated 128×128 sample image for effect thumbnails (shown before user uploads). */
-export function createDefaultPreviewImage(): Promise<HTMLImageElement> {
-	const S = 128;
+const S = 256;
+
+function hashId(id: string): number {
+	let h = 0;
+	for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+	return Math.abs(h);
+}
+
+/** Procedural placeholder when static preview source is missing. */
+export function createFallbackPreviewImage(effectId: string): Promise<HTMLImageElement> {
+	const h = hashId(effectId);
 	const canvas = document.createElement('canvas');
 	canvas.width = S;
 	canvas.height = S;
 	const ctx = canvas.getContext('2d')!;
 
-	// Deep ambient background (Effect.app-style)
-	const bg = ctx.createRadialGradient(S * 0.5, S * 0.55, S * 0.1, S * 0.5, S * 0.5, S * 0.75);
-	bg.addColorStop(0, '#1a2240');
-	bg.addColorStop(0.55, '#0d1224');
-	bg.addColorStop(1, '#060810');
+	const hue = h % 360;
+	const cx = 0.35 + (h % 30) / 100;
+	const cy = 0.4 + ((h >> 4) % 25) / 100;
+
+	const bg = ctx.createLinearGradient(0, 0, S, S);
+	bg.addColorStop(0, `hsl(${hue}, 25%, 8%)`);
+	bg.addColorStop(1, `hsl(${(hue + 40) % 360}, 18%, 4%)`);
 	ctx.fillStyle = bg;
 	ctx.fillRect(0, 0, S, S);
 
-	// Large warm orb (left)
-	const warm = ctx.createRadialGradient(S * 0.34, S * 0.52, 0, S * 0.34, S * 0.52, S * 0.34);
-	warm.addColorStop(0, '#ffb86a');
-	warm.addColorStop(0.35, '#e86a38');
-	warm.addColorStop(0.7, '#8a3018');
-	warm.addColorStop(1, 'transparent');
-	ctx.fillStyle = warm;
+	const orb = ctx.createRadialGradient(S * cx, S * cy, 0, S * cx, S * cy, S * 0.42);
+	orb.addColorStop(0, `hsl(${(hue + 20) % 360}, 70%, 72%)`);
+	orb.addColorStop(0.45, `hsl(${hue}, 55%, 42%)`);
+	orb.addColorStop(1, 'transparent');
+	ctx.fillStyle = orb;
 	ctx.fillRect(0, 0, S, S);
 
-	// Small cool orb (right)
-	const cool = ctx.createRadialGradient(S * 0.72, S * 0.38, 0, S * 0.72, S * 0.38, S * 0.22);
-	cool.addColorStop(0, '#f0a8ff');
-	cool.addColorStop(0.4, '#b060e0');
-	cool.addColorStop(1, 'transparent');
-	ctx.fillStyle = cool;
-	ctx.fillRect(0, 0, S, S);
-
-	// Soft ground glow
-	const floor = ctx.createLinearGradient(0, S * 0.65, 0, S);
-	floor.addColorStop(0, 'transparent');
-	floor.addColorStop(1, 'rgba(40, 50, 90, 0.55)');
-	ctx.fillStyle = floor;
-	ctx.fillRect(0, 0, S, S);
-
-	// Specular highlights
-	ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
-	for (const [x, y, r] of [
-		[0.28, 0.4, 1.4],
-		[0.68, 0.3, 0.9],
-		[0.76, 0.42, 0.6]
-	] as const) {
-		ctx.beginPath();
-		ctx.arc(S * x, S * y, r, 0, Math.PI * 2);
-		ctx.fill();
+	if (h % 3 === 0) {
+		ctx.fillStyle = 'rgba(255,255,255,0.12)';
+		for (let i = 0; i < 5; i++) {
+			ctx.fillRect(0, (S / 5) * i, S, 1);
+		}
 	}
 
+	return canvasToImage(canvas);
+}
+
+function canvasToImage(canvas: HTMLCanvasElement): Promise<HTMLImageElement> {
 	return new Promise((resolve, reject) => {
 		const img = new Image();
 		img.onload = () => resolve(img);
-		img.onerror = () => reject(new Error('Failed to create default preview image'));
-		img.src = canvas.toDataURL('image/jpeg', 0.9);
+		img.onerror = () => reject(new Error('Failed to create fallback preview image'));
+		img.src = canvas.toDataURL('image/jpeg', 0.88);
 	});
 }

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { EFFECTS, CATEGORIES } from '../effects/index';
+	import { CATEGORIES } from '../effects/index';
 	import { BUILTIN_PRESETS, BUILTIN_PRESET_GROUPS } from '../presets/builtin';
 	import { loadBuiltinPreset } from '../stores/presets';
 	import {
@@ -9,8 +9,7 @@
 		favorites,
 		leftTab,
 		thumbnails,
-		sourceThumbnail,
-		sourceImage
+		sourceThumbnails
 	} from '../stores/editor';
 	import {
 		effectPanelCollapsed,
@@ -20,6 +19,7 @@
 		effectPanelIsCompact
 	} from '../stores/view';
 	import type { Effect } from '../engine/renderer';
+	import { i18n } from '$lib/i18n';
 
 	let gridColumns = $derived(effectPanelGridColumns($effectPanelWidth, $effectPanelCollapsed));
 	let compactMode = $derived(effectPanelIsCompact($effectPanelWidth, $effectPanelCollapsed));
@@ -61,8 +61,6 @@
 		}
 	}
 
-	const POPULAR_IDS = ['dither', 'glitch_digital', 'glitch_vhs', 'levels', 'noise', 'exposure', 'crt', 'bloom'] as const;
-
 	const categoryIcons: Record<string, string> = {
 		Blur: '◎',
 		Color: '◑',
@@ -71,12 +69,6 @@
 		Effects: '✦',
 		Generate: '❋'
 	};
-
-	let popularEffects = $derived(
-		POPULAR_IDS.map((id) => EFFECTS.find((e) => e.id === id)).filter(Boolean) as Effect[]
-	);
-
-	let showPopular = $derived($leftTab === 'effects' && !$searchQuery.trim());
 
 	function handleEffectClick(effect: Effect, e: MouseEvent) {
 		addEffect(effect, { randomize: !e.shiftKey });
@@ -115,14 +107,21 @@
 			? BUILTIN_PRESETS.filter((p) => {
 					if (!$searchQuery.trim()) return true;
 					const q = $searchQuery.toLowerCase();
-					return (
-						p.name.toLowerCase().includes(q) ||
-						p.group.toLowerCase().includes(q) ||
-						p.description.toLowerCase().includes(q)
-					);
+					return $i18n.presetSearchText(p.id, p.name, p.group, p.description).includes(q);
 				})
 			: []
 	);
+
+	function displayEffectName(effect: Effect) {
+		return $i18n.effectName(effect.id, effect.name);
+	}
+
+	function effectTooltip(effect: Effect) {
+		const name = displayEffectName(effect);
+		return $thumbnails.has(effect.id) && $sourceThumbnails.has(effect.id)
+			? $i18n.t('effectsPanel.tooltipWithThumb', { name })
+			: $i18n.t('effectsPanel.tooltipNoThumb', { name });
+	}
 
 	let groupedPresets = $derived(
 		BUILTIN_PRESET_GROUPS.reduce(
@@ -145,8 +144,8 @@
 	<button
 		class="collapse-btn"
 		onclick={toggleCollapse}
-		title={$effectPanelCollapsed ? 'Expand effects panel' : 'Collapse effects panel'}
-		aria-label={$effectPanelCollapsed ? 'Expand effects panel' : 'Collapse effects panel'}
+		title={$effectPanelCollapsed ? $i18n.t('effectsPanel.expandPanel') : $i18n.t('effectsPanel.collapsePanel')}
+		aria-label={$effectPanelCollapsed ? $i18n.t('effectsPanel.expandPanel') : $i18n.t('effectsPanel.collapsePanel')}
 		aria-expanded={!$effectPanelCollapsed}
 	>
 		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -160,11 +159,15 @@
 	</button>
 
 	<div class="tabs">
-		<button class:active={$leftTab === 'effects'} onclick={() => leftTab.set('effects')}>EFFECTS</button>
-		<button class:active={$leftTab === 'favorites'} onclick={() => leftTab.set('favorites')}>
-			FAVORITES
+		<button class:active={$leftTab === 'effects'} onclick={() => leftTab.set('effects')}>
+			{$i18n.t('effectsPanel.tabs.effects')}
 		</button>
-		<button class:active={$leftTab === 'presets'} onclick={() => leftTab.set('presets')}>PRESETS</button>
+		<button class:active={$leftTab === 'favorites'} onclick={() => leftTab.set('favorites')}>
+			{$i18n.t('effectsPanel.tabs.favorites')}
+		</button>
+		<button class:active={$leftTab === 'presets'} onclick={() => leftTab.set('presets')}>
+			{$i18n.t('effectsPanel.tabs.presets')}
+		</button>
 	</div>
 
 	<div class="search-wrap">
@@ -181,7 +184,7 @@
 		</svg>
 		<input
 			type="text"
-			placeholder={$leftTab === 'presets' ? 'Search presets…' : 'Search…'}
+			placeholder={$leftTab === 'presets' ? $i18n.t('effectsPanel.searchPresets') : $i18n.t('effectsPanel.search')}
 			bind:value={$searchQuery}
 			class="search"
 		/>
@@ -194,102 +197,56 @@
 		{#if $leftTab === 'presets'}
 			{#each Object.entries(groupedPresets) as [group, presets]}
 				<div class="category-group">
-					<h3 class="category-label category-label--major">{group}</h3>
+					<h3 class="category-label category-label--major">
+						{$i18n.builtinPresetGroup(presets[0]?.id ?? '', group)}
+					</h3>
 					<div class="grid grid--presets">
 						{#each presets as preset (preset.id)}
 							<div
 								class="effect-card preset-card"
-								{...railPointer(preset.name)}
+								{...railPointer($i18n.builtinPresetName(preset.id, preset.name))}
 								onclick={() => loadBuiltinPreset(preset.id)}
 								role="button"
 								tabindex="0"
 								onkeydown={(e) => e.key === 'Enter' && loadBuiltinPreset(preset.id)}
-								title="{preset.description}\n\nLayers: {preset.layerLabels.join(' → ')}"
+								title="{$i18n.builtinPresetDescription(preset.id, preset.description)}\n\n{$i18n.t('effectsPanel.layersPrefix')} {preset.layerLabels.join(' → ')}"
 							>
 								<div class="thumb-wrap preset-thumb">
 									<div class="preset-thumb-inner">
-										<span class="preset-abbr">VP</span>
+										<span class="preset-abbr">{$i18n.t('effectsPanel.presetAbbr')}</span>
 									</div>
 								</div>
-								<div class="card-name">{preset.name}</div>
-								<div class="preset-meta">{preset.snapshot.layers.length} layers</div>
+								<div class="card-name">{$i18n.builtinPresetName(preset.id, preset.name)}</div>
+								<div class="preset-meta">
+									{$i18n.t('effectsPanel.layersCount', { n: preset.snapshot.layers.length })}
+								</div>
 							</div>
 						{/each}
 					</div>
 				</div>
 			{:else}
-				<p class="empty">No presets found</p>
+				<p class="empty">{$i18n.t('effectsPanel.noPresets')}</p>
 			{/each}
 		{:else}
-			{#if showPopular}
-				<div class="category-group">
-					<h3 class="category-label"><span>★</span> MOST POPULAR</h3>
-					<div class="grid">
-						{#each popularEffects as effect (effect.id)}
-							<div
-								class="effect-card"
-								{...railPointer(effect.name)}
-								onclick={(e) => handleEffectClick(effect, e)}
-								role="button"
-								tabindex="0"
-								onkeydown={(e) =>
-									e.key === 'Enter' && handleEffectClick(effect, e as unknown as MouseEvent)}
-								title="{effect.name} — Click: random · Shift+Click: defaults"
-							>
-								<div class="thumb-wrap">
-									{#if $thumbnails.has(effect.id) && $sourceThumbnail}
-										<img
-											class="thumb-img thumb-after"
-											src={$thumbnails.get(effect.id)}
-											alt=""
-											aria-hidden="true"
-										/>
-										<img class="thumb-img thumb-before" src={$sourceThumbnail} alt={effect.name} />
-									{:else if $thumbnails.has(effect.id)}
-										<img class="thumb-img" src={$thumbnails.get(effect.id)} alt={effect.name} />
-									{:else}
-										<div class="thumb-placeholder"></div>
-									{/if}
-									<button
-										class="fav-star"
-										class:active={$favorites.has(effect.id)}
-										onclick={(e) => {
-											e.stopPropagation();
-											toggleFav(effect.id);
-										}}
-										title="Favorite"
-									>
-										{$favorites.has(effect.id) ? '★' : '☆'}
-									</button>
-								</div>
-								<div class="card-name">{effect.name}</div>
-							</div>
-						{/each}
-					</div>
-				</div>
-			{/if}
-
 			{#each Object.entries(grouped) as [cat, effects]}
 				<div class="category-group">
 					<h3 class="category-label category-label--major">
-						{cat.toUpperCase()}
+						{$i18n.categoryName(cat).toUpperCase()}
 					</h3>
 					<div class="grid">
 						{#each effects as effect (effect.id)}
 							<div
 								class="effect-card"
-								{...railPointer(effect.name)}
+								{...railPointer(displayEffectName(effect))}
 								onclick={(e) => handleEffectClick(effect, e)}
 								role="button"
 								tabindex="0"
 								onkeydown={(e) =>
 									e.key === 'Enter' && handleEffectClick(effect, e as unknown as MouseEvent)}
-								title={$sourceImage
-									? `${effect.name} — Click: random · Shift+Click: defaults`
-									: `${effect.name} — Click to add layer · Load media to preview`}
+								title={effectTooltip(effect)}
 							>
 								<div class="thumb-wrap">
-									{#if $thumbnails.has(effect.id) && $sourceThumbnail}
+									{#if $thumbnails.has(effect.id) && $sourceThumbnails.has(effect.id)}
 										<img
 											class="thumb-img thumb-after"
 											src={$thumbnails.get(effect.id)}
@@ -298,7 +255,7 @@
 										/>
 										<img
 											class="thumb-img thumb-before"
-											src={$sourceThumbnail}
+											src={$sourceThumbnails.get(effect.id)}
 											alt={effect.name}
 										/>
 									{:else if $thumbnails.has(effect.id)}
@@ -313,18 +270,18 @@
 											e.stopPropagation();
 											toggleFav(effect.id);
 										}}
-										title="Favorite"
+										title={$i18n.t('effectsPanel.favorite')}
 									>
 										{$favorites.has(effect.id) ? '★' : '☆'}
 									</button>
 								</div>
-								<div class="card-name">{effect.name}</div>
+								<div class="card-name">{displayEffectName(effect)}</div>
 							</div>
 						{/each}
 					</div>
 				</div>
 			{:else}
-				<p class="empty">No effects found</p>
+				<p class="empty">{$i18n.t('effectsPanel.noEffects')}</p>
 			{/each}
 		{/if}
 	</div>

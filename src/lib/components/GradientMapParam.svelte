@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { GradientStop } from '../engine/gradient';
+	import { i18n } from '$lib/i18n';
 
 	let {
 		stops = $bindable<GradientStop[]>(),
@@ -64,7 +65,7 @@
 				class="grad-stop"
 				class:active={dragging === i}
 				style="left: {stop.pos * 100}%"
-				title="Drag to move · click swatch to change color"
+				title={$i18n.t('gradient.hint')}
 				onpointerdown={(e) => onBarPointerDown(i, e)}
 				onpointermove={onBarPointerMove}
 				onpointerup={onBarPointerUp}

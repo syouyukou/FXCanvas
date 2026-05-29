@@ -3,7 +3,7 @@
 	import { Renderer } from '../engine/renderer';
 	import { appliedEffects, sourceImage, imageSize } from '../stores/editor';
 	import { showOriginal } from '../stores/view';
-	import { refreshThumbnailsForImage } from '../engine/effectThumbnails';
+	import { i18n } from '$lib/i18n';
 
 	const MIN_ZOOM = 0.25;
 	const MAX_ZOOM = 8;
@@ -130,7 +130,6 @@
 			imageSize.set(renderer.imageSize);
 			resetView();
 			applyLayout(renderer.imageSize);
-			setTimeout(() => refreshThumbnailsForImage($sourceImage!), 0);
 		}
 
 		renderer.render(stack);
@@ -170,7 +169,7 @@
 	onpointerup={onPointerUp}
 	onpointercancel={onPointerUp}
 	role="region"
-	aria-label="Canvas"
+	aria-label={$i18n.t('canvas.ariaCanvas')}
 >
 	{#if !$sourceImage}
 		<div class="empty-state">
@@ -179,8 +178,8 @@
 				<circle cx="8.5" cy="8.5" r="1.5"/>
 				<polyline points="21 15 16 10 5 21"/>
 			</svg>
-			<p>Drop an image here</p>
-			<span>or click Load Media</span>
+			<p>{$i18n.t('canvas.dropImage')}</p>
+			<span>{$i18n.t('canvas.orClickLoad')}</span>
 		</div>
 	{/if}
 	<div
@@ -188,12 +187,12 @@
 		class:hidden={!$sourceImage}
 		style="transform: translate({panX}px, {panY}px)"
 		role="img"
-		aria-label="Preview canvas"
+		aria-label={$i18n.t('canvas.ariaPreview')}
 	>
 		<canvas bind:this={canvas}></canvas>
 	</div>
 	{#if $showOriginal && $sourceImage}
-		<div class="compare-badge">ORIGINAL</div>
+		<div class="compare-badge">{$i18n.t('canvas.original')}</div>
 	{/if}
 </div>
 

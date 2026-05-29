@@ -1,5 +1,6 @@
 import { get, writable } from 'svelte/store';
 import { getBuiltinPreset } from '../presets/builtin';
+import { builtinPresetName, t } from '$lib/i18n';
 import { appendPresetGroup, appliedEffects, activeLayerIndex } from './editor';
 import { pushHistory, toSnapshot, type StackSnapshot } from './history';
 
@@ -34,7 +35,7 @@ export function saveCurrentPreset(name: string) {
 	const snapshot = toSnapshot(get(appliedEffects), get(activeLayerIndex));
 	const preset: SavedPreset = {
 		id: crypto.randomUUID(),
-		name: name.trim() || `Preset ${get(savedPresets).length + 1}`,
+		name: name.trim() || t('presetsMenu.autoName', { n: get(savedPresets).length + 1 }),
 		snapshot,
 		createdAt: Date.now()
 	};
@@ -56,7 +57,10 @@ export function loadBuiltinPreset(id: string) {
 	const preset = getBuiltinPreset(id);
 	if (!preset) return;
 	pushHistory();
-	appendPresetGroup(preset.snapshot, { name: preset.name, presetId: preset.id });
+	appendPresetGroup(preset.snapshot, {
+		name: builtinPresetName(preset.id, preset.name),
+		presetId: preset.id
+	});
 }
 
 function applySnapshotAsGroup(snapshot: StackSnapshot, meta: { name: string; presetId?: string }) {

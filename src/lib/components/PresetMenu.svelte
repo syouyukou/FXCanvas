@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { savedPresets, saveCurrentPreset, loadPreset, deletePreset } from '../stores/presets';
+	import { i18n } from '$lib/i18n';
 
 	let open = $state(false);
 	let saveOpen = $state(false);
@@ -29,13 +30,13 @@
 </script>
 
 <div class="preset-menu">
-	<button class="btn-ghost" onclick={toggle} title="Save / load effect stack">
+	<button class="btn-ghost" onclick={toggle} title={$i18n.t('presetsMenu.tooltip')}>
 		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 			<path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
 			<polyline points="17 21 17 13 7 13 7 21"/>
 			<polyline points="7 3 7 8 15 8"/>
 		</svg>
-		Presets
+		{$i18n.t('presetsMenu.title')}
 	</button>
 
 	{#if open}
@@ -46,18 +47,20 @@
 				<div class="save-row">
 					<input
 						type="text"
-						placeholder="Preset name…"
+						placeholder={$i18n.t('presetsMenu.namePlaceholder')}
 						bind:value={name}
 						onkeydown={(e) => e.key === 'Enter' && onSave()}
 					/>
-					<button class="save-btn" onclick={onSave}>Save</button>
+					<button class="save-btn" onclick={onSave}>{$i18n.t('presetsMenu.save')}</button>
 				</div>
 			{:else}
-				<button class="menu-item accent" onclick={() => (saveOpen = true)}>Save current stack…</button>
+				<button class="menu-item accent" onclick={() => (saveOpen = true)}>
+					{$i18n.t('presetsMenu.saveCurrent')}
+				</button>
 			{/if}
 
 			{#if $savedPresets.length === 0}
-				<p class="empty">No saved presets yet</p>
+				<p class="empty">{$i18n.t('presetsMenu.empty')}</p>
 			{:else}
 				<div class="list">
 					{#each $savedPresets as preset (preset.id)}
@@ -67,7 +70,7 @@
 							</button>
 							<button
 								class="delete-btn"
-								title="Delete preset"
+								title={$i18n.t('presetsMenu.deletePreset')}
 								onclick={(e) => onDelete(e, preset.id)}
 							>✕</button>
 						</div>

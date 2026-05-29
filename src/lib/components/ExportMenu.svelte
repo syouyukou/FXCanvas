@@ -8,6 +8,7 @@
 		type ExportSizePreset
 	} from '$lib/engine/export';
 	import type { Renderer } from '$lib/engine/renderer';
+	import { i18n, locale } from '$lib/i18n';
 
 	let { renderer = null }: { renderer: Renderer | null } = $props();
 
@@ -15,7 +16,10 @@
 	let format = $state<ExportFormat>('png');
 	let sizePreset = $state<ExportSizePreset>('1x');
 
-	let sizeOptions = $derived(getExportSizeOptions($imageSize.width, $imageSize.height));
+	let sizeOptions = $derived.by(() => {
+		void $locale;
+		return getExportSizeOptions($imageSize.width, $imageSize.height);
+	});
 	let currentSize = $derived(
 		sizeOptions.find((o) => o.id === sizePreset) ?? sizeOptions[0] ?? null
 	);
@@ -73,7 +77,7 @@
 		aria-expanded={showMenu}
 		aria-haspopup="true"
 	>
-		Export
+		{$i18n.t('export.title')}
 		<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
 			<polyline points="6 9 12 15 18 9"/>
 		</svg>
@@ -82,15 +86,15 @@
 	{#if showMenu}
 		<div class="export-menu">
 			<div class="export-field">
-				<label class="export-label" for="export-format">Format</label>
+				<label class="export-label" for="export-format">{$i18n.t('export.format')}</label>
 				<select id="export-format" class="export-select" bind:value={format}>
-					<option value="png">PNG</option>
-					<option value="jpeg">JPEG</option>
+					<option value="png">{$i18n.t('export.png')}</option>
+					<option value="jpeg">{$i18n.t('export.jpeg')}</option>
 				</select>
 			</div>
 
 			<div class="export-field">
-				<label class="export-label" for="export-size">Size</label>
+				<label class="export-label" for="export-size">{$i18n.t('export.size')}</label>
 				<select id="export-size" class="export-select" bind:value={sizePreset}>
 					{#each sizeOptions as option (option.id)}
 						<option value={option.id}>
@@ -101,14 +105,16 @@
 			</div>
 
 			{#if currentSize}
-				<p class="export-dim">{currentSize.width} × {currentSize.height} px</p>
+				<p class="export-dim">
+					{$i18n.t('export.px', { w: currentSize.width, h: currentSize.height })}
+				</p>
 				{#if currentSize.tooLarge}
-					<p class="export-warn">Exceeds {MAX_EXPORT_DIM}px limit — choose a smaller size</p>
+					<p class="export-warn">{$i18n.t('export.exceedsLimit', { max: MAX_EXPORT_DIM })}</p>
 				{/if}
 			{/if}
 
 			<button class="btn-download" onclick={download} disabled={!currentSize || currentSize.tooLarge}>
-				Download
+				{$i18n.t('export.download')}
 			</button>
 		</div>
 	{/if}

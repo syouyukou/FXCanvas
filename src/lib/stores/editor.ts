@@ -2,6 +2,8 @@ import { get, writable, derived } from 'svelte/store';
 import { EFFECTS } from '../effects/index';
 import type { Effect, AppliedEffect, EffectParam } from '../engine/renderer';
 import { cloneGradient, type GradientStop } from '../engine/gradient';
+import { createI18n } from '$lib/i18n';
+import { locale } from '$lib/i18n';
 import { fromSnapshot, pushHistory, type StackSnapshot } from './history';
 
 const FAVORITES_KEY = 'fxcanvas-favorites';
@@ -91,19 +93,19 @@ export const activeLayerIndex = writable<number>(-1);
 export const sourceImage = writable<HTMLImageElement | ImageBitmap | null>(null);
 export const imageSize = writable<{ width: number; height: number }>({ width: 0, height: 0 });
 export const thumbnails = writable<Map<string, string>>(new Map());
-export const sourceThumbnail = writable<string | null>(null);
+/** Per-effect curated "before" image for sidebar hover preview. */
+export const sourceThumbnails = writable<Map<string, string>>(new Map());
 export const searchQuery = writable('');
 export const leftTab = writable<'effects' | 'favorites' | 'presets'>('effects');
 export const favorites = writable<Set<string>>(loadFavorites());
 
 favorites.subscribe((favs) => persistFavorites(favs));
 
-export const filteredEffects = derived([searchQuery], ([$search]) => {
+export const filteredEffects = derived([searchQuery, locale], ([$search, $lang]) => {
 	if (!$search.trim()) return EFFECTS;
 	const q = $search.toLowerCase();
-	return EFFECTS.filter(
-		(e) => e.name.toLowerCase().includes(q) || e.category.toLowerCase().includes(q)
-	);
+	const i18n = createI18n($lang);
+	return EFFECTS.filter((e) => i18n.effectSearchText(e.id, e.name, e.category).includes(q));
 });
 
 export function addEffect(effectTemplate: Effect, options?: { randomize?: boolean; skipHistory?: boolean }) {
